@@ -1,0 +1,42 @@
+{% for student in students %}
+<tr data-name="{{ student.full_name|escapejs }}"
+    data-user="{{ student.username|escapejs }}"
+    data-pass="{{ student.password|escapejs }}"
+    data-college="{{ student.college.college_name|escapejs }}"
+    data-dept="{{ student.department.dept_name|escapejs }}"
+    data-year="{{ student.year }}"
+    data-status="{{ student.status|title }}"
+    data-email="{{ student.email|escapejs }}"
+    data-join="{{ student.created_at|date:'Y-m-d' }}"
+    data-end="{{ student.end_date|date:'Y-m-d'|default:'' }}">
+    <td class="sm-td--no">{{ forloop.counter0|add:page_obj.start_index }}</td>
+    <td>
+        <div class="sm-student">
+            <div class="sm-avatar sm-avatar--blue">{{ student.full_name|slice:":2"|upper }}</div>
+            <div>
+                <div class="sm-student__name">{{ student.full_name }}</div>
+                <div class="sm-student__email">{{ student.email }}</div>
+            </div>
+        </div>
+    </td>
+    <td><span class="sm-username">{{ student.username }}</span></td>
+    <td><span class="sm-password">{{ student.password }}</span></td>
+    <td class="sm-td--muted">{{ student.college.college_name }}</td>
+    <td><span class="sm-dept-tag">{{ student.department.dept_code }}</span></td>
+    <td class="sm-td--muted">{{ student.year }}</td>
+    <td class="sm-td--muted">{{ student.created_at|date:"Y-m-d" }}</td>
+    <td class="sm-td--muted">{{ student.end_date|date:"Y-m-d"|default:"—" }}</td>
+    <td><span class="sm-badge {% if student.status == 'active' %}sm-badge--active{% else %}sm-badge--inactive{% endif %}">{{ student.get_status_display|default:student.status|title }}</span></td>
+    <td>
+        <div class="sm-actions">
+            <button class="sm-icon-btn sm-icon-btn--view" title="View" onclick="openViewModal(this)"><i class="fas fa-eye"></i></button>
+            <button class="sm-icon-btn sm-icon-btn--edit" title="Edit" onclick="openEditModal(this)"><i class="fas fa-pen-to-square"></i></button>
+            <button class="sm-icon-btn sm-icon-btn--delete" title="Delete" onclick="openDeleteModal(this)"><i class="fas fa-trash-can"></i></button>
+        </div>
+    </td>
+</tr>
+{% empty %}
+<tr>
+    <td colspan="11" style="text-align:center; padding:2rem; color:#888;">No students found.</td>
+</tr>
+{% endfor %}

@@ -67,8 +67,9 @@
                             <label for="college">College <span class="req">*</span></label>
                             <select id="college" name="college" class="sm-select" required>
                                 <option value="">Select College</option>
-                                <option value="ABC College">ABC College</option>
-                                <option value="XYZ College">XYZ College</option>
+                                {% for college in colleges %}
+                                <option value="{{ college.id }}">{{ college.college_name }}</option>
+                                {% endfor %}
                             </select>
                         </div>
                         <div class="sm-form-group">
@@ -123,28 +124,6 @@
                     </div>
                 </div>
 
-                <!-- Section 3: System Credentials -->
-                <div class="sm-form-section">
-                    <div class="sm-form-section__header">
-                        <i class="fas fa-lock"></i>
-                        <h3>System Credentials</h3>
-                    </div>
-                    <div class="sm-form-grid">
-                        <div class="sm-form-group">
-                            <label for="username">HOD Username <span class="req">*</span></label>
-                            <input type="text" id="username" name="username" placeholder="Auto-generated" required>
-                        </div>
-                        <div class="sm-form-group">
-                            <label for="password">Temporary Password <span class="req">*</span></label>
-                            <div class="sm-input-with-btn">
-                                <input type="text" id="password" name="password" placeholder="••••••••" required>
-                                <button type="button" id="refreshPass" class="sm-input-btn" title="Regenerate Password">
-                                    <i class="fas fa-rotate"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
                 <!-- Form Footer -->
                 <div class="sm-form-footer">

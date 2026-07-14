@@ -771,30 +771,45 @@
 /* View modal — detail grid */
 .dm-detail-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.1rem 1.25rem;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.25rem;
 }
 
 .dm-detail-item {
-    min-width: 0;
+    background: #f8f8fc;
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    border: 1px solid #f1f2f7;
+    transition: all 0.2s ease;
+}
+
+.dm-detail-item:hover {
+    background: #fff;
+    border-color: #4f46e5;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.08);
 }
 
 .dm-detail-label {
-    font-size: 0.68rem;
+    font-size: 0.72rem;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: #94a3b8;
+    color: #6b7085;
     font-weight: 700;
-    margin: 0 0 0.3rem;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
+.dm-detail-label i { color: #9a9db3; font-size: 0.85rem; }
 
 .dm-detail-value {
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     font-weight: 600;
     color: #0f172a;
     margin: 0;
     word-break: break-word;
-    line-height: 1.4;
 }
 
 /* Edit modal — form */

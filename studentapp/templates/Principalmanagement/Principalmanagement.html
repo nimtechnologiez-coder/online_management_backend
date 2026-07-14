@@ -72,28 +72,30 @@
         </div>
 
         <!-- Toolbar -->
-        <div class="pm-toolbar">
+        <form class="pm-toolbar" method="GET" action="{% url 'principal_management' %}">
             <div class="pm-toolbar__left">
                 <div class="pm-search">
                     <i class="fas fa-search pm-search__icon"></i>
-                    <input type="text" id="searchInput" placeholder="Search by name, email..." class="pm-search__input">
+                    <input type="text" name="q" value="{{ q }}" placeholder="Search by name, email..." class="pm-search__input" onkeydown="if(event.key === 'Enter'){this.form.submit();}">
                 </div>
                 <div class="pm-toolbar__filters">
-                    <select id="collegeFilter" class="pm-select">
+                    <select name="college" class="pm-select" onchange="this.form.submit()">
                         <option value="">All Colleges</option>
-                        <option value="tech">Tech Engineering College</option>
+                        {% for c in all_colleges %}
+                        <option value="{{ c.id }}" {% if selected_college == c.id|stringformat:"s" %}selected{% endif %}>{{ c.college_name }}</option>
+                        {% endfor %}
                     </select>
-                    <select id="statusFilter" class="pm-select pm-select--sm">
+                    <select name="status" class="pm-select pm-select--sm" onchange="this.form.submit()">
                         <option value="">All Status</option>
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
+                        <option value="active" {% if selected_status == 'active' %}selected{% endif %}>Active</option>
+                        <option value="inactive" {% if selected_status == 'inactive' %}selected{% endif %}>Inactive</option>
                     </select>
                 </div>
             </div>
-            <button class="pm-btn pm-btn--ghost" id="resetBtn">
+            <a href="{% url 'principal_management' %}" class="pm-btn pm-btn--ghost" id="resetBtn" style="text-decoration: none;">
                 <i class="fas fa-rotate-left"></i> Reset
-            </button>
-        </div>
+            </a>
+        </form>
 
         <!-- Table Card -->
         <div class="pm-card">
@@ -103,6 +105,7 @@
                         <tr>
                             <th>#</th>
                             <th>Principal</th>
+                            <th>Mobile</th>
                             <th>Email</th>
                             <th>College</th>
                             <th>Username</th>
@@ -113,51 +116,31 @@
                         </tr>
                     </thead>
                     <tbody id="tableBody">
-                        <!-- Demo Row 1 -->
-                        <tr>
-                            <td class="pm-td--no">1</td>
-                            <td>
-                                <div class="pm-principal">
-                                    <div class="pm-avatar pm-avatar--blue">RK</div>
-                                    <div>
-                                        <div class="pm-principal__name">Dr. Rajesh Khanna</div>
-                                        <div class="pm-principal__role">Principal</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="pm-td--muted">rajesh.khanna@tec.edu</td>
-                            <td class="pm-td--muted">Tech Engineering College</td>
-                            <td><span class="pm-username">TEC_PRINCIPAL</span></td>
-                            <td>
-                                <!-- Password Show/Hide Container -->
-                                <div class="pm-password-wrapper">
-                                    <span class="pm-password" data-password="Pass12345">••••••••</span>
-                                    <button class="pm-password-toggle" onclick="togglePassword(this)">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                </div>
-                            </td>
-                            <td><span class="pm-badge pm-badge--active">Active</span></td>
-                            <td class="pm-td--muted">01 Jun 2022</td>
-                            <td>
-                                <div class="pm-actions">
-                                    <button class="pm-icon-btn pm-icon-btn--view" onclick="openViewModal('Dr. Rajesh Khanna', 'rajesh.khanna@tec.edu', 'Tech Engineering College', 'TEC_PRINCIPAL')"><i class="fas fa-eye"></i></button>
-                                    <button class="pm-icon-btn pm-icon-btn--edit" onclick="openEditModal('Dr. Rajesh Khanna')"><i class="fas fa-pen-to-square"></i></button>
-                                    <button class="pm-icon-btn pm-icon-btn--delete" onclick="openDeleteModal('Dr. Rajesh Khanna')"><i class="fas fa-trash-can"></i></button>
-                                </div>
-                            </td>
-                        </tr>
+                        {% include 'Principalmanagement/partials/principal_rows.html' %}
                     </tbody>
                 </table>
             </div>
 
             <div class="pm-table-footer">
-                <span class="pm-table-footer__info">Showing <strong id="pageRange">1–10</strong> of <strong id="totalCount">24</strong> principals</span>
-                <div class="pm-pagination">
-                    <button class="pm-btn pm-btn--ghost pm-pagination-btn" id="prevPage"><i class="fas fa-chevron-left"></i> Previous</button>
-                    <button class="pm-btn pm-btn--ghost pm-pagination-btn" id="nextPage">Next <i class="fas fa-chevron-right"></i></button>
+                <span class="pm-table-footer__info" id="pageInfo">
+                    Showing <strong id="infoStart">{{ page_obj.start_index|default:0 }}</strong>–<strong id="infoEnd">{{ page_obj.end_index|default:0 }}</strong> of <strong id="infoTotal">{{ page_obj.paginator.count }}</strong> principals
+                </span>
+                <div class="pm-pagination" id="paginationContainer">
+                    <!-- Rendered by JS -->
                 </div>
             </div>
+
+            <!-- Hidden data for JS bootstrap -->
+            <script id="pageData" type="application/json">
+            {
+                "currentPage": {{ page_obj.number }},
+                "numPages": {{ page_obj.paginator.num_pages }},
+                "hasPrevious": {{ page_obj.has_previous|yesno:"true,false" }},
+                "hasNext": {{ page_obj.has_next|yesno:"true,false" }},
+                "previousPage": {% if page_obj.has_previous %}{{ page_obj.previous_page_number }}{% else %}null{% endif %},
+                "nextPage": {% if page_obj.has_next %}{{ page_obj.next_page_number }}{% else %}null{% endif %}
+            }
+            </script>
         </div>
     </div>
 
@@ -166,33 +149,31 @@
     <div id="addModal" class="pm-modal-overlay">
         <div class="pm-modal pm-modal--form">
             <div class="pm-modal__header">
-                <h3 class="pm-modal__title">Add New Principal</h3>
+                <h3 class="pm-modal__title"><i class="fas fa-user-plus"></i> Add New Principal</h3>
                 <button class="pm-close-btn" onclick="closeAllModals()">&times;</button>
             </div>
-            <form id="addPrincipalForm" class="pm-form-grid">
+            <form id="addPrincipalForm" class="pm-form-grid" action="{% url 'principal_add' %}" method="POST">
+                {% csrf_token %}
                 <div class="pm-form-group">
-                    <label>Full Name</label>
-                    <input type="text" name="full_name" placeholder="e.g. Dr. Jane Doe" required>
+                    <label>Full Name <span style="color:#ef4444">*</span></label>
+                    <input type="text" id="addName" name="principal_name" placeholder="e.g. Dr. Jane Doe" required oninput="generateCredentials()">
                 </div>
                 <div class="pm-form-group">
-                    <label>Email Address</label>
-                    <input type="email" name="email" placeholder="jane.doe@college.edu" required>
+                    <label>Email Address <span style="color:#ef4444">*</span></label>
+                    <input type="email" id="addEmail" name="principal_email" placeholder="jane.doe@college.edu" required>
                 </div>
                 <div class="pm-form-group">
-                    <label>College</label>
-                    <select name="college" class="pm-select" required>
+                    <label>Mobile Number <span style="color:#ef4444">*</span></label>
+                    <input type="tel" id="addMobile" name="principal_mobile" placeholder="+91 00000 00000" required>
+                </div>
+                <div class="pm-form-group">
+                    <label>College <span style="color:#ef4444">*</span></label>
+                    <select name="college" id="addCollege" class="pm-select" required onchange="generateCredentials()">
                         <option value="" disabled selected>Select College</option>
-                        <option value="tech">Tech Engineering College</option>
-                        <option value="global">Global Institute</option>
+                        {% for college in colleges %}
+                        <option value="{{ college.id }}">{{ college.college_name }}</option>
+                        {% endfor %}
                     </select>
-                </div>
-                <div class="pm-form-group">
-                    <label>Username</label>
-                    <input type="text" name="username" placeholder="COLLEGE_PRINCIPAL" required>
-                </div>
-                <div class="pm-form-group">
-                    <label>Password</label>
-                    <input type="password" name="password" placeholder="••••••••" required>
                 </div>
                 <div class="pm-form-group">
                     <label>Status</label>
@@ -201,10 +182,47 @@
                         <option value="inactive">Inactive</option>
                     </select>
                 </div>
+
+                <!-- Hidden inputs carry auto-generated credentials to backend -->
+                <input type="hidden" name="username" id="hiddenUsername">
+                <input type="hidden" name="password" id="hiddenPassword">
             </form>
             <div class="pm-modal__actions">
                 <button onclick="closeAllModals()" class="pm-btn pm-btn--ghost">Cancel</button>
-                <button type="submit" form="addPrincipalForm" class="pm-btn pm-btn--primary">Create Account</button>
+                <button type="submit" form="addPrincipalForm" class="pm-btn pm-btn--primary"><i class="fas fa-check"></i> Create Account</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Credentials Success Modal (shown after principal is created) -->
+    <div id="credSuccessModal" class="pm-modal-overlay">
+        <div class="pm-modal" style="max-width:480px; text-align:center;">
+            <div style="width:64px;height:64px;border-radius:50%;background:#d1fae5;display:flex;align-items:center;justify-content:center;font-size:1.6rem;color:#10b981;margin:0 auto 1.25rem;">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h3 class="pm-modal__title" style="margin-bottom:.5rem;">Principal Created!</h3>
+            <p style="font-size:.85rem;color:#4b5580;margin-bottom:1.5rem;">Account credentials have been generated. Share these with the principal securely.</p>
+            <div class="pm-credentials-preview" style="text-align:left;margin-bottom:1.5rem;">
+                <div class="pm-cred-header"><i class="fas fa-magic"></i> Login Credentials</div>
+                <div class="pm-cred-grid">
+                    <div class="pm-cred-item">
+                        <span class="pm-cred-label">Name</span>
+                        <span class="pm-cred-value" id="successName"></span>
+                    </div>
+                    <div class="pm-cred-item">&nbsp;</div>
+                    <div class="pm-cred-item">
+                        <span class="pm-cred-label">Username</span>
+                        <span class="pm-cred-value" id="successUsername"></span>
+                    </div>
+                    <div class="pm-cred-item">
+                        <span class="pm-cred-label">Password</span>
+                        <span class="pm-cred-value" id="successPassword"></span>
+                    </div>
+                </div>
+                <p class="pm-cred-note"><i class="fas fa-exclamation-circle"></i> Save these credentials — they will not be shown again.</p>
+            </div>
+            <div class="pm-modal__actions" style="justify-content:center;">
+                <button onclick="closeAllModals()" class="pm-btn pm-btn--primary">Done</button>
             </div>
         </div>
     </div>
@@ -218,15 +236,31 @@
             </div>
             <div class="pm-view-content">
                 <div class="pm-view-profile">
-                    <div class="pm-avatar pm-avatar--blue" style="width: 60px; height: 60px; font-size: 1.2rem; margin: 0 auto 1rem;">RK</div>
+                    <div id="viewInitials" class="pm-avatar pm-avatar--blue" style="width: 60px; height: 60px; font-size: 1.2rem; margin: 0 auto 1rem;">RK</div>
                     <h2 id="viewName">Dr. Rajesh Khanna</h2>
                     <p class="pm-principal__role">Principal</p>
                 </div>
                 <div class="pm-view-grid">
-                    <div class="pm-view-item"><strong>Email:</strong> <span id="viewEmail">rajesh.khanna@tec.edu</span></div>
-                    <div class="pm-view-item"><strong>College:</strong> <span id="viewCollege">Tech Engineering College</span></div>
-                    <div class="pm-view-item"><strong>Username:</strong> <span id="viewUsername">TEC_PRINCIPAL</span></div>
-                    <div class="pm-view-item"><strong>Status:</strong> <span class="pm-badge pm-badge--active">Active</span></div>
+                    <div class="pm-view-item">
+                        <div class="pm-view-label"><i class="fas fa-envelope"></i> Email</div>
+                        <div class="pm-view-value" id="viewEmail">rajesh.khanna@tec.edu</div>
+                    </div>
+                    <div class="pm-view-item">
+                        <div class="pm-view-label"><i class="fas fa-phone"></i> Mobile</div>
+                        <div class="pm-view-value" id="viewMobile">+91 98765 43210</div>
+                    </div>
+                    <div class="pm-view-item">
+                        <div class="pm-view-label"><i class="fas fa-university"></i> College</div>
+                        <div class="pm-view-value" id="viewCollege">Tech Engineering College</div>
+                    </div>
+                    <div class="pm-view-item">
+                        <div class="pm-view-label"><i class="fas fa-user-shield"></i> Username</div>
+                        <div class="pm-view-value" id="viewUsername">TEC_PRINCIPAL</div>
+                    </div>
+                    <div class="pm-view-item" style="grid-column: 1 / -1;">
+                        <div class="pm-view-label"><i class="fas fa-circle-check"></i> Status</div>
+                        <div class="pm-view-value"><span class="pm-badge pm-badge--active" id="viewStatus">Active</span></div>
+                    </div>
                 </div>
             </div>
             <div class="pm-modal__actions">
@@ -242,25 +276,32 @@
                 <h3 class="pm-modal__title">Edit Principal</h3>
                 <button class="pm-close-btn" onclick="closeAllModals()">&times;</button>
             </div>
-            <form id="editForm" class="pm-form-grid">
+            <form id="editForm" class="pm-form-grid" method="POST">
+                {% csrf_token %}
                 <div class="pm-form-group">
-                    <label>Full Name</label>
-                    <input type="text" value="Dr. Rajesh Khanna" required>
+                    <label>Full Name <span style="color:#ef4444">*</span></label>
+                    <input type="text" id="editName" name="full_name" required>
                 </div>
                 <div class="pm-form-group">
-                    <label>Email</label>
-                    <input type="email" value="rajesh.khanna@tec.edu" required>
+                    <label>Email Address <span style="color:#ef4444">*</span></label>
+                    <input type="email" id="editEmail" name="email" required>
                 </div>
                 <div class="pm-form-group">
-                    <label>College</label>
-                    <select class="pm-select">
-                        <option>Tech Engineering College</option>
-                        <option>Global Institute</option>
+                    <label>Mobile Number <span style="color:#ef4444">*</span></label>
+                    <input type="tel" id="editMobile" name="principal_mobile" required>
+                </div>
+                <div class="pm-form-group">
+                    <label>College <span style="color:#ef4444">*</span></label>
+                    <select class="pm-select" id="editCollege" name="college" required>
+                        <option value="" disabled selected>Select College</option>
+                        {% for college in all_colleges %}
+                        <option value="{{ college.id }}">{{ college.college_name }}</option>
+                        {% endfor %}
                     </select>
                 </div>
                 <div class="pm-form-group">
                     <label>Status</label>
-                    <select class="pm-select">
+                    <select class="pm-select" id="editStatus" name="status">
                         <option value="active">Active</option>
                         <option value="inactive">Inactive</option>
                     </select>
@@ -268,7 +309,7 @@
             </form>
             <div class="pm-modal__actions">
                 <button onclick="closeAllModals()" class="pm-btn pm-btn--ghost">Cancel</button>
-                <button class="pm-btn pm-btn--primary">Save Changes</button>
+                <button type="submit" form="editForm" class="pm-btn pm-btn--primary"><i class="fas fa-save"></i> Save Changes</button>
             </div>
         </div>
     </div>
@@ -289,29 +330,155 @@
     <script>
         // Password Toggle Logic
         function togglePassword(btn) {
-            const pwdSpan = btn.previousElementSibling;
-            const isHidden = pwdSpan.innerText === '••••••••';
-            const realPassword = pwdSpan.getAttribute('data-password');
-
-            if (isHidden) {
-                pwdSpan.innerText = realPassword;
+            const span = btn.previousElementSibling;
+            if (span.textContent === "••••••••") {
+                span.textContent = span.getAttribute("data-password");
                 btn.innerHTML = '<i class="fas fa-eye-slash"></i>';
             } else {
-                pwdSpan.innerText = '••••••••';
+                span.textContent = "••••••••";
                 btn.innerHTML = '<i class="fas fa-eye"></i>';
             }
         }
 
+        /* ─── AJAX Pagination ─────────────────────────────────────── */
+        const tbody    = document.getElementById('tableBody');
+        const pagCont  = document.getElementById('paginationContainer');
+        const infoStart = document.getElementById('infoStart');
+        const infoEnd   = document.getElementById('infoEnd');
+        const infoTotal = document.getElementById('infoTotal');
+
+        // Bootstrap from server-rendered JSON island
+        let pageState = JSON.parse(document.getElementById('pageData').textContent);
+
+        // Build the URL preserving current filters
+        function buildUrl(page) {
+            const params = new URLSearchParams(window.location.search);
+            params.set('page', page);
+            params.delete('partial');
+            return '?' + params.toString();
+        }
+
+        function renderPagination(state) {
+            const { currentPage, numPages, hasPrevious, hasNext, previousPage, nextPage } = state;
+            if (numPages <= 1) { pagCont.innerHTML = ''; return; }
+
+            let html = '';
+            html += hasPrevious
+                ? `<button class="pm-page-btn" onclick="goToPage(${previousPage})" title="Previous"><i class="fas fa-chevron-left"></i></button>`
+                : `<button class="pm-page-btn" disabled title="Previous"><i class="fas fa-chevron-left"></i></button>`;
+
+            const pages = getPageRange(currentPage, numPages);
+            pages.forEach(p => {
+                if (p === '...') {
+                    html += `<span class="pm-page-ellipsis">…</span>`;
+                } else {
+                    html += `<button class="pm-page-btn${p === currentPage ? ' pm-page-btn--active' : ''}" onclick="goToPage(${p})">${p}</button>`;
+                }
+            });
+
+            html += hasNext
+                ? `<button class="pm-page-btn" onclick="goToPage(${nextPage})" title="Next"><i class="fas fa-chevron-right"></i></button>`
+                : `<button class="pm-page-btn" disabled title="Next"><i class="fas fa-chevron-right"></i></button>`;
+
+            pagCont.innerHTML = html;
+        }
+
+        function getPageRange(current, total) {
+            const delta = 1;
+            const range = [];
+            const rangeWithDots = [];
+            let prev = null;
+            for (let i = 1; i <= total; i++) {
+                if (i === 1 || i === total || (i >= current - delta && i <= current + delta)) {
+                    range.push(i);
+                }
+            }
+            range.forEach(i => {
+                if (prev !== null && i - prev > 1) rangeWithDots.push('...');
+                rangeWithDots.push(i);
+                prev = i;
+            });
+            return rangeWithDots;
+        }
+
+        let isLoading = false;
+        function goToPage(page) {
+            if (isLoading) return;
+            isLoading = true;
+
+            const params = new URLSearchParams(window.location.search);
+            params.set('page', page);
+            params.set('partial', '1');
+            const ajaxUrl = '?' + params.toString();
+
+            tbody.style.transition = 'opacity 0.18s ease';
+            tbody.style.opacity = '0.35';
+
+            fetch(ajaxUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(r => r.json())
+                .then(data => {
+                    tbody.innerHTML = data.rows_html;
+                    infoStart.textContent = data.start_index;
+                    infoEnd.textContent   = data.end_index;
+                    infoTotal.textContent = data.total;
+
+                    pageState = {
+                        currentPage:  data.current_page,
+                        numPages:     data.num_pages,
+                        hasPrevious:  data.has_previous,
+                        hasNext:      data.has_next,
+                        previousPage: data.previous_page,
+                        nextPage:     data.next_page,
+                    };
+                    renderPagination(pageState);
+                    history.pushState(null, '', buildUrl(page));
+
+                    requestAnimationFrame(() => {
+                        tbody.style.opacity = '1';
+                    });
+                })
+                .catch(err => {
+                    console.error('Pagination error:', err);
+                    tbody.style.opacity = '1';
+                })
+                .finally(() => { isLoading = false; });
+        }
+
+        renderPagination(pageState);
+
+        document.addEventListener('keydown', e => {
+            if (document.querySelector('.pm-modal-overlay.active')) return;
+            if (e.key === 'ArrowLeft'  && pageState.hasPrevious) goToPage(pageState.previousPage);
+            if (e.key === 'ArrowRight' && pageState.hasNext)     goToPage(pageState.nextPage);
+        });
+
+        window.addEventListener('popstate', () => location.reload());
+
         // Modal Controls
         function openAddModal() { document.getElementById('addModal').classList.add('active'); }
-        function openViewModal(name, email, college, username) {
+        function openViewModal(name, email, mobile, college, username, status) {
             document.getElementById('viewName').innerText = name;
             document.getElementById('viewEmail').innerText = email;
+            document.getElementById('viewMobile').innerText = mobile;
             document.getElementById('viewCollege').innerText = college;
             document.getElementById('viewUsername').innerText = username;
+            document.getElementById('viewInitials').innerText = name.substring(0, 2).toUpperCase();
+            
+            const statusEl = document.getElementById('viewStatus');
+            statusEl.innerText = status;
+            statusEl.className = status.toLowerCase() === 'active' ? 'pm-badge pm-badge--active' : 'pm-badge pm-badge--inactive';
+            
             document.getElementById('viewModal').classList.add('active');
         }
-        function openEditModal(name) { document.getElementById('editModal').classList.add('active'); }
+        function openEditModal(id, name, email, mobile, college_id, status) {
+            document.getElementById('editForm').action = "/principals/edit/" + id + "/";
+            document.getElementById('editName').value = name;
+            document.getElementById('editEmail').value = email;
+            document.getElementById('editMobile').value = mobile;
+            document.getElementById('editCollege').value = college_id;
+            document.getElementById('editStatus').value = status;
+            document.getElementById('editModal').classList.add('active'); 
+        }
         function openDeleteModal(name) {
             document.getElementById('deleteName').innerText = name;
             document.getElementById('deleteModal').classList.add('active');
@@ -325,12 +492,45 @@
             if (event.target.classList.contains('pm-modal-overlay')) { closeAllModals(); }
         }
 
+        // Silently generate credentials into hidden inputs (no preview shown in modal)
+        function generateCredentials() {
+            const name = document.getElementById('addName').value.trim();
+            const collegeEl = document.getElementById('addCollege');
+            const collegeText = collegeEl.options[collegeEl.selectedIndex]?.text || '';
+
+            if (!name) return;
+
+            const collegePart = collegeText.split(' ')[0].toUpperCase().replace(/[^A-Z0-9]/g, '') || 'COLLEGE';
+            const namePart = name.split(' ')[0].toUpperCase().replace(/[^A-Z0-9]/g, '');
+            const username = collegePart + '_' + namePart;
+
+            const namePrefix = name.replace(/[^a-zA-Z]/g, '').substring(0, 4).toLowerCase();
+            const randomDigits = Math.floor(1000 + Math.random() * 9000);
+            const password = namePrefix + '@' + randomDigits;
+
+            document.getElementById('hiddenUsername').value = username;
+            document.getElementById('hiddenPassword').value = password;
+        }
+
         document.getElementById('addPrincipalForm')?.addEventListener('submit', function(e) {
-            e.preventDefault();
-            alert("Principal added successfully!");
-            closeAllModals();
-            this.reset();
+            // Ensure credentials are generated before submit
+            generateCredentials();
+            const username = document.getElementById('hiddenUsername').value;
+            if (!username) {
+                e.preventDefault();
+                alert('Please fill in the Principal Name so credentials can be generated.');
+            }
         });
+
+        // Auto-open credentials success modal if Django passes new_credentials via session
+        {% if new_credentials %}
+        window.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('successName').textContent     = "{{ new_credentials.name|escapejs }}";
+            document.getElementById('successUsername').textContent = "{{ new_credentials.username|escapejs }}";
+            document.getElementById('successPassword').textContent = "{{ new_credentials.password|escapejs }}";
+            document.getElementById('credSuccessModal').classList.add('active');
+        });
+        {% endif %}
     </script>
 </body>
 </html>

@@ -1,0 +1,40 @@
+{% for principal in principals %}
+<tr>
+    <td class="pm-td--no">{{ forloop.counter0|add:page_obj.start_index }}</td>
+    <td>
+        <div class="pm-principal">
+            <div class="pm-avatar pm-avatar--blue">{{ principal.principal_name|slice:":2"|upper }}</div>
+            <div>
+                <div class="pm-principal__name">{{ principal.principal_name }}</div>
+                <div class="pm-principal__role">Principal</div>
+            </div>
+        </div>
+    </td>
+    <td class="pm-td--muted">{{ principal.principal_mobile|default:"N/A" }}</td>
+    <td class="pm-td--muted">{{ principal.principal_email }}</td>
+    <td class="pm-td--muted">{{ principal.college.college_name }}</td>
+    <td><span class="pm-username">{{ principal.username|default:"N/A" }}</span></td>
+    <td>
+        <!-- Password Show/Hide Container -->
+        <div class="pm-password-wrapper">
+            <span class="pm-password" data-password="{{ principal.password|default:"N/A" }}">••••••••</span>
+            <button class="pm-password-toggle" onclick="togglePassword(this)">
+                <i class="fas fa-eye"></i>
+            </button>
+        </div>
+    </td>
+    <td><span class="pm-badge {% if principal.status == 'active' %}pm-badge--active{% else %}pm-badge--inactive{% endif %}">{{ principal.get_status_display|default:principal.status|title }}</span></td>
+    <td class="pm-td--muted">{{ principal.created_at|date:"d M Y" }}</td>
+    <td>
+        <div class="pm-actions">
+            <button class="pm-icon-btn pm-icon-btn--view" onclick="openViewModal('{{ principal.principal_name|escapejs }}', '{{ principal.principal_email|escapejs }}', '{{ principal.principal_mobile|escapejs|default:"N/A" }}', '{{ principal.college.college_name|escapejs }}', '{{ principal.username|escapejs|default:"N/A" }}', '{{ principal.get_status_display|default:principal.status|title }}')"><i class="fas fa-eye"></i></button>
+            <button class="pm-icon-btn pm-icon-btn--edit" onclick="openEditModal({{ principal.id }}, '{{ principal.principal_name|escapejs }}', '{{ principal.principal_email|escapejs }}', '{{ principal.principal_mobile|escapejs }}', '{{ principal.college_id }}', '{{ principal.status }}')"><i class="fas fa-pen-to-square"></i></button>
+            <button class="pm-icon-btn pm-icon-btn--delete" onclick="openDeleteModal('{{ principal.principal_name|escapejs }}')"><i class="fas fa-trash-can"></i></button>
+        </div>
+    </td>
+</tr>
+{% empty %}
+<tr>
+    <td colspan="10" style="text-align: center; padding: 2rem;">No principals found.</td>
+</tr>
+{% endfor %}

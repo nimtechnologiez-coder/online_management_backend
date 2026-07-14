@@ -10,13 +10,14 @@
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
     <!-- Font Awesome CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
-    <!-- Chart.js -->
+    <!-- Chart.js & SheetJS -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <!-- CSS Links -->
     <link rel="stylesheet" href="{% static 'css/sidebar.css' %}" />
@@ -35,94 +36,107 @@
             <!-- Breadcrumb -->
             <nav class="va-breadcrumb" aria-label="Breadcrumb">
                 <a href="{% url 'dashboard' %}"><i class="fas fa-home"></i> Dashboard</a>
-                <span class="va-breadcrumb__sep">/</span>
+                <span class="va-breadcrumb__sep"><i class="fas fa-chevron-right"></i></span>
                 <span class="va-breadcrumb__current">Video Analytics</span>
             </nav>
 
-            <!-- Page Header -->
+            <!-- ── Page Header ────────────────────────────────── -->
             <div class="va-page-header">
                 <div class="va-header-text">
                     <h1 class="va-page-title">Video Analytics</h1>
-                    <p class="va-page-subtitle">Insights into student engagement and video performance.</p>
+                    <p class="va-page-subtitle">Real-time insights into student engagement and video performance.</p>
                 </div>
                 <div class="va-header-actions">
-                    <button class="va-btn va-btn--ghost"><i class="fas fa-download"></i> Export Report</button>
-                    <button class="va-btn va-btn--primary"><i class="fas fa-calendar-alt"></i> Last 30 Days</button>
+                    <button class="va-btn va-btn--ghost" onclick="exportReport()">
+                        <i class="fas fa-file-excel" style="color: #107c41;"></i> Export to Excel
+                    </button>
                 </div>
             </div>
 
-            <!-- Summary Stats Cards -->
+            <!-- ── Summary Stats ──────────────────────────────── -->
             <div class="va-stats-grid">
-                <div class="va-stat-card">
-                    <div class="va-stat-card__icon va-icon-blue"><i class="fas fa-video"></i></div>
+                <div class="va-stat-card va-stat-card--blue">
+                    <div class="va-stat-card__icon va-icon-blue"><i class="fas fa-film"></i></div>
                     <div class="va-stat-card__content">
                         <span class="va-stat-label">Total Videos</span>
-                        <span class="va-stat-value">124</span>
-                        <span class="va-stat-trend va-trend-up"><i class="fas fa-arrow-up"></i> 12%</span>
+                        <span class="va-stat-value">{{ total_videos }}</span>
+                        <span class="va-stat-trend va-trend-up"><i class="fas fa-arrow-up"></i> +12%</span>
                     </div>
                 </div>
-                <div class="va-stat-card">
+                <div class="va-stat-card va-stat-card--green">
                     <div class="va-stat-card__icon va-icon-green"><i class="fas fa-eye"></i></div>
                     <div class="va-stat-card__content">
                         <span class="va-stat-label">Total Views</span>
-                        <span class="va-stat-value">45.2K</span>
-                        <span class="va-stat-trend va-trend-up"><i class="fas fa-arrow-up"></i> 8%</span>
+                        <span class="va-stat-value">{{ total_views }}</span>
+                        <span class="va-stat-trend va-trend-up"><i class="fas fa-arrow-up"></i> +8%</span>
                     </div>
                 </div>
-                <div class="va-stat-card">
+                <div class="va-stat-card va-stat-card--purple">
                     <div class="va-stat-card__icon va-icon-purple"><i class="fas fa-clock"></i></div>
                     <div class="va-stat-card__content">
                         <span class="va-stat-label">Watch Hours</span>
-                        <span class="va-stat-value">1,280h</span>
-                        <span class="va-stat-trend va-trend-up"><i class="fas fa-arrow-up"></i> 15%</span>
+                        <span class="va-stat-value">{{ watch_hours }}h</span>
+                        <span class="va-stat-trend va-trend-up"><i class="fas fa-arrow-up"></i> +15%</span>
                     </div>
                 </div>
-                <div class="va-stat-card">
+                <div class="va-stat-card va-stat-card--amber">
                     <div class="va-stat-card__icon va-icon-amber"><i class="fas fa-chart-pie"></i></div>
                     <div class="va-stat-card__content">
                         <span class="va-stat-label">Completion Rate</span>
-                        <span class="va-stat-value">68%</span>
-                        <span class="va-stat-trend va-trend-down"><i class="fas fa-arrow-down"></i> 2%</span>
+                        <span class="va-stat-value">{{ completion_rate }}%</span>
+                        <span class="va-stat-trend va-trend-down"><i class="fas fa-arrow-down"></i> -2%</span>
                     </div>
                 </div>
-                <div class="va-stat-card">
+                <div class="va-stat-card va-stat-card--red">
                     <div class="va-stat-card__icon va-icon-red"><i class="fas fa-user-check"></i></div>
                     <div class="va-stat-card__content">
                         <span class="va-stat-label">Active Students</span>
-                        <span class="va-stat-value">842</span>
-                        <span class="va-stat-trend va-trend-up"><i class="fas fa-arrow-up"></i> 5%</span>
+                        <span class="va-stat-value">{{ active_students }}</span>
+                        <span class="va-stat-trend va-trend-up"><i class="fas fa-arrow-up"></i> +5%</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Charts Row -->
+            <!-- ── Charts Row ─────────────────────────────────── -->
             <div class="va-charts-grid">
+                <!-- Views Trend (large) -->
                 <div class="va-chart-card va-chart-card--large">
                     <div class="va-chart-header">
-                        <h3 class="va-chart-title">Video Views Trend</h3>
-                        <div class="va-chart-options">
-                            <select class="va-select-sm">
-                                <option>Daily</option>
-                                <option>Weekly</option>
-                                <option>Monthly</option>
-                            </select>
+                        <div>
+                            <h3 class="va-chart-title">Video Views Trend</h3>
+                            <p class="va-chart-subtitle">Total views over selected period</p>
                         </div>
+                        <select class="va-select-sm" id="trendFilter" onchange="updateTrendChart()">
+                            <option value="weekly">Weekly</option>
+                            <option value="daily">Daily</option>
+                            <option value="monthly">Monthly</option>
+                        </select>
                     </div>
                     <div class="va-chart-body">
                         <canvas id="viewsTrendChart"></canvas>
                     </div>
                 </div>
+
+                <!-- Category Doughnut -->
                 <div class="va-chart-card">
                     <div class="va-chart-header">
-                        <h3 class="va-chart-title">Department Views</h3>
+                        <div>
+                            <h3 class="va-chart-title">By Category</h3>
+                            <p class="va-chart-subtitle">View distribution</p>
+                        </div>
                     </div>
                     <div class="va-chart-body">
                         <canvas id="deptViewsChart"></canvas>
                     </div>
                 </div>
+
+                <!-- Completion Bar -->
                 <div class="va-chart-card">
                     <div class="va-chart-header">
-                        <h3 class="va-chart-title">Completion Rate</h3>
+                        <div>
+                            <h3 class="va-chart-title">Monthly Completion</h3>
+                            <p class="va-chart-subtitle">Avg. completion %</p>
+                        </div>
                     </div>
                     <div class="va-chart-body">
                         <canvas id="completionChart"></canvas>
@@ -130,124 +144,195 @@
                 </div>
             </div>
 
-            <!-- Tables Row -->
+            <!-- ── Tables Row ─────────────────────────────────── -->
             <div class="va-tables-grid">
+
+                <!-- Most Watched Videos -->
                 <div class="va-table-card">
                     <div class="va-table-header">
-                        <h3 class="va-table-title">Most Watched Videos</h3>
-                        <div class="va-table-toolbar">
-                            <div class="va-search-mini">
-                                <i class="fas fa-search"></i>
-                                <input type="text" placeholder="Search video...">
-                            </div>
+                        <h3 class="va-table-title"><i class="fas fa-trophy" style="color:#f59e0b;margin-right:.4rem;"></i>Most Watched Videos</h3>
+                        <div class="va-search-mini">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="videoSearch" placeholder="Search video..." oninput="filterVideoTable()">
                         </div>
                     </div>
                     <div class="va-table-scroll">
-                        <table class="va-table">
+                        <table class="va-table" id="videoTable">
                             <thead>
                                 <tr>
+                                    <th>#</th>
                                     <th>Video Title</th>
-                                    <th>Department</th>
+                                    <th>Category</th>
                                     <th>Views</th>
-                                    <th>Watch Time</th>
-                                    <th>Completion %</th>
                                     <th>Status</th>
                                 </tr>
                             </thead>
                             <tbody>
+                                {% for video in most_watched %}
                                 <tr>
-                                    <td><strong>Python for Beginners</strong></td>
-                                    <td><span class="va-dept-tag">CSE</span></td>
-                                    <td>4,200</td>
-                                    <td>840h</td>
-                                    <td><div class="va-progress-bar"><div class="va-progress-fill" style="width: 85%;"></div><span class="va-progress-text">85%</span></div></td>
-                                    <td><span class="va-badge va-badge--active">Published</span></td>
+                                    <td>
+                                        <span class="va-rank {% if forloop.counter == 1 %}va-rank--1{% elif forloop.counter == 2 %}va-rank--2{% elif forloop.counter == 3 %}va-rank--3{% endif %}">
+                                            {{ forloop.counter }}
+                                        </span>
+                                    </td>
+                                    <td style="max-width:200px;">
+                                        <strong style="display:block;color:var(--va-text);font-size:.83rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ video.title }}">{{ video.title }}</strong>
+                                        <span style="font-size:.72rem;color:var(--va-text-muted);">{{ video.duration }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="va-dept-tag {% if video.category == 'Mathematics' %}va-dept-tag--teal{% elif video.category == 'Physics' %}va-dept-tag--amber{% elif video.category == 'Soft Skills' %}va-dept-tag--red{% endif %}">
+                                            {{ video.category }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="va-views-bar">
+                                            <div class="va-views-bar__track">
+                                                <div class="va-views-bar__fill" style="width:{{ video.views|default:0 }}%;max-width:100%;"></div>
+                                            </div>
+                                            <span class="va-views-bar__num">{{ video.views }}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="va-badge {% if video.status == 'Published' %}va-badge--active{% else %}va-badge--inactive{% endif %}">
+                                            {{ video.status }}
+                                        </span>
+                                    </td>
                                 </tr>
+                                {% empty %}
                                 <tr>
-                                    <td><strong>Advanced Calculus</strong></td>
-                                    <td><span class="va-dept-tag va-dept-tag--teal">MATH</span></td>
-                                    <td>3,100</td>
-                                    <td>620h</td>
-                                    <td><div class="va-progress-bar"><div class="va-progress-fill" style="width: 62%;"></div><span class="va-progress-text">62%</span></div></td>
-                                    <td><span class="va-badge va-badge--active">Published</span></td>
+                                    <td colspan="5">
+                                        <div class="va-empty">
+                                            <i class="fas fa-video-slash"></i>
+                                            No videos available.
+                                        </div>
+                                    </td>
                                 </tr>
+                                {% endfor %}
                             </tbody>
                         </table>
                     </div>
                 </div>
 
+                <!-- Recent Student Activity -->
                 <div class="va-table-card">
                     <div class="va-table-header">
-                        <h3 class="va-table-title">Recent Student Activity</h3>
+                        <h3 class="va-table-title"><i class="fas fa-bolt" style="color:var(--va-primary);margin-right:.4rem;"></i>Recent Activity</h3>
                     </div>
                     <div class="va-table-scroll">
                         <table class="va-table">
                             <thead>
                                 <tr>
-                                    <th>Student Name</th>
+                                    <th>Student</th>
                                     <th>Video</th>
-                                    <th>Progress</th>
-                                    <th>Last Watched</th>
-                                    <th>Duration</th>
+                                    <th>Watched</th>
+                                    <th>Status</th>
                                 </tr>
                             </thead>
                             <tbody>
+                                {% for watch in recent_activity %}
                                 <tr>
-                                    <td>John Doe</td>
-                                    <td>Python Basics</td>
-                                    <td><div class="va-progress-bar"><div class="va-progress-fill" style="width: 90%;"></div></div></td>
-                                    <td>2 mins ago</td>
-                                    <td>12:45</td>
+                                    <td>
+                                        <div class="va-student-cell">
+                                            <div class="va-avatar">{{ watch.student.full_name|first|upper }}</div>
+                                            <span class="va-student-name">{{ watch.student.full_name }}</span>
+                                        </div>
+                                    </td>
+                                    <td style="max-width:140px;">
+                                        <span style="font-size:.8rem;color:var(--va-text);font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ watch.video.title }}">
+                                            {{ watch.video.title }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="va-time-chip">
+                                            <i class="fas fa-clock"></i>
+                                            {{ watch.watched_at|timesince }} ago
+                                        </span>
+                                    </td>
+                                    <td><span class="va-badge va-badge--watch">Watched</span></td>
                                 </tr>
+                                {% empty %}
                                 <tr>
-                                    <td>Jane Smith</td>
-                                    <td>Quantum Physics</td>
-                                    <td><div class="va-progress-bar"><div class="va-progress-fill" style="width: 30%;"></div></div></td>
-                                    <td>15 mins ago</td>
-                                    <td>45:00</td>
+                                    <td colspan="4">
+                                        <div class="va-empty">
+                                            <i class="fas fa-users-slash"></i>
+                                            No recent activity.
+                                        </div>
+                                    </td>
                                 </tr>
+                                {% endfor %}
                             </tbody>
                         </table>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
+
+            </div><!-- /tables-grid -->
+        </div><!-- /va-main -->
+    </div><!-- /va-wrapper -->
 
     <script>
+        /* ── Views Trend Chart ─────────────────────────────── */
         const ctxTrend = document.getElementById('viewsTrendChart').getContext('2d');
-        new Chart(ctxTrend, {
+        const trendChart = new Chart(ctxTrend, {
             type: 'line',
             data: {
                 labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6'],
                 datasets: [{
                     label: 'Total Views',
                     data: [1200, 1900, 1500, 2500, 2200, 3000],
-                    borderColor: '#2563eb',
-                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                    borderColor: '#4f46e5',
+                    backgroundColor: 'rgba(79,70,229,0.08)',
                     fill: true,
-                    tension: 0.4,
+                    tension: 0.45,
                     borderWidth: 3,
-                    pointRadius: 4
+                    pointRadius: 5,
+                    pointBackgroundColor: '#4f46e5',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
                 }]
             },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' ' + ctx.parsed.y + ' views' } } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { font: { size: 11 }, color: '#8b93b8' } },
+                    y: { grid: { color: '#f0f2f8' }, ticks: { font: { size: 11 }, color: '#8b93b8' }, beginAtZero: true }
+                }
+            }
         });
 
+        function updateTrendChart() {
+            const v = document.getElementById('trendFilter').value;
+            const data = {
+                daily:   { labels: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], data: [150,230,180,320,290,120,400] },
+                weekly:  { labels: ['Week 1','Week 2','Week 3','Week 4','Week 5','Week 6'], data: [1200,1900,1500,2500,2200,3000] },
+                monthly: { labels: ['Jan','Feb','Mar','Apr','May','Jun'], data: [5000,7200,6800,9400,8100,10500] },
+            };
+            trendChart.data.labels = data[v].labels;
+            trendChart.data.datasets[0].data = data[v].data;
+            trendChart.update('active');
+        }
+
+        /* ── Category Doughnut ─────────────────────────────── */
         const ctxDept = document.getElementById('deptViewsChart').getContext('2d');
         new Chart(ctxDept, {
             type: 'doughnut',
             data: {
-                labels: ['CSE', 'IT', 'MATH', 'PHYSICS'],
+                labels: ['Programming', 'Mathematics', 'Physics', 'Soft Skills'],
                 datasets: [{
                     data: [40, 25, 20, 15],
-                    backgroundColor: ['#2563eb', '#60a5fa', '#93c5fd', '#bfdbfe'],
-                    borderWidth: 0
+                    backgroundColor: ['#4f46e5','#06b6d4','#8b5cf6','#f59e0b'],
+                    borderWidth: 0,
+                    hoverOffset: 6
                 }]
             },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                cutout: '68%',
+                plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, pointStyle: 'circle', padding: 12, font: { size: 11 } } } }
+            }
         });
 
+        /* ── Completion Bar Chart ───────────────────────────── */
         const ctxComp = document.getElementById('completionChart').getContext('2d');
         new Chart(ctxComp, {
             type: 'bar',
@@ -256,12 +341,35 @@
                 datasets: [{
                     label: 'Completion %',
                     data: [65, 72, 68, 80, 75],
-                    backgroundColor: '#7c3aed',
-                    borderRadius: 6
+                    backgroundColor: 'rgba(139,92,246,0.85)',
+                    borderRadius: 7,
+                    borderSkipped: false,
                 }]
             },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { font: { size: 11 }, color: '#8b93b8' } },
+                    y: { grid: { color: '#f0f2f8' }, ticks: { font: { size: 11 }, color: '#8b93b8' }, min: 0, max: 100 }
+                }
+            }
         });
+
+        /* ── Video Table Search ─────────────────────────────── */
+        function filterVideoTable() {
+            const q = document.getElementById('videoSearch').value.toLowerCase();
+            document.querySelectorAll('#videoTable tbody tr').forEach(row => {
+                row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+            });
+        }
+
+        /* ── Export Excel ────────────────────────────────────── */
+        function exportReport() {
+            const table = document.getElementById('videoTable');
+            const wb = XLSX.utils.table_to_book(table, {sheet: "Video Analytics"});
+            XLSX.writeFile(wb, 'video_analytics_report.xlsx');
+        }
     </script>
 </body>
 </html>

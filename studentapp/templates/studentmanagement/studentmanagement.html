@@ -51,7 +51,7 @@
                 <div class="sm-stat__icon"><i class="fas fa-users"></i></div>
                 <div class="sm-stat__body">
                     <span class="sm-stat__label">Total Students</span>
-                    <span class="sm-stat__value">250</span>
+                    <span class="sm-stat__value">{{ total_students }}</span>
                 </div>
                 <div class="sm-stat__bg-icon"><i class="fas fa-users"></i></div>
             </div>
@@ -59,7 +59,7 @@
                 <div class="sm-stat__icon"><i class="fas fa-circle-check"></i></div>
                 <div class="sm-stat__body">
                     <span class="sm-stat__label">Active</span>
-                    <span class="sm-stat__value">235</span>
+                    <span class="sm-stat__value">{{ active_students }}</span>
                 </div>
                 <div class="sm-stat__bg-icon"><i class="fas fa-circle-check"></i></div>
             </div>
@@ -67,7 +67,7 @@
                 <div class="sm-stat__icon"><i class="fas fa-circle-xmark"></i></div>
                 <div class="sm-stat__body">
                     <span class="sm-stat__label">Inactive</span>
-                    <span class="sm-stat__value">15</span>
+                    <span class="sm-stat__value">{{ inactive_students }}</span>
                 </div>
                 <div class="sm-stat__bg-icon"><i class="fas fa-circle-xmark"></i></div>
             </div>
@@ -75,49 +75,48 @@
                 <div class="sm-stat__icon"><i class="fas fa-university"></i></div>
                 <div class="sm-stat__body">
                     <span class="sm-stat__label">Colleges</span>
-                    <span class="sm-stat__value">2</span>
+                    <span class="sm-stat__value">{{ college_count }}</span>
                 </div>
                 <div class="sm-stat__bg-icon"><i class="fas fa-university"></i></div>
             </div>
         </div>
 
         <!-- Toolbar -->
-        <div class="sm-toolbar">
+        <form class="sm-toolbar" method="GET" action="{% url 'student_management' %}">
             <div class="sm-toolbar__filters">
                 <div class="sm-search">
                     <i class="fas fa-search sm-search__icon"></i>
-                    <input type="text" id="searchInput" placeholder="Search by name, username…" class="sm-search__input">
+                    <input type="text" name="q" value="{{ q }}" placeholder="Search by name, username…" class="sm-search__input" onkeydown="if(event.key==='Enter'){this.form.submit();}"> 
                 </div>
-                <select id="collegeFilter" class="sm-select">
+                <select name="college" class="sm-select" onchange="this.form.submit()">
                     <option value="">All Colleges</option>
-                    <option value="ABC College">ABC College</option>
-                    <option value="XYZ College">XYZ College</option>
+                    {% for c in all_colleges %}
+                    <option value="{{ c.id }}" {% if selected_college == c.id|stringformat:"s" %}selected{% endif %}>{{ c.college_name }}</option>
+                    {% endfor %}
                 </select>
-                <select id="departmentFilter" class="sm-select">
+                <select name="department" class="sm-select" onchange="this.form.submit()">
                     <option value="">All Departments</option>
-                    <option value="CSE">CSE</option>
-                    <option value="ECE">ECE</option>
-                    <option value="IT">IT</option>
-                    <option value="MECH">MECH</option>
-                    <option value="CIVIL">CIVIL</option>
+                    {% for d in all_departments %}
+                    <option value="{{ d.id }}" {% if selected_dept == d.id|stringformat:"s" %}selected{% endif %}>{{ d.dept_name }}</option>
+                    {% endfor %}
                 </select>
-                <select id="yearFilter" class="sm-select sm-select--sm">
+                <select name="year" class="sm-select sm-select--sm" onchange="this.form.submit()">
                     <option value="">All Years</option>
-                    <option value="I">Year I</option>
-                    <option value="II">Year II</option>
-                    <option value="III">Year III</option>
-                    <option value="IV">Year IV</option>
+                    <option value="I" {% if selected_year == 'I' %}selected{% endif %}>Year I</option>
+                    <option value="II" {% if selected_year == 'II' %}selected{% endif %}>Year II</option>
+                    <option value="III" {% if selected_year == 'III' %}selected{% endif %}>Year III</option>
+                    <option value="IV" {% if selected_year == 'IV' %}selected{% endif %}>Year IV</option>
                 </select>
-                <select id="statusFilter" class="sm-select sm-select--sm">
+                <select name="status" class="sm-select sm-select--sm" onchange="this.form.submit()">
                     <option value="">All Status</option>
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
+                    <option value="active" {% if selected_status == 'active' %}selected{% endif %}>Active</option>
+                    <option value="inactive" {% if selected_status == 'inactive' %}selected{% endif %}>Inactive</option>
                 </select>
             </div>
-            <button class="sm-btn sm-btn--ghost" id="resetBtn" title="Reset filters">
+            <a href="{% url 'student_management' %}" class="sm-btn sm-btn--ghost" id="resetBtn" title="Reset filters" style="text-decoration:none;">
                 Reset
-            </button>
-        </div>
+            </a>
+        </form>
 
         <!-- Table Card -->
         <div class="sm-card">
@@ -139,79 +138,31 @@
                         </tr>
                     </thead>
                     <tbody id="tableBody">
-                        <!-- Data rows -->
-                        <tr data-name="John Peter" data-user="STU000001" data-pass="yW9kP2rX#1" data-college="ABC College" data-dept="CSE" data-year="I" data-status="Active" data-email="john.peter@abc.edu" data-join="2023-09-01" data-end="2027-06-30">
-                            <td class="sm-td--no">1</td>
-                            <td>
-                                <div class="sm-student">
-                                    <div class="sm-avatar sm-avatar--blue">JP</div>
-                                    <div>
-                                        <div class="sm-student__name">John Peter</div>
-                                        <div class="sm-student__email">john.peter@abc.edu</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td><span class="sm-username">STU000001</span></td>
-                            <td><span class="sm-password">yW9kP2rX#1</span></td>
-                            <td class="sm-td--muted">ABC College</td>
-                            <td><span class="sm-dept-tag">CSE</span></td>
-                            <td class="sm-td--muted">I</td>
-                            <td class="sm-td--muted">2023-09-01</td>
-                            <td class="sm-td--muted">2027-06-30</td>
-                            <td><span class="sm-badge sm-badge--active">Active</span></td>
-                            <td>
-                                <div class="sm-actions">
-                                    <button class="sm-icon-btn sm-icon-btn--view" title="View" onclick="openViewModal(this)"><i class="fas fa-eye"></i></button>
-                                    <button class="sm-icon-btn sm-icon-btn--edit" title="Edit" onclick="openEditModal(this)"><i class="fas fa-pen-to-square"></i></button>
-                                    <button class="sm-icon-btn sm-icon-btn--key" title="Reset Password"><i class="fas fa-key"></i></button>
-                                    <button class="sm-icon-btn sm-icon-btn--delete" title="Delete" onclick="openDeleteModal(this)"><i class="fas fa-trash-can"></i></button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr data-name="Rahul Kumar" data-user="STU000002" data-pass="mT5vB8qL@2" data-college="ABC College" data-dept="ECE" data-year="II" data-status="Active" data-email="rahul.kumar@abc.edu" data-join="2022-09-01" data-end="2026-06-30">
-                            <td class="sm-td--no">2</td>
-                            <td>
-                                <div class="sm-student">
-                                    <div class="sm-avatar sm-avatar--green">RK</div>
-                                    <div>
-                                        <div class="sm-student__name">Rahul Kumar</div>
-                                        <div class="sm-student__email">rahul.kumar@abc.edu</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td><span class="sm-username">STU000002</span></td>
-                            <td><span class="sm-password">mT5vB8qL@2</span></td>
-                            <td class="sm-td--muted">ABC College</td>
-                            <td><span class="sm-dept-tag sm-dept-tag--teal">ECE</span></td>
-                            <td class="sm-td--muted">II</td>
-                            <td class="sm-td--muted">2022-09-01</td>
-                            <td class="sm-td--muted">2026-06-30</td>
-                            <td><span class="sm-badge sm-badge--active">Active</span></td>
-                            <td>
-                                <div class="sm-actions">
-                                    <button class="sm-icon-btn sm-icon-btn--view" title="View" onclick="openViewModal(this)"><i class="fas fa-eye"></i></button>
-                                    <button class="sm-icon-btn sm-icon-btn--edit" title="Edit" onclick="openEditModal(this)"><i class="fas fa-pen-to-square"></i></button>
-                                    <button class="sm-icon-btn sm-icon-btn--key" title="Reset Password"><i class="fas fa-key"></i></button>
-                                    <button class="sm-icon-btn sm-icon-btn--delete" title="Delete" onclick="openDeleteModal(this)"><i class="fas fa-trash-can"></i></button>
-                                </div>
-                            </td>
-                        </tr>
+                        {% include 'studentmanagement/partials/student_rows.html' %}
                     </tbody>
                 </table>
             </div>
 
             <div class="sm-table-footer">
-                <span class="sm-table-footer__info">Showing <strong>1–5</strong> of <strong>250</strong> students</span>
-                <div class="sm-pagination">
-                    <button class="sm-page-btn" id="prevBtn" disabled><i class="fas fa-chevron-left"></i></button>
-                    <button class="sm-page-btn sm-page-btn--active">1</button>
-                    <button class="sm-page-btn">2</button>
-                    <button class="sm-page-btn">3</button>
-                    <span class="sm-page-ellipsis">…</span>
-                    <button class="sm-page-btn">50</button>
-                    <button class="sm-page-btn" id="nextBtn"><i class="fas fa-chevron-right"></i></button>
+                <span class="sm-table-footer__info" id="pageInfo">
+                    Showing <strong id="infoStart">{{ page_obj.start_index|default:0 }}</strong>–<strong id="infoEnd">{{ page_obj.end_index|default:0 }}</strong> of <strong id="infoTotal">{{ page_obj.paginator.count }}</strong> students
+                </span>
+                <div class="sm-pagination" id="paginationContainer">
+                    <!-- Rendered by JS -->
                 </div>
             </div>
+
+            <!-- Hidden data for JS bootstrap -->
+            <script id="pageData" type="application/json">
+            {
+                "currentPage": {{ page_obj.number }},
+                "numPages": {{ page_obj.paginator.num_pages }},
+                "hasPrevious": {{ page_obj.has_previous|yesno:"true,false" }},
+                "hasNext": {{ page_obj.has_next|yesno:"true,false" }},
+                "previousPage": {% if page_obj.has_previous %}{{ page_obj.previous_page_number }}{% else %}null{% endif %},
+                "nextPage": {% if page_obj.has_next %}{{ page_obj.next_page_number }}{% else %}null{% endif %}
+            }
+            </script>
         </div>
     </div>
 
@@ -327,96 +278,184 @@
     </div>
 
     <script>
+        /* ─── Modal helpers ───────────────────────────────────────── */
         function closeModal(id) {
             document.getElementById(id).classList.remove('active');
         }
-
         function openViewModal(btn) {
             const row = btn.closest('tr');
-            document.getElementById('viewName').textContent = row.dataset.name;
-            document.getElementById('viewEmail').textContent = row.dataset.email;
-            document.getElementById('viewUser').textContent = row.dataset.user;
-            document.getElementById('viewPass').textContent = row.dataset.pass;
+            document.getElementById('viewName').textContent    = row.dataset.name;
+            document.getElementById('viewEmail').textContent   = row.dataset.email;
+            document.getElementById('viewUser').textContent    = row.dataset.user;
+            document.getElementById('viewPass').textContent    = row.dataset.pass;
             document.getElementById('viewCollege').textContent = row.dataset.college;
-            document.getElementById('viewDept').textContent = row.dataset.dept;
-            document.getElementById('viewYear').textContent = row.dataset.year;
-            document.getElementById('viewJoin').textContent = row.dataset.join;
-            document.getElementById('viewEnd').textContent = row.dataset.end;
-            document.getElementById('viewStatus').textContent = row.dataset.status;
+            document.getElementById('viewDept').textContent    = row.dataset.dept;
+            document.getElementById('viewYear').textContent    = row.dataset.year;
+            document.getElementById('viewJoin').textContent    = row.dataset.join;
+            document.getElementById('viewEnd').textContent     = row.dataset.end;
+            document.getElementById('viewStatus').textContent  = row.dataset.status;
             document.getElementById('viewModal').classList.add('active');
         }
-
         function openEditModal(btn) {
             const row = btn.closest('tr');
-            document.getElementById('editName').value = row.dataset.name;
-            document.getElementById('editUser').value = row.dataset.user;
-            document.getElementById('editPass').value = row.dataset.pass;
+            document.getElementById('editName').value    = row.dataset.name;
+            document.getElementById('editUser').value    = row.dataset.user;
+            document.getElementById('editPass').value    = row.dataset.pass;
             document.getElementById('editCollege').value = row.dataset.college;
-            document.getElementById('editDept').value = row.dataset.dept;
-            document.getElementById('editYear').value = row.dataset.year;
-            document.getElementById('editJoin').value = row.dataset.join;
-            document.getElementById('editEnd').value = row.dataset.end;
-            document.getElementById('editStatus').value = row.dataset.status;
+            document.getElementById('editDept').value    = row.dataset.dept;
+            document.getElementById('editYear').value    = row.dataset.year;
+            document.getElementById('editJoin').value    = row.dataset.join;
+            document.getElementById('editEnd').value     = row.dataset.end;
+            document.getElementById('editStatus').value  = row.dataset.status;
             document.getElementById('editModal').classList.add('active');
         }
-
         function confirmEdit() {
             alert('Student updated successfully! (demo)');
             closeModal('editModal');
         }
-
         function openDeleteModal(btn) {
             const row = btn.closest('tr');
             document.getElementById('deleteName').textContent = row.dataset.name;
             document.getElementById('deleteModal').classList.add('active');
         }
-
         function confirmDelete() {
             alert('Student deleted! (demo)');
             closeModal('deleteModal');
         }
 
-        // Table Filtering Logic
-        const searchInput = document.getElementById('searchInput');
-        const collegeFilter = document.getElementById('collegeFilter');
-        const departmentFilter = document.getElementById('departmentFilter');
-        const yearFilter = document.getElementById('yearFilter');
-        const statusFilter = document.getElementById('statusFilter');
-        const resetBtn = document.getElementById('resetBtn');
+        /* ─── AJAX Pagination ─────────────────────────────────────── */
+        const tbody    = document.getElementById('tableBody');
+        const pagCont  = document.getElementById('paginationContainer');
+        const infoStart = document.getElementById('infoStart');
+        const infoEnd   = document.getElementById('infoEnd');
+        const infoTotal = document.getElementById('infoTotal');
 
-        function filterTable() {
-            const q = searchInput.value.toLowerCase();
-            const col = collegeFilter.value.toLowerCase();
-            const dept = departmentFilter.value.toLowerCase();
-            const yr = yearFilter.value.toLowerCase();
-            const st = statusFilter.value.toLowerCase();
+        // Bootstrap from server-rendered JSON island
+        let pageState = JSON.parse(document.getElementById('pageData').textContent);
 
-            document.querySelectorAll('#tableBody tr').forEach(row => {
-                const text = row.textContent.toLowerCase();
-                const rowCol = row.cells[4].textContent.toLowerCase();
-                const rowDept = row.cells[5].textContent.toLowerCase();
-                const rowYear = row.cells[6].textContent.toLowerCase();
-                const rowStatus = row.cells[9].textContent.toLowerCase();
-
-                const ok = text.includes(q) &&
-                           (!col || rowCol === col) &&
-                           (!dept || rowDept === dept) &&
-                           (!yr || rowYear === yr) &&
-                           (!st || rowStatus.includes(st));
-                row.style.display = ok ? '' : 'none';
-            });
+        // Build the URL preserving current filters
+        function buildUrl(page) {
+            const params = new URLSearchParams(window.location.search);
+            params.set('page', page);
+            params.delete('partial');   // never leak partial flag into browser URL
+            return '?' + params.toString();
         }
 
-        [searchInput, collegeFilter, departmentFilter, yearFilter, statusFilter].forEach(el => 
-            el.addEventListener(el.tagName === 'INPUT' ? 'input' : 'change', filterTable)
-        );
+        // Render pagination buttons
+        function renderPagination(state) {
+            const { currentPage, numPages, hasPrevious, hasNext, previousPage, nextPage } = state;
+            if (numPages <= 1) { pagCont.innerHTML = ''; return; }
 
-        resetBtn.addEventListener('click', () => {
-            [searchInput, collegeFilter, departmentFilter, yearFilter, statusFilter].forEach(el => {
-                el.tagName === 'INPUT' ? el.value = '' : el.selectedIndex = 0;
+            let html = '';
+
+            // ◀ Previous
+            html += hasPrevious
+                ? `<button class="sm-page-btn" onclick="goToPage(${previousPage})" title="Previous"><i class="fas fa-chevron-left"></i></button>`
+                : `<button class="sm-page-btn" disabled title="Previous"><i class="fas fa-chevron-left"></i></button>`;
+
+            // Page numbers with smart ellipsis
+            const pages = getPageRange(currentPage, numPages);
+            pages.forEach(p => {
+                if (p === '...') {
+                    html += `<span class="sm-page-ellipsis">…</span>`;
+                } else {
+                    html += `<button class="sm-page-btn${p === currentPage ? ' sm-page-btn--active' : ''}" onclick="goToPage(${p})">${p}</button>`;
+                }
             });
-            filterTable();
+
+            // ▶ Next
+            html += hasNext
+                ? `<button class="sm-page-btn" onclick="goToPage(${nextPage})" title="Next"><i class="fas fa-chevron-right"></i></button>`
+                : `<button class="sm-page-btn" disabled title="Next"><i class="fas fa-chevron-right"></i></button>`;
+
+            pagCont.innerHTML = html;
+        }
+
+        // Smart page range: always show first, last, current ±1
+        function getPageRange(current, total) {
+            const delta = 1;
+            const range = [];
+            const rangeWithDots = [];
+            let prev = null;
+
+            for (let i = 1; i <= total; i++) {
+                if (i === 1 || i === total || (i >= current - delta && i <= current + delta)) {
+                    range.push(i);
+                }
+            }
+            range.forEach(i => {
+                if (prev !== null && i - prev > 1) rangeWithDots.push('...');
+                rangeWithDots.push(i);
+                prev = i;
+            });
+            return rangeWithDots;
+        }
+
+        // Fetch a page via AJAX and swap content
+        let isLoading = false;
+        function goToPage(page) {
+            if (isLoading) return;
+            isLoading = true;
+
+            // Build AJAX url with partial flag
+            const params = new URLSearchParams(window.location.search);
+            params.set('page', page);
+            params.set('partial', '1');
+            const ajaxUrl = '?' + params.toString();
+
+            // Fade-out table
+            tbody.style.transition = 'opacity 0.18s ease';
+            tbody.style.opacity = '0.35';
+
+            fetch(ajaxUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(r => r.json())
+                .then(data => {
+                    // Swap rows
+                    tbody.innerHTML = data.rows_html;
+
+                    // Update info text
+                    infoStart.textContent = data.start_index;
+                    infoEnd.textContent   = data.end_index;
+                    infoTotal.textContent = data.total;
+
+                    // Update state and re-render pagination
+                    pageState = {
+                        currentPage:  data.current_page,
+                        numPages:     data.num_pages,
+                        hasPrevious:  data.has_previous,
+                        hasNext:      data.has_next,
+                        previousPage: data.previous_page,
+                        nextPage:     data.next_page,
+                    };
+                    renderPagination(pageState);
+
+                    // Push clean URL (no partial flag)
+                    history.pushState(null, '', buildUrl(page));
+
+                    // Fade-in table
+                    requestAnimationFrame(() => {
+                        tbody.style.opacity = '1';
+                    });
+                })
+                .catch(err => {
+                    console.error('Pagination error:', err);
+                    tbody.style.opacity = '1';
+                })
+                .finally(() => { isLoading = false; });
+        }
+
+        // Initial render
+        renderPagination(pageState);
+
+        // Keyboard navigation (← →)
+        document.addEventListener('keydown', e => {
+            if (document.querySelector('.sm-modal-overlay.active')) return; // skip when modal open
+            if (e.key === 'ArrowLeft'  && pageState.hasPrevious) goToPage(pageState.previousPage);
+            if (e.key === 'ArrowRight' && pageState.hasNext)     goToPage(pageState.nextPage);
         });
+
+        // Browser back/forward – reload page properly
+        window.addEventListener('popstate', () => location.reload());
     </script>
 </body>
 </html>

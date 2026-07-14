@@ -1,34 +1,29 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Report Management | Admin Panel</title>
-    <meta name="description" content="Generate and manage academic and administrative reports." />
+    <meta name="description" content="Generate and export system reports." />
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <!-- Font Awesome CDN -->
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- SheetJS for Excel Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <!-- CSS Links -->
     <link rel="stylesheet" href="{% static 'css/sidebar.css' %}" />
-    <link rel="stylesheet" href="{% static 'css/department.css' %}">
     <link rel="stylesheet" href="{% static 'css/reportmanagement.css' %}">
 </head>
 
 <body class="rm-page">
-
-    <!-- MAIN WRAPPER: This is the key to fixing the sidebar overlap -->
     <div class="rm-wrapper">
-        
         <!-- Sidebar -->
         {% include 'includes/sidebar.html' %}
 
@@ -37,238 +32,134 @@
             <!-- Breadcrumb -->
             <nav class="rm-breadcrumb" aria-label="Breadcrumb">
                 <a href="{% url 'dashboard' %}"><i class="fas fa-home"></i> Dashboard</a>
-                <span class="rm-breadcrumb__sep">/</span>
-                <span class="rm-breadcrumb__current">Report Management</span>
+                <span>/</span>
+                <span>Report Management</span>
             </nav>
 
             <!-- Page Header -->
             <div class="rm-page-header">
-                <div class="rm-header-text">
+                <div>
                     <h1 class="rm-page-title">Report Management</h1>
-                    <p class="rm-page-subtitle">Generate and analyze institutional and academic reports.</p>
+                    <p class="rm-page-subtitle">Export comprehensive system data and analytics.</p>
                 </div>
                 <div class="rm-header-actions">
-                    <button class="rm-btn rm-btn--ghost" title="Export PDF"><i class="fas fa-file-pdf"></i> PDF</button>
-                    <button class="rm-btn rm-btn--ghost" title="Export Excel"><i class="fas fa-file-excel"></i> Excel</button>
-                    <button class="rm-btn rm-btn--ghost" title="Print All"><i class="fas fa-print"></i> Print</button>
-                    <button class="rm-btn rm-btn--primary" onclick="openGenerateModal()">
-                        <i class="fas fa-plus"></i> Generate Report
+                    <button class="rm-btn rm-btn--ghost" onclick="exportReport()" title="Export all reports to Excel">
+                        <i class="fas fa-file-excel" style="color: #107c41; font-size:1.1rem;"></i> Export to Excel
                     </button>
                 </div>
             </div>
 
-            <!-- Summary Stats Cards -->
+            <!-- Summary Stats -->
             <div class="rm-stats">
                 <div class="rm-stat rm-stat--blue">
-                    <div class="rm-stat__icon"><i class="fas fa-file-alt"></i></div>
+                    <div class="rm-stat__icon"><i class="fas fa-university"></i></div>
                     <div class="rm-stat__body">
-                        <span class="rm-stat__label">Total Reports</span>
-                        <span class="rm-stat__value">1,240</span>
+                        <span class="rm-stat__label">Total Colleges</span>
+                        <span class="rm-stat__value">{{ total_colleges }}</span>
                     </div>
-                    <div class="rm-stat__bg-icon"><i class="fas fa-file-alt"></i></div>
+                    <div class="rm-stat__bg-icon"><i class="fas fa-university"></i></div>
+                </div>
+                <div class="rm-stat rm-stat--teal">
+                    <div class="rm-stat__icon"><i class="fas fa-chalkboard-teacher"></i></div>
+                    <div class="rm-stat__body">
+                        <span class="rm-stat__label">Total Principals</span>
+                        <span class="rm-stat__value">{{ total_principals }}</span>
+                    </div>
+                    <div class="rm-stat__bg-icon"><i class="fas fa-chalkboard-teacher"></i></div>
                 </div>
                 <div class="rm-stat rm-stat--green">
-                    <div class="rm-stat__icon"><i class="fas fa-check-circle"></i></div>
+                    <div class="rm-stat__icon"><i class="fas fa-user-graduate"></i></div>
                     <div class="rm-stat__body">
-                        <span class="rm-stat__label">Completed</span>
-                        <span class="rm-stat__value">1,100</span>
+                        <span class="rm-stat__label">Total Students</span>
+                        <span class="rm-stat__value">{{ total_students }}</span>
                     </div>
-                    <div class="rm-stat__bg-icon"><i class="fas fa-check-circle"></i></div>
+                    <div class="rm-stat__bg-icon"><i class="fas fa-user-graduate"></i></div>
                 </div>
                 <div class="rm-stat rm-stat--red">
-                    <div class="rm-stat__icon"><i class="fas fa-clock"></i></div>
+                    <div class="rm-stat__icon"><i class="fas fa-video"></i></div>
                     <div class="rm-stat__body">
-                        <span class="rm-stat__label">Pending/Draft</span>
-                        <span class="rm-stat__value">140</span>
+                        <span class="rm-stat__label">Total Videos</span>
+                        <span class="rm-stat__value">{{ total_videos }}</span>
                     </div>
-                    <div class="rm-stat__bg-icon"><i class="fas fa-clock"></i></div>
+                    <div class="rm-stat__bg-icon"><i class="fas fa-video"></i></div>
                 </div>
-                <div class="rm-stat rm-stat--purple">
-                    <div class="rm-stat__icon"><i class="fas fa-download"></i></div>
-                    <div class="rm-stat__body">
-                        <span class="rm-stat__label">Total Downloads</span>
-                        <span class="rm-stat__value">5.2K</span>
-                    </div>
-                    <div class="rm-stat__bg-icon"><i class="fas fa-download"></i></div>
-                </div>
-            </div>
-
-            <!-- Analytics Row -->
-            <div class="rm-analytics-grid">
-                <div class="rm-chart-card">
-                    <div class="rm-chart-header">
-                        <h3 class="rm-chart-title">Report Generation Trend</h3>
-                    </div>
-                    <div class="rm-chart-body">
-                        <canvas id="reportTrendChart"></canvas>
-                    </div>
-                </div>
-                <div class="rm-activity-card">
-                    <h3 class="rm-chart-title">Recent Activity Timeline</h3>
-                    <div class="rm-timeline">
-                        <div class="rm-timeline-item">
-                            <div class="rm-timeline-dot"></div>
-                            <div class="rm-timeline-content">
-                                <span class="rm-timeline-time">10 mins ago</span>
-                                <p>Admin Jane generated <strong>Student Grade Report</strong></p>
-                            </div>
-                        </div>
-                        <div class="rm-timeline-item">
-                            <div class="rm-timeline-dot"></div>
-                            <div class="rm-timeline-content">
-                                <span class="rm-timeline-time">1 hour ago</span>
-                                <p>Principal downloaded <strong>Annual Audit 2023</strong></p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Toolbar -->
-            <div class="rm-toolbar">
-                <div class="rm-toolbar__filters">
-                    <div class="rm-search">
-                        <i class="fas fa-search rm-search__icon"></i>
-                        <input type="text" id="searchInput" placeholder="Search by ID, Name..." class="rm-search__input">
-                    </div>
-                    <select id="typeFilter" class="rm-select">
-                        <option value="">All Types</option>
-                        <option value="Academic">Academic</option>
-                        <option value="Administrative">Administrative</option>
-                    </select>
-                    <select id="statusFilter" class="rm-select">
-                        <option value="">All Status</option>
-                        <option value="completed">Completed</option>
-                        <option value="pending">Pending</option>
-                    </select>
-                </div>
-                <button class="rm-btn rm-btn--ghost" id="resetBtn">Reset</button>
             </div>
 
             <!-- Table Card -->
             <div class="rm-card">
+                <div class="rm-table-header">
+                    <h2 class="rm-table-title"><i class="fas fa-list-alt" style="color:var(--rm-primary); margin-right:.5rem;"></i> Available System Reports</h2>
+                </div>
                 <div class="rm-table-scroll">
                     <table class="rm-table" id="reportTable">
                         <thead>
                             <tr>
-                                <th>Report ID</th>
-                                <th>Report Name</th>
-                                <th>Type</th>
-                                <th>College</th>
-                                <th>Department</th>
-                                <th>Generated By</th>
-                                <th>Date</th>
+                                <th>Report Type</th>
+                                <th>Description</th>
+                                <th>Total Records</th>
                                 <th>Format</th>
                                 <th>Status</th>
-                                <th>Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="tableBody">
-                            <tr data-name="Monthly Attendance" data-type="Academic" data-status="completed">
-                                <td class="rm-td--id">REP-001</td>
-                                <td class="rm-td--bold">Monthly Attendance Report</td>
-                                <td><span class="rm-dept-tag">Academic</span></td>
-                                <td class="rm-td--muted">ABC College</td>
-                                <td class="rm-td--muted">CSE</td>
-                                <td>Admin Jane</td>
-                                <td>2023-10-25</td>
-                                <td><span class="rm-format-tag pdf">PDF</span></td>
-                                <td><span class="rm-badge rm-badge--active">Completed</span></td>
+                        <tbody>
+                            <!-- Colleges Report -->
+                            <tr>
                                 <td>
-                                    <div class="rm-actions">
-                                        <button class="rm-icon-btn rm-icon-btn--view" title="View" onclick="openViewModal(this)"><i class="fas fa-eye"></i></button>
-                                        <button class="rm-icon-btn rm-icon-btn--delete" title="Delete" onclick="openDeleteModal(this)"><i class="fas fa-trash-can"></i></button>
-                                    </div>
+                                    <div class="rm-bold"><i class="fas fa-university" style="color:var(--rm-primary); margin-right:.4rem;"></i> Colleges Report</div>
                                 </td>
+                                <td><span class="rm-sub">Complete list of all registered colleges.</span></td>
+                                <td class="rm-bold">{{ total_colleges }}</td>
+                                <td><i class="fas fa-file-excel" style="color:#107c41;"></i> Excel</td>
+                                <td><span class="rm-badge rm-badge--sys">Ready to Export</span></td>
+                            </tr>
+                            
+                            <!-- Principals Report -->
+                            <tr>
+                                <td>
+                                    <div class="rm-bold"><i class="fas fa-chalkboard-teacher" style="color:#0d9488; margin-right:.4rem;"></i> Principals Report</div>
+                                </td>
+                                <td><span class="rm-sub">Details of all college principals.</span></td>
+                                <td class="rm-bold">{{ total_principals }}</td>
+                                <td><i class="fas fa-file-excel" style="color:#107c41;"></i> Excel</td>
+                                <td><span class="rm-badge rm-badge--sys">Ready to Export</span></td>
+                            </tr>
+
+                            <!-- Students Report -->
+                            <tr>
+                                <td>
+                                    <div class="rm-bold"><i class="fas fa-user-graduate" style="color:#10b981; margin-right:.4rem;"></i> Students Report</div>
+                                </td>
+                                <td><span class="rm-sub">Comprehensive list of enrolled students.</span></td>
+                                <td class="rm-bold">{{ total_students }}</td>
+                                <td><i class="fas fa-file-excel" style="color:#107c41;"></i> Excel</td>
+                                <td><span class="rm-badge rm-badge--sys">Ready to Export</span></td>
+                            </tr>
+
+                            <!-- Videos Report -->
+                            <tr>
+                                <td>
+                                    <div class="rm-bold"><i class="fas fa-video" style="color:#ef4444; margin-right:.4rem;"></i> Videos Report</div>
+                                </td>
+                                <td><span class="rm-sub">Inventory of all uploaded video content.</span></td>
+                                <td class="rm-bold">{{ total_videos }}</td>
+                                <td><i class="fas fa-file-excel" style="color:#107c41;"></i> Excel</td>
+                                <td><span class="rm-badge rm-badge--sys">Ready to Export</span></td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
-                <div class="rm-table-footer">
-                    <span class="rm-table-footer__info">Showing <strong>1–1</strong> of <strong>1,240</strong> reports</span>
-                    <div class="rm-pagination">
-                        <button class="rm-page-btn" disabled><i class="fas fa-chevron-left"></i></button>
-                        <button class="rm-page-btn rm-page-btn--active">1</button>
-                        <button class="rm-page-btn"><i class="fas fa-chevron-right"></i></button>
-                    </div>
-                </div>
             </div>
-        </div>
-    </div>
 
-    <!-- MODALS -->
-    <div id="generateModal" class="rm-modal-overlay">
-        <div class="rm-modal rm-modal--large">
-            <div class="rm-modal__header">
-                <h3 class="rm-modal__title"><i class="fas fa-gear"></i> Generate Custom Report</h3>
-                <button class="rm-modal__close" onclick="closeModal('generateModal')">&times;</button>
-            </div>
-            <div class="rm-modal__body">
-                <div class="rm-form-grid">
-                    <div class="rm-form-group">
-                        <label>Report Name</label>
-                        <input type="text" placeholder="Enter report name">
-                    </div>
-                    <div class="rm-form-group">
-                        <label>Report Type</label>
-                        <select class="rm-select">
-                            <option>Academic</option>
-                            <option>Administrative</option>
-                        </select>
-                    </div>
-                    <div class="rm-form-group rm-form-group--full">
-                        <label>Notes</label>
-                        <textarea rows="3"></textarea>
-                    </div>
-                </div>
-            </div>
-            <div class="rm-modal__actions">
-                <button onclick="closeModal('generateModal')" class="rm-btn rm-btn--ghost">Cancel</button>
-                <button onclick="confirmGenerate()" class="rm-btn rm-btn--primary">Generate Now</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="deleteModal" class="rm-modal-overlay">
-        <div class="rm-modal">
-            <div class="rm-modal__icon"><i class="fas fa-exclamation-triangle"></i></div>
-            <h3 class="rm-modal__title">Delete Report?</h3>
-            <p class="rm-modal__desc">Are you sure you want to permanently delete <strong id="deleteName"></strong>?</p>
-            <div class="rm-modal__actions">
-                <button onclick="closeModal('deleteModal')" class="rm-btn rm-btn--ghost">Cancel</button>
-                <button onclick="confirmDelete()" class="rm-btn rm-btn--danger">Yes, Delete</button>
-            </div>
-        </div>
-    </div>
+        </div><!-- /rm-main -->
+    </div><!-- /rm-wrapper -->
 
     <script>
-        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
-        function openGenerateModal() { document.getElementById('generateModal').classList.add('active'); }
-        function openDeleteModal(btn) {
-            const row = btn.closest('tr');
-            document.getElementById('deleteName').textContent = row.cells[1].textContent;
-            document.getElementById('deleteModal').classList.add('active');
+        /* ── Export to Excel ────────────────────────────────── */
+        function exportReport() {
+            const table = document.getElementById('reportTable');
+            const wb = XLSX.utils.table_to_book(table, {sheet: "System Reports"});
+            XLSX.writeFile(wb, 'system_reports_summary.xlsx');
         }
-        function confirmGenerate() { alert('Report generated!'); closeModal('generateModal'); }
-        function confirmDelete() { alert('Report deleted!'); closeModal('deleteModal'); }
-
-        const ctxTrend = document.getElementById('reportTrendChart').getContext('2d');
-        new Chart(ctxTrend, {
-            type: 'line',
-            data: {
-                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                datasets: [{
-                    label: 'Reports Generated',
-                    data: [40, 60, 50, 90, 110, 130],
-                    borderColor: '#2563eb',
-                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
-                    fill: true,
-                    tension: 0.4,
-                    borderWidth: 3
-                }]
-            },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
-        });
     </script>
 </body>
 </html>

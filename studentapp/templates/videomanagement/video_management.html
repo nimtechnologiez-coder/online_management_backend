@@ -51,7 +51,7 @@
                 <div class="vm-stat__icon"><i class="fas fa-video"></i></div>
                 <div class="vm-stat__body">
                     <span class="vm-stat__label">Total Videos</span>
-                    <span class="vm-stat__value">124</span>
+                    <span class="vm-stat__value">{{ total_videos }}</span>
                 </div>
                 <div class="vm-stat__bg-icon"><i class="fas fa-video"></i></div>
             </div>
@@ -59,7 +59,7 @@
                 <div class="vm-stat__icon"><i class="fas fa-circle-check"></i></div>
                 <div class="vm-stat__body">
                     <span class="vm-stat__label">Published</span>
-                    <span class="vm-stat__value">110</span>
+                    <span class="vm-stat__value">{{ published_videos }}</span>
                 </div>
                 <div class="vm-stat__bg-icon"><i class="fas fa-circle-check"></i></div>
             </div>
@@ -67,7 +67,7 @@
                 <div class="vm-stat__icon"><i class="fas fa-clock"></i></div>
                 <div class="vm-stat__body">
                     <span class="vm-stat__label">Drafts</span>
-                    <span class="vm-stat__value">14</span>
+                    <span class="vm-stat__value">{{ draft_videos }}</span>
                 </div>
                 <div class="vm-stat__bg-icon"><i class="fas fa-clock"></i></div>
             </div>
@@ -75,41 +75,38 @@
                 <div class="vm-stat__icon"><i class="fas fa-eye"></i></div>
                 <div class="vm-stat__body">
                     <span class="vm-stat__label">Total Views</span>
-                    <span class="vm-stat__value">12.5K</span>
+                    <span class="vm-stat__value">{{ total_views }}</span>
                 </div>
                 <div class="vm-stat__bg-icon"><i class="fas fa-eye"></i></div>
             </div>
         </div>
 
         <!-- Toolbar -->
-        <div class="vm-toolbar">
+        <form method="GET" action="{% url 'video_management' %}" class="vm-toolbar">
             <div class="vm-toolbar__filters">
                 <div class="vm-search">
                     <i class="fas fa-search vm-search__icon"></i>
-                    <input type="text" id="searchInput" placeholder="Search video title..." class="vm-search__input">
+                    <input type="text" name="q" value="{{ q }}" placeholder="Search video title..." class="vm-search__input" onchange="this.form.submit()">
                 </div>
-                <select id="categoryFilter" class="vm-select">
+                <select name="category" class="vm-select" onchange="this.form.submit()">
                     <option value="">All Categories</option>
-                    <option value="Programming">Programming</option>
-                    <option value="Mathematics">Mathematics</option>
-                    <option value="Physics">Physics</option>
-                    <option value="Soft Skills">Soft Skills</option>
+                    <option value="Programming" {% if selected_category == 'Programming' %}selected{% endif %}>Programming</option>
+                    <option value="Mathematics" {% if selected_category == 'Mathematics' %}selected{% endif %}>Mathematics</option>
+                    <option value="Physics" {% if selected_category == 'Physics' %}selected{% endif %}>Physics</option>
+                    <option value="Soft Skills" {% if selected_category == 'Soft Skills' %}selected{% endif %}>Soft Skills</option>
                 </select>
-                <select id="statusFilter" class="vm-select vm-select--sm">
+                <select name="status" class="vm-select vm-select--sm" onchange="this.form.submit()">
                     <option value="">All Status</option>
-                    <option value="published">Published</option>
-                    <option value="draft">Draft</option>
+                    <option value="Published" {% if selected_status == 'Published' %}selected{% endif %}>Published</option>
+                    <option value="Draft" {% if selected_status == 'Draft' %}selected{% endif %}>Draft</option>
                 </select>
             </div>
             <div class="vm-toolbar__actions">
-                <button class="vm-btn vm-btn--ghost" title="Refresh" onclick="location.reload()">
-                    <i class="fas fa-rotate-left"></i> Refresh
-                </button>
-                <button class="vm-btn vm-btn--ghost" title="Export Data">
-                    <i class="fas fa-file-export"></i> Export
-                </button>
+                <a href="{% url 'video_management' %}" class="vm-btn vm-btn--ghost">
+                    <i class="fas fa-rotate-right"></i> Reset Filters
+                </a>
             </div>
-        </div>
+        </form>
 
         <!-- Table Card -->
         <div class="vm-card">
@@ -129,96 +126,36 @@
                         </tr>
                     </thead>
                     <tbody id="tableBody">
-                        <!-- Row 1 -->
-                        <tr data-title="Introduction to Python" data-cat="Programming" data-dur="12:45" data-date="2023-10-12" data-status="Published" data-desc="A comprehensive guide to getting started with Python programming for beginners.">
-                            <td class="vm-td--no">1</td>
-                            <td>
-                                <div class="vm-thumb">
-                                    <img src="https://via.placeholder.com/80x45" alt="Thumbnail">
-                                    <i class="fas fa-play vm-thumb__play"></i>
-                                </div>
-                            </td>
-                            <td><span class="vm-video-title">Introduction to Python</span></td>
-                            <td><span class="vm-dept-tag">Programming</span></td>
-                            <td class="vm-td--muted">12:45</td>
-                            <td><span class="vm-description-truncate" title="A comprehensive guide to getting started with Python programming for beginners.">A comprehensive guide to getting started with Python programming for beginners...</span></td>
-                            <td class="vm-td--muted">2023-10-12</td>
-                            <td><span class="vm-badge vm-badge--active">Published</span></td>
-                            <td>
-                                <div class="vm-actions">
-                                    <button class="vm-icon-btn vm-icon-btn--view" title="View" onclick="openViewModal(this)"><i class="fas fa-eye"></i></button>
-                                    <button class="vm-icon-btn vm-icon-btn--edit" title="Edit" onclick="openEditModal(this)"><i class="fas fa-pen-to-square"></i></button>
-                                    <button class="vm-icon-btn vm-icon-btn--delete" title="Delete" onclick="openDeleteModal(this)"><i class="fas fa-trash-can"></i></button>
-                                </div>
-                            </td>
-                        </tr>
-                        <!-- Row 2 -->
-                        <tr data-title="Advanced Calculus Basics" data-cat="Mathematics" data-dur="45:20" data-date="2023-11-05" data-status="Draft" data-desc="Deep dive into calculus limits and derivatives for advanced students.">
-                            <td class="vm-td--no">2</td>
-                            <td>
-                                <div class="vm-thumb">
-                                    <img src="https://via.placeholder.com/80x45" alt="Thumbnail">
-                                    <i class="fas fa-play vm-thumb__play"></i>
-                                </div>
-                            </td>
-                            <td><span class="vm-video-title">Advanced Calculus Basics</span></td>
-                            <td><span class="vm-dept-tag vm-dept-tag--teal">Mathematics</span></td>
-                            <td class="vm-td--muted">45:20</td>
-                            <td><span class="vm-description-truncate" title="Deep dive into calculus limits and derivatives for advanced students.">Deep dive into calculus limits and derivatives for advanced students...</span></td>
-                            <td class="vm-td--muted">2023-11-05</td>
-                            <td><span class="vm-badge vm-badge--inactive">Draft</span></td>
-                            <td>
-                                <div class="vm-actions">
-                                    <button class="vm-icon-btn vm-icon-btn--view" title="View" onclick="openViewModal(this)"><i class="fas fa-eye"></i></button>
-                                    <button class="vm-icon-btn vm-icon-btn--edit" title="Edit" onclick="openEditModal(this)"><i class="fas fa-pen-to-square"></i></button>
-                                    <button class="vm-icon-btn vm-icon-btn--delete" title="Delete" onclick="openDeleteModal(this)"><i class="fas fa-trash-can"></i></button>
-                                </div>
-                            </td>
-                        </tr>
+                        {% include 'videomanagement/partials/video_rows.html' %}
                     </tbody>
                 </table>
             </div>
 
             <div class="vm-table-footer">
-                <span class="vm-table-footer__info">Showing <strong>1–2</strong> of <strong>124</strong> videos</span>
-                <div class="vm-pagination">
-                    <button class="vm-page-btn" id="prevBtn" disabled><i class="fas fa-chevron-left"></i></button>
-                    <button class="vm-page-btn vm-page-btn--active">1</button>
-                    <button class="vm-page-btn">2</button>
-                    <button class="vm-page-btn">3</button>
-                    <span class="vm-page-ellipsis">…</span>
-                    <button class="vm-page-btn">25</button>
-                    <button class="vm-page-btn" id="nextBtn"><i class="fas fa-chevron-right"></i></button>
+                <span class="vm-table-footer__info" id="pageInfo">
+                    Showing <strong id="infoStart">{{ page_obj.start_index|default:0 }}</strong>–<strong id="infoEnd">{{ page_obj.end_index|default:0 }}</strong> of <strong id="infoTotal">{{ page_obj.paginator.count }}</strong> videos
+                </span>
+                <div class="vm-pagination" id="paginationContainer">
+                    <!-- Rendered by JS -->
                 </div>
             </div>
+
+            <!-- Hidden data for JS bootstrap -->
+            <script id="pageData" type="application/json">
+            {
+                "currentPage": {{ page_obj.number }},
+                "numPages": {{ page_obj.paginator.num_pages }},
+                "hasPrevious": {{ page_obj.has_previous|yesno:"true,false" }},
+                "hasNext": {{ page_obj.has_next|yesno:"true,false" }},
+                "previousPage": {% if page_obj.has_previous %}{{ page_obj.previous_page_number }}{% else %}null{% endif %},
+                "nextPage": {% if page_obj.has_next %}{{ page_obj.next_page_number }}{% else %}null{% endif %}
+            }
+            </script>
         </div>
     </div>
 
     <!-- ── MODALS ────────────────────────────────────────────── -->
-    <!-- View Modal -->
-    <div id="viewModal" class="vm-modal-overlay">
-        <div class="vm-modal vm-modal--large">
-            <div class="vm-modal__header">
-                <h3 class="vm-modal__title"><i class="fas fa-circle-info"></i> Video Details</h3>
-                <button class="vm-modal__close" onclick="closeModal('viewModal')">&times;</button>
-            </div>
-            <div class="vm-modal__body">
-                <div class="vm-detail-grid">
-                    <div class="vm-detail-item"><strong>Video Title:</strong> <span id="viewTitle"></span></div>
-                    <div class="vm-detail-item"><strong>Category:</strong> <span id="viewCat"></span></div>
-                    <div class="vm-detail-item"><strong>Duration:</strong> <span id="viewDur"></span></div>
-                    <div class="vm-detail-item"><strong>Upload Date:</strong> <span id="viewDate"></span></div>
-                    <div class="vm-detail-item"><strong>Status:</strong> <span id="viewStatus"></span></div>
-                    <div class="vm-detail-item vm-detail-item--full"><strong>Description:</strong> <span id="viewDesc"></span></div>
-                </div>
-            </div>
-            <div class="vm-modal__actions">
-                <button onclick="closeModal('viewModal')" class="vm-btn vm-btn--ghost">Close</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Edit Modal (NOW INCLUDING VIDEO AND THUMBNAIL EDIT) -->
+    <!-- Edit Modal -->
     <div id="editModal" class="vm-modal-overlay">
         <div class="vm-modal vm-modal--large">
             <div class="vm-modal__header">
@@ -226,7 +163,6 @@
                 <button class="vm-modal__close" onclick="closeModal('editModal')">&times;</button>
             </div>
             <form class="vm-modal__body">
-                <!-- Section 1: Basic Info -->
                 <div class="vm-modal-section">
                     <h4 class="vm-modal-section-title">Basic Information</h4>
                     <div class="vm-form-grid">
@@ -253,8 +189,6 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- Section 2: Media Update -->
                 <div class="vm-modal-section">
                     <h4 class="vm-modal-section-title">Media Update</h4>
                     <div class="vm-form-grid">
@@ -276,8 +210,6 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- Section 3: Settings -->
                 <div class="vm-modal-section">
                     <h4 class="vm-modal-section-title">Settings</h4>
                     <div class="vm-form-grid">
@@ -314,17 +246,6 @@
     <script>
         function closeModal(id) { document.getElementById(id).classList.remove('active'); }
         
-        function openViewModal(btn) {
-            const row = btn.closest('tr');
-            document.getElementById('viewTitle').textContent = row.dataset.title;
-            document.getElementById('viewCat').textContent = row.dataset.cat;
-            document.getElementById('viewDur').textContent = row.dataset.dur;
-            document.getElementById('viewDate').textContent = row.dataset.date;
-            document.getElementById('viewStatus').textContent = row.dataset.status;
-            document.getElementById('viewDesc').textContent = row.dataset.desc;
-            document.getElementById('viewModal').classList.add('active');
-        }
-
         function openEditModal(btn) {
             const row = btn.closest('tr');
             document.getElementById('editTitle').value = row.dataset.title;
@@ -335,36 +256,121 @@
             document.getElementById('editModal').classList.add('active');
         }
 
-        function openDeleteModal(btn) {
-            const row = btn.closest('tr');
-            document.getElementById('deleteTitle').textContent = row.dataset.title;
-            document.getElementById('deleteModal').classList.add('active');
-        }
-
         function confirmEdit() { alert('Video updated successfully!'); closeModal('editModal'); }
+        
         function confirmDelete() { alert('Video deleted successfully!'); closeModal('deleteModal'); }
 
-        // Filtering Logic
-        const searchInput = document.getElementById('searchInput');
-        const categoryFilter = document.getElementById('categoryFilter');
-        const statusFilter = document.getElementById('statusFilter');
+        /* ─── AJAX Pagination ─────────────────────────────────────── */
+        const tbody    = document.getElementById('tableBody');
+        const pagCont  = document.getElementById('paginationContainer');
+        const infoStart = document.getElementById('infoStart');
+        const infoEnd   = document.getElementById('infoEnd');
+        const infoTotal = document.getElementById('infoTotal');
 
-        function filterTable() {
-            const q = searchInput.value.toLowerCase();
-            const cat = categoryFilter.value.toLowerCase();
-            const st = statusFilter.value.toLowerCase();
+        let pageState = JSON.parse(document.getElementById('pageData').textContent);
 
-            document.querySelectorAll('#tableBody tr').forEach(row => {
-                const text = row.textContent.toLowerCase();
-                const rowCat = row.dataset.cat.toLowerCase();
-                const rowStat = row.dataset.status.toLowerCase();
-
-                const ok = text.includes(q) && (!cat || rowCat === cat) && (!st || rowStat.includes(st));
-                row.style.display = ok ? '' : 'none';
-            });
+        function buildUrl(page) {
+            const params = new URLSearchParams(window.location.search);
+            params.set('page', page);
+            params.delete('partial');
+            return '?' + params.toString();
         }
 
-        [searchInput, categoryFilter, statusFilter].forEach(el => el.addEventListener('input', filterTable));
+        function renderPagination(state) {
+            const { currentPage, numPages, hasPrevious, hasNext, previousPage, nextPage } = state;
+            if (numPages <= 1) { pagCont.innerHTML = ''; return; }
+
+            let html = '';
+            html += hasPrevious
+                ? `<button class="vm-page-btn" onclick="goToPage(${previousPage})" title="Previous"><i class="fas fa-chevron-left"></i></button>`
+                : `<button class="vm-page-btn" disabled title="Previous"><i class="fas fa-chevron-left"></i></button>`;
+
+            const pages = getPageRange(currentPage, numPages);
+            pages.forEach(p => {
+                if (p === '...') {
+                    html += `<span class="vm-page-ellipsis">…</span>`;
+                } else {
+                    html += `<button class="vm-page-btn${p === currentPage ? ' vm-page-btn--active' : ''}" onclick="goToPage(${p})">${p}</button>`;
+                }
+            });
+
+            html += hasNext
+                ? `<button class="vm-page-btn" onclick="goToPage(${nextPage})" title="Next"><i class="fas fa-chevron-right"></i></button>`
+                : `<button class="vm-page-btn" disabled title="Next"><i class="fas fa-chevron-right"></i></button>`;
+
+            pagCont.innerHTML = html;
+        }
+
+        function getPageRange(current, total) {
+            const delta = 1;
+            const range = [];
+            const rangeWithDots = [];
+            let prev = null;
+            for (let i = 1; i <= total; i++) {
+                if (i === 1 || i === total || (i >= current - delta && i <= current + delta)) {
+                    range.push(i);
+                }
+            }
+            range.forEach(i => {
+                if (prev !== null && i - prev > 1) rangeWithDots.push('...');
+                rangeWithDots.push(i);
+                prev = i;
+            });
+            return rangeWithDots;
+        }
+
+        let isLoading = false;
+        function goToPage(page) {
+            if (isLoading) return;
+            isLoading = true;
+
+            const params = new URLSearchParams(window.location.search);
+            params.set('page', page);
+            params.set('partial', '1');
+            const ajaxUrl = '?' + params.toString();
+
+            tbody.style.transition = 'opacity 0.18s ease';
+            tbody.style.opacity = '0.35';
+
+            fetch(ajaxUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(r => r.json())
+                .then(data => {
+                    tbody.innerHTML = data.rows_html;
+                    infoStart.textContent = data.start_index;
+                    infoEnd.textContent   = data.end_index;
+                    infoTotal.textContent = data.total;
+
+                    pageState = {
+                        currentPage:  data.current_page,
+                        numPages:     data.num_pages,
+                        hasPrevious:  data.has_previous,
+                        hasNext:      data.has_next,
+                        previousPage: data.previous_page,
+                        nextPage:     data.next_page,
+                    };
+                    renderPagination(pageState);
+                    history.pushState(null, '', buildUrl(page));
+
+                    requestAnimationFrame(() => {
+                        tbody.style.opacity = '1';
+                    });
+                })
+                .catch(err => {
+                    console.error('Pagination error:', err);
+                    tbody.style.opacity = '1';
+                })
+                .finally(() => { isLoading = false; });
+        }
+
+        renderPagination(pageState);
+
+        document.addEventListener('keydown', e => {
+            if (document.querySelector('.vm-modal-overlay.active')) return;
+            if (e.key === 'ArrowLeft'  && pageState.hasPrevious) goToPage(pageState.previousPage);
+            if (e.key === 'ArrowRight' && pageState.hasNext)     goToPage(pageState.nextPage);
+        });
+
+        window.addEventListener('popstate', () => location.reload());
     </script>
 </body>
 </html>

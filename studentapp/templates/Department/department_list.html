@@ -123,6 +123,7 @@
                             <th>Department</th>
                             <th>College</th>
                             <th>HOD</th>
+                            <th>Phone</th>
                             <th>Username</th>
                             <th>Password</th>
                             <th>Status</th>
@@ -161,32 +162,32 @@
                 </div>
                 <div class="dm-detail-grid">
                     <div class="dm-detail-item">
-                        <p class="dm-detail-label">College</p>
+                        <p class="dm-detail-label"><i class="fas fa-university"></i> College</p>
                         <p class="dm-detail-value" id="viewCollege"></p>
                     </div>
                     <div class="dm-detail-item">
-                        <p class="dm-detail-label">Status</p>
-                        <p class="dm-detail-value" id="viewStatus"></p>
-                    </div>
-                    <div class="dm-detail-item">
-                        <p class="dm-detail-label">Head of Department</p>
+                        <p class="dm-detail-label"><i class="fas fa-user-tie"></i> Head of Department</p>
                         <p class="dm-detail-value" id="viewHod"></p>
                     </div>
                     <div class="dm-detail-item">
-                        <p class="dm-detail-label">Students</p>
+                        <p class="dm-detail-label"><i class="fas fa-users"></i> Students</p>
                         <p class="dm-detail-value" id="viewStudents"></p>
                     </div>
                     <div class="dm-detail-item">
-                        <p class="dm-detail-label">Username</p>
+                        <p class="dm-detail-label"><i class="fas fa-calendar-day"></i> Created</p>
+                        <p class="dm-detail-value" id="viewCreated"></p>
+                    </div>
+                    <div class="dm-detail-item">
+                        <p class="dm-detail-label"><i class="fas fa-user-shield"></i> Username</p>
                         <p class="dm-detail-value" id="viewUsername"></p>
                     </div>
                     <div class="dm-detail-item">
-                        <p class="dm-detail-label">Password</p>
+                        <p class="dm-detail-label"><i class="fas fa-key"></i> Password</p>
                         <p class="dm-detail-value" id="viewPassword"></p>
                     </div>
-                    <div class="dm-detail-item">
-                        <p class="dm-detail-label">Created</p>
-                        <p class="dm-detail-value" id="viewCreated"></p>
+                    <div class="dm-detail-item" style="grid-column: 1 / -1;">
+                        <p class="dm-detail-label"><i class="fas fa-circle-check"></i> Status</p>
+                        <p class="dm-detail-value" id="viewStatus"></p>
                     </div>
                 </div>
             </div>
@@ -283,30 +284,25 @@
     <script>
         // ── Data ──────────────────────────────────────────────
         let departmentData = [
+            {% for d in departments %}
             {
-                id: 1, code: 'CSE', name: 'Computer Science', sub: 'Engineering',
-                college: 'Tech Engineering College', hod: 'Dr. Ramesh Kumar', hodInitials: 'RK', hodColor: 'blue',
-                badgeColor: 'blue', username: 'TEC_CSE_HOD', password: 'yW9kP2rX',
-                students: 450, status: 'active', created: '12 Jan 2023'
-            },
-            {
-                id: 2, code: 'ECE', name: 'Electronics & Communication', sub: 'Engineering',
-                college: 'Tech Engineering College', hod: 'Dr. Anita Sharma', hodInitials: 'AS', hodColor: 'green',
-                badgeColor: 'teal', username: 'TEC_ECE_HOD', password: 'mT5vB8qL',
-                students: 380, status: 'active', created: '14 Feb 2023'
-            },
-            {
-                id: 3, code: 'BCOM', name: 'Commerce', sub: 'Commerce & Business',
-                college: 'Global Institute of Commerce', hod: 'Prof. Vijay Menon', hodInitials: 'VM', hodColor: 'amber',
-                badgeColor: 'orange', username: 'GIC_BCOM_HOD', password: 'kR2nC7wP',
-                students: 600, status: 'inactive', created: '05 Mar 2023'
-            },
-            {
-                id: 4, code: 'ENG', name: 'English Literature', sub: 'Arts & Humanities',
-                college: 'Royal Arts College', hod: 'Dr. Sarah George', hodInitials: 'SG', hodColor: 'rose',
-                badgeColor: 'rose', username: 'RAC_ENG_HOD', password: 'pX4hN6jQ',
-                students: 220, status: 'active', created: '20 Apr 2023'
-            }
+                id: {{ d.id|default:0 }},
+                code: '{{ d.dept_code|escapejs }}',
+                name: '{{ d.dept_name|escapejs }}',
+                sub: '{{ d.dept_short_name|escapejs }}',
+                college: '{{ d.college.college_name|escapejs }}',
+                hod: '{{ d.hod_name|escapejs }}',
+                hodPhone: '{{ d.hod_phone|escapejs }}',
+                hodInitials: '{{ d.hod_name|slice:":2"|upper|escapejs }}',
+                hodColor: 'indigo',
+                badgeColor: 'blue',
+                username: '{{ d.username|escapejs }}',
+                password: '{{ d.password|escapejs }}',
+                students: 0,
+                status: '{{ d.status|escapejs }}',
+                created: '{{ d.created_at|date:"d M Y" }}'
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
         ];
 
         let deleteTargetId = null;
@@ -341,6 +337,7 @@
                             <span>${d.hod}</span>
                         </div>
                     </td>
+                    <td>${d.hodPhone}</td>
                     <td><span class="dm-username">${d.username}</span></td>
                     <td><span class="dm-password">${d.password}</span></td>
                     <td><span class="dm-badge ${badgeClass}">${badgeLabel}</span></td>

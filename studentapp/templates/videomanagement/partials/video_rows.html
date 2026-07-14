@@ -1,0 +1,48 @@
+{% for video in videos %}
+<tr data-title="{{ video.title|escapejs }}" 
+    data-cat="{{ video.category|escapejs }}" 
+    data-dur="{{ video.duration|escapejs }}" 
+    data-date="{{ video.uploaded_at|date:'Y-m-d' }}" 
+    data-status="{{ video.status|escapejs }}" 
+    data-desc="{{ video.description|escapejs }}">
+    <td class="vm-td--no">{{ forloop.counter0|add:page_obj.start_index }}</td>
+    <td>
+        <div class="vm-thumb">
+            {% if video.thumbnail %}
+                <img src="{{ video.thumbnail.url }}" alt="Thumbnail">
+            {% else %}
+                <img src="https://via.placeholder.com/80x45?text=No+Thumb" alt="Thumbnail">
+            {% endif %}
+            <i class="fas fa-play vm-thumb__play"></i>
+        </div>
+    </td>
+    <td><span class="vm-video-title">{{ video.title }}</span></td>
+    <td>
+        <span class="vm-dept-tag {% if video.category == 'Mathematics' %}vm-dept-tag--teal{% endif %}">
+            {{ video.category }}
+        </span>
+    </td>
+    <td class="vm-td--muted">{{ video.duration }}</td>
+    <td>
+        <span class="vm-description-truncate" title="{{ video.description }}">
+            {{ video.description|truncatechars:60 }}
+        </span>
+    </td>
+    <td class="vm-td--muted">{{ video.uploaded_at|date:"Y-m-d" }}</td>
+    <td>
+        <span class="vm-badge {% if video.status == 'Published' %}vm-badge--active{% else %}vm-badge--inactive{% endif %}">
+            {{ video.status }}
+        </span>
+    </td>
+    <td>
+        <div class="vm-actions">
+            <button class="vm-icon-btn vm-icon-btn--edit" title="Edit" onclick="openEditModal(this)"><i class="fas fa-pen-to-square"></i></button>
+            <button class="vm-icon-btn vm-icon-btn--delete" title="Delete" onclick="openDeleteModal(this)"><i class="fas fa-trash-can"></i></button>
+        </div>
+    </td>
+</tr>
+{% empty %}
+<tr>
+    <td colspan="9" style="text-align: center; padding: 2rem;">No videos found.</td>
+</tr>
+{% endfor %}

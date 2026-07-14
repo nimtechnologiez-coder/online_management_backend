@@ -19,6 +19,7 @@ urlpatterns = [
 
     path('principals/', views.principal_management, name='principal_management'),
     path('principals/add/', views.principal_add, name='principal_add'),
+    path('principals/edit/<int:id>/', views.principal_edit, name='principal_edit'),
 
     path('students/', views.student_management, name='student_management'),
     path('students/add/', views.student_add, name='student_add'),
@@ -38,4 +39,5 @@ urlpatterns = [
     path('settings/', views.system_settings, name='system_settings'),
     path('profile/', views.profile, name='profile'),
     path('logout/', views.user_logout, name='logout'),
+    path('search/', views.global_search, name='global_search'),
 ]

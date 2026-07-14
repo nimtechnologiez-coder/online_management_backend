@@ -102,19 +102,18 @@
                             <label for="college">College <span class="req">*</span></label>
                             <select id="college" name="college" class="sm-select" required>
                                 <option value="">Select College</option>
-                                <option value="ABC College">ABC College</option>
-                                <option value="XYZ College">XYZ College</option>
+                                {% for c in all_colleges %}
+                                <option value="{{ c.id }}">{{ c.college_name }}</option>
+                                {% endfor %}
                             </select>
                         </div>
                         <div class="sm-form-group">
                             <label for="department">Department <span class="req">*</span></label>
-                            <select id="department" name="department" class="sm-select" required>
-                                <option value="">Select Department</option>
-                                <option value="CSE">CSE</option>
-                                <option value="ECE">ECE</option>
-                                <option value="IT">IT</option>
-                                <option value="MECH">MECH</option>
-                                <option value="CIVIL">CIVIL</option>
+                            <select id="department" name="department" class="sm-select" required disabled>
+                                <option value="">Select College First</option>
+                                {% for d in all_departments %}
+                                <option value="{{ d.id }}" data-college-id="{{ d.college_id }}">{{ d.dept_name }}</option>
+                                {% endfor %}
                             </select>
                         </div>
                         <div class="sm-form-group">
@@ -130,26 +129,13 @@
                     </div>
                 </div>
 
-                <!-- Section 3: Account Credentials -->
+                <!-- Section 3: Account Status -->
                 <div class="sm-form-section">
                     <div class="sm-form-section__header">
                         <i class="fas fa-lock"></i>
-                        <h3>Account Credentials</h3>
+                        <h3>Account Settings</h3>
                     </div>
                     <div class="sm-form-grid">
-                        <div class="sm-form-group">
-                            <label for="username">Username <span class="req">*</span></label>
-                            <input type="text" id="username" name="username" placeholder="Auto-generated" required>
-                        </div>
-                        <div class="sm-form-group">
-                            <label for="password">Password <span class="req">*</span></label>
-                            <div class="sm-input-with-btn">
-                                <input type="text" id="password" name="password" placeholder="••••••••" required>
-                                <button type="button" id="refreshPass" class="sm-input-btn" title="Regenerate Password">
-                                    <i class="fas fa-rotate"></i>
-                                </button>
-                            </div>
-                        </div>
                         <div class="sm-form-group">
                             <label for="status">Account Status</label>
                             <select id="status" name="status" class="sm-select">
@@ -158,10 +144,11 @@
                             </select>
                         </div>
                         <div class="sm-form-group">
-                            <label for="profile_pic">Profile Picture</label>
-                            <input type="file" id="profile_pic" name="profile_pic" class="sm-file-input">
+                            <label for="end_date">End Date</label>
+                            <input type="date" id="end_date" name="end_date" class="sm-input" style="padding: 0.6rem 0.85rem; border: 1px solid #e2e8f0; border-radius: 8px; font-family: 'Inter', sans-serif;">
                         </div>
                     </div>
+                    <p style="margin-top:0.75rem; font-size:0.82rem; color:#6b7280; background:#f0f4ff; border-radius:8px; padding:0.65rem 1rem;"><i class="fas fa-info-circle" style="color:#4f6ef7;"></i> Username and password are <strong>auto-generated</strong> from the Student ID and will be shown in the student list after saving.</p>
                 </div>
 
                 <!-- Form Footer -->
@@ -178,35 +165,29 @@
 
     <!-- ── Automatic Generation Logic ───────────────────── -->
     <script>
-        const studentIdInput = document.getElementById('student_id');
-        const usernameInput = document.getElementById('username');
-        const passwordInput = document.getElementById('password');
-        const refreshPassBtn = document.getElementById('refreshPass');
+        // Dynamic Department Filtering
+        const collegeSelect = document.getElementById('college');
+        const deptSelect = document.getElementById('department');
+        const allDeptOptions = Array.from(deptSelect.options).slice(1); // Skip placeholder
 
-        // Auto-populate Username when Student ID is typed
-        studentIdInput.addEventListener('input', () => {
-            usernameInput.value = studentIdInput.value;
-        });
-
-        // Secure Random Password Generator
-        function generatePassword() {
-            const length = 10;
-            const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
-            let retVal = "";
-            for (let i = 0; i < length; ++i) {
-                retVal += charset.charAt(Math.floor(Math.random() * charset.length));
+        collegeSelect.addEventListener('change', () => {
+            const selectedCollegeId = collegeSelect.value;
+            
+            // Clear current options (keep placeholder)
+            deptSelect.innerHTML = '<option value="">Select Department</option>';
+            
+            if (selectedCollegeId) {
+                deptSelect.disabled = false;
+                // Add back options matching the selected college
+                allDeptOptions.forEach(opt => {
+                    if (opt.getAttribute('data-college-id') === selectedCollegeId) {
+                        deptSelect.appendChild(opt.cloneNode(true));
+                    }
+                });
+            } else {
+                deptSelect.disabled = true;
+                deptSelect.innerHTML = '<option value="">Select College First</option>';
             }
-            return retVal;
-        }
-
-        // Initialize password on load
-        window.onload = () => {
-            passwordInput.value = generatePassword();
-        };
-
-        // Regenerate password on button click
-        refreshPassBtn.addEventListener('click', () => {
-            passwordInput.value = generatePassword();
         });
     </script>
 </body>

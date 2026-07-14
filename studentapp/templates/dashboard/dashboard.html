@@ -6,391 +6,754 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Dashboard | Video Management System{% endblock %}</title>
 
-    <!-- Fonts: Plus Jakarta Sans (display/numbers) + Inter (body/data) -->
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <!-- Font Awesome CDN -->
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- Dashboard Custom CSS -->
+    <!-- Dashboard CSS -->
     <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
-
-    <!-- Block for page specific CSS -->
     {% block extra_css %}{% endblock %}
+    <style>
+        /* ── Chart Skeleton Loading ───────────────────────── */
+        .chart-skeleton {
+            position: absolute;
+            inset: 0;
+            background: #fff;
+            border-radius: 12px;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: flex-end;
+            gap: 0;
+            padding: 1rem 1.2rem 2rem 1.2rem;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+        .chart-skeleton.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        .chart-skeleton__bars {
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+            width: 100%;
+            height: 100%;
+        }
+        .chart-skeleton__bar {
+            flex: 1;
+            border-radius: 6px 6px 0 0;
+            background: linear-gradient(90deg, #f0f2f8 25%, #e4e8f5 50%, #f0f2f8 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.4s infinite;
+        }
+        .chart-skeleton__bar:nth-child(1)  { height: 55%; animation-delay: 0s; }
+        .chart-skeleton__bar:nth-child(2)  { height: 80%; animation-delay: 0.1s; }
+        .chart-skeleton__bar:nth-child(3)  { height: 45%; animation-delay: 0.2s; }
+        .chart-skeleton__bar:nth-child(4)  { height: 90%; animation-delay: 0.3s; }
+        .chart-skeleton__bar:nth-child(5)  { height: 65%; animation-delay: 0.4s; }
+        .chart-skeleton__bar:nth-child(6)  { height: 35%; animation-delay: 0.5s; }
+        .chart-skeleton__bar:nth-child(7)  { height: 75%; animation-delay: 0.6s; }
+        /* For line/doughnut charts use wave bars */
+        .chart-skeleton--line .chart-skeleton__bar { border-radius: 50% 50% 0 0; }
+        .chart-skeleton--doughnut {
+            justify-content: center;
+            align-items: center;
+        }
+        .chart-skeleton--doughnut .chart-skeleton__bars {
+            justify-content: center;
+            align-items: center;
+        }
+        .chart-skeleton__donut {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            background: linear-gradient(90deg, #f0f2f8 25%, #e4e8f5 50%, #f0f2f8 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.4s infinite;
+            position: relative;
+        }
+        .chart-skeleton__donut::after {
+            content: '';
+            position: absolute;
+            inset: 28px;
+            border-radius: 50%;
+            background: #fff;
+        }
+        .chart-skeleton__label-row {
+            display: flex;
+            gap: 12px;
+            margin-top: 14px;
+        }
+        .chart-skeleton__label {
+            height: 10px;
+            border-radius: 20px;
+            background: linear-gradient(90deg, #f0f2f8 25%, #e4e8f5 50%, #f0f2f8 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.4s infinite;
+        }
+        .chart-skeleton__axis {
+            height: 2px;
+            width: 100%;
+            background: #e9ecf4;
+            border-radius: 2px;
+            margin-top: 6px;
+        }
+        @keyframes shimmer {
+            0%   { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* ── Page Entrance Animations ───────────────────────── */
+        @keyframes fadeSlideUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+        }
+        @keyframes countUp {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes progressGrow {
+            from { width: 0% !important; }
+        }
+
+        /* Stat cards stagger */
+        .stat-card {
+            opacity: 0;
+            animation: fadeSlideUp 0.5s ease forwards;
+        }
+        .stat-card:nth-child(1)  { animation-delay: 0.05s; }
+        .stat-card:nth-child(2)  { animation-delay: 0.10s; }
+        .stat-card:nth-child(3)  { animation-delay: 0.15s; }
+        .stat-card:nth-child(4)  { animation-delay: 0.20s; }
+        .stat-card:nth-child(5)  { animation-delay: 0.25s; }
+        .stat-card:nth-child(6)  { animation-delay: 0.30s; }
+        .stat-card:nth-child(7)  { animation-delay: 0.35s; }
+        .stat-card:nth-child(8)  { animation-delay: 0.40s; }
+        .stat-card:nth-child(9)  { animation-delay: 0.45s; }
+        .stat-card:nth-child(10) { animation-delay: 0.50s; }
+
+        /* Chart cards stagger */
+        .chart-card {
+            opacity: 0;
+            animation: fadeSlideUp 0.55s ease forwards;
+        }
+        .charts-grid .chart-card:nth-child(1) { animation-delay: 0.45s; }
+        .charts-grid .chart-card:nth-child(2) { animation-delay: 0.55s; }
+        .charts-grid .chart-card:nth-child(3) { animation-delay: 0.65s; }
+
+        /* Dashboard cards stagger */
+        .dashboard-card {
+            opacity: 0;
+            animation: fadeSlideUp 0.55s ease forwards;
+        }
+        .left-column .dashboard-card:nth-child(1) { animation-delay: 0.6s; }
+        .left-column .dashboard-card:nth-child(2) { animation-delay: 0.7s; }
+        .left-column .dashboard-card:nth-child(3) { animation-delay: 0.8s; }
+        .left-column .dashboard-card:nth-child(4) { animation-delay: 0.9s; }
+        .right-column .dashboard-card:nth-child(1) { animation-delay: 0.65s; }
+        .right-column .dashboard-card:nth-child(2) { animation-delay: 0.75s; }
+
+        /* Number counter animation */
+        .stat-number {
+            animation: countUp 0.4s ease forwards;
+            animation-delay: 0.6s;
+            opacity: 0;
+        }
+
+        /* Progress bar grow animation */
+        .progress-fill {
+            animation: progressGrow 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            animation-delay: 0.9s;
+        }
+    </style>
 </head>
 <body>
-    <div class="app-container">
-        <!-- Include Sidebar component -->
-        {% include 'includes/sidebar.html' %}
+<div class="app-container">
+    {% include 'includes/sidebar.html' %}
 
-        <!-- Main Content Area -->
-        <main class="main-content">
+    <main class="main-content">
 
-            <!-- Sticky Top Header -->
-            <header class="top-header">
-                <div class="header-left">
-                    <div class="page-title-wrap">
-                        <h1 class="page-title">{% block page_title %}Video Learning Dashboard{% endblock %}</h1>
-                        <p class="welcome-message">{% block welcome_message %}Welcome back, Admin — here's what's happening across your colleges today.{% endblock %}</p>
-                    </div>
+        <!-- ── Sticky Top Header ──────────────────────────────── -->
+        <header class="top-header">
+            <div class="header-left">
+                <div class="page-title-wrap">
+                    <h1 class="page-title">{% block page_title %}Video Learning Dashboard{% endblock %}</h1>
+                    <p class="welcome-message">{% block welcome_message %}Welcome back, Admin — here's what's happening today.{% endblock %}</p>
                 </div>
+            </div>
 
-                <div class="header-center">
+            <div class="header-center">
+                <form method="GET" action="{% url 'global_search' %}" style="width:100%;">
                     <div class="search-box">
                         <i class="fas fa-search search-icon"></i>
-                        <input type="text" placeholder="Search colleges, students, videos..." class="search-input">
+                        <input type="text" name="q" placeholder="Search colleges, students, videos..." class="search-input" autocomplete="off">
                     </div>
-                </div>
-
-                <div class="header-right">
-                    <div class="datetime-display">
-                        <i class="far fa-clock"></i>
-                        <span id="current-datetime"></span>
-                    </div>
-
-                    <div class="user-profile">
-                        <img src="https://ui-avatars.com/api/?name=Admin+User&background=2563eb&color=fff" alt="Admin Avatar" class="avatar">
-                        <div class="user-info">
-                            <span class="user-name">Admin User</span>
-                            <span class="user-role">Super Admin</span>
-                        </div>
-                        <i class="fas fa-chevron-down dropdown-icon"></i>
-                    </div>
-                </div>
-            </header>
-
-            <!-- Dashboard Body Content -->
-            <div class="dashboard-content">
-                {% block content %}
-
-                <!-- ============================================================
-                     Stat Cards — Video Learning Overview
-                     ============================================================ -->
-                <div class="stats-grid">
-
-                    <div class="stat-card">
-                        <div class="stat-icon icon-blue"><i class="fas fa-university"></i></div>
-                        <div class="stat-details">
-                            <h3>Total Colleges</h3>
-                            <p class="stat-number">{{ total_colleges }}</p>
-                        </div>
-                    </div>
-
-                    <div class="stat-card">
-                        <div class="stat-icon icon-indigo"><i class="fas fa-chalkboard-teacher"></i></div>
-                        <div class="stat-details">
-                            <h3>Total Principals</h3>
-                            <p class="stat-number">{{ total_principals }}</p>
-                        </div>
-                    </div>
-
-                    <div class="stat-card">
-                        <div class="stat-icon icon-amber"><i class="fas fa-user-tie"></i></div>
-                        <div class="stat-details">
-                            <h3>Total HODs</h3>
-                            <p class="stat-number">{{ total_hods }}</p>
-                        </div>
-                    </div>
-
-                    <div class="stat-card">
-                        <div class="stat-icon icon-rose"><i class="fas fa-user-graduate"></i></div>
-                        <div class="stat-details">
-                            <h3>Total Students</h3>
-                            <p class="stat-number">{{ total_students }}</p>
-                        </div>
-                    </div>
-
-                    <div class="stat-card">
-                        <div class="stat-icon icon-teal"><i class="fas fa-video"></i></div>
-                        <div class="stat-details">
-                            <h3>Total Videos</h3>
-                            <p class="stat-number">{{ total_videos }}</p>
-                        </div>
-                    </div>
-
-                    <div class="stat-card">
-                        <div class="stat-icon icon-blue"><i class="fas fa-eye"></i></div>
-                        <div class="stat-details">
-                            <h3>Today's Video Views</h3>
-                            <p class="stat-number">{{ today_views }}</p>
-                        </div>
-                    </div>
-
-                    <div class="stat-card">
-                        <div class="stat-icon icon-teal"><i class="fas fa-user-check"></i></div>
-                        <div class="stat-details">
-                            <h3>Active Students</h3>
-                            <p class="stat-number">{{ active_students }}</p>
-                        </div>
-                    </div>
-
-                </div>
-
-                <!-- ============================================================
-                     Charts Section — Video Learning Analytics
-                     ============================================================ -->
-                <div class="charts-grid mt-4">
-                    <div class="chart-card">
-                        <div class="card-header">
-                            <h3>Student Video Watch Overview</h3>
-                            <span class="card-header-tag">This week</span>
-                        </div>
-                        <div class="chart-container">
-                            <canvas id="watchOverviewChart"></canvas>
-                        </div>
-                    </div>
-                    <div class="chart-card">
-                        <div class="card-header">
-                            <h3>Monthly Video Watch Analytics</h3>
-                            <span class="card-header-tag">Last 6 months</span>
-                        </div>
-                        <div class="chart-container">
-                            <canvas id="monthlyWatchChart"></canvas>
-                        </div>
-                    </div>
-                    <div class="chart-card">
-                        <div class="card-header">
-                            <h3>College-wise Video Watch Distribution</h3>
-                            <span class="card-header-tag">Share of views</span>
-                        </div>
-                        <div class="chart-container">
-                            <canvas id="collegeDistributionChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ============================================================
-                     Main Layout Grid (Left Content + Right Sidebar)
-                     ============================================================ -->
-                <div class="main-grid mt-4">
-
-                    <!-- Left Column -->
-                    <div class="left-column">
-
-                        <!-- Quick Actions -->
-                        <div class="dashboard-card">
-                            <div class="card-header">
-                                <h3>Quick Actions</h3>
-                            </div>
-                            <div class="quick-actions-grid">
-                                <a href="{% url 'college_add' %}" class="quick-btn"><i class="fas fa-university"></i> Add College</a>
-                                <a href="{% url 'principal_add' %}" class="quick-btn"><i class="fas fa-chalkboard-teacher"></i> Add Principal</a>
-                                <a href="{% url 'hod_management' %}" class="quick-btn"><i class="fas fa-user-tie"></i> Add HOD</a>
-                                <a href="{% url 'student_add' %}" class="quick-btn"><i class="fas fa-user-plus"></i> Add Student</a>
-                                <a href="{% url 'video_management' %}" class="quick-btn"><i class="fas fa-upload"></i> Upload Video</a>
-                                <a href="{% url 'user_management' %}" class="quick-btn"><i class="fas fa-users-cog"></i> Manage Users</a>
-                                <a href="{% url 'reports' %}" class="quick-btn"><i class="fas fa-file-export"></i> Reports</a>
-                            </div>
-                        </div>
-
-                        <!-- Top Performing Colleges -->
-                        <div class="dashboard-card mt-4">
-                            <div class="card-header">
-                                <h3>Top Performing Colleges</h3>
-                                <span class="card-header-tag">By student count</span>
-                            </div>
-                            <ul class="rank-list">
-                              {% for college in top_colleges %}
-<li class="rank-item">
-    <span class="rank-badge">{{ forloop.counter }}</span>
-
-    <div class="rank-info">
-        <p>{{ college.college_name }}</p>
-
-        <div class="progress-track">
-            <div class="progress-fill"
-                 style="width:{{ college.total_students }}%">
-            </div>
-        </div>
-    </div>
-
-    <span>{{ college.total_students }}</span>
-</li>
-{% endfor %}
-                            </ul>
-                        </div>
-
-                    </div>
-
-                    <!-- Right Column -->
-                    <div class="right-column">
-
-                        <!-- Recent Activities -->
-                        <div class="dashboard-card">
-                            <div class="card-header">
-                                <h3>Recent Activities</h3>
-                            </div>
-                            <ul class="activity-list">
-                                {% for video in recent_videos %}
-                                <li class="activity-item">
-                                    <div class="activity-icon icon-teal"><i class="fas fa-upload"></i></div>
-                                    <div class="activity-content">
-                                        <p><strong>New video uploaded</strong> — {{ video.title }}</p>
-                                        <span class="time">{{ video.uploaded_at|timesince }} ago</span>
-                                    </div>
-                                </li>
-                                {% empty %}
-                                <li class="activity-item">
-                                    <div class="activity-content">
-                                        <p>No recent activity.</p>
-                                    </div>
-                                </li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-
-                        <!-- Most Watched Videos -->
-                        <div class="dashboard-card mt-4">
-                            <div class="card-header">
-                                <h3>Most Watched Videos</h3>
-                                <button class="btn-outline">View All</button>
-                            </div>
-                            <ul class="video-list">
-                                {% for video in top_videos %}
-                                <li class="video-item">
-                                    <div class="video-thumb"><i class="fas fa-play"></i></div>
-                                    <div class="video-info">
-                                        <p>{{ video.title }}</p>
-                                        <span>{{ video.department.name|default:"General" }}</span>
-                                    </div>
-                                    <span class="video-views"><i class="fas fa-eye"></i> {{ video.views }}</span>
-                                </li>
-                                {% empty %}
-                                <li class="video-item">
-                                    <div class="video-info"><p>No videos yet.</p></div>
-                                </li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-
-                    </div>
-                </div>
-                {% endblock %}
+                </form>
             </div>
 
-            <!-- Footer -->
-            <footer class="dashboard-footer">
-                <div class="footer-content">
-                    <p>Copyright &copy; 2026 College Video Management System.</p>
-                    <div class="footer-right">
-                        <span>Designed for Super Admin</span>
-                        <span class="version-badge">Version 1.0</span>
+            <div class="header-right">
+                <div class="datetime-display">
+                    <i class="far fa-clock"></i>
+                    <span id="current-datetime"></span>
+                </div>
+                <div class="user-profile">
+                    <img src="https://ui-avatars.com/api/?name=Admin+User&background=4f46e5&color=fff" alt="Admin Avatar" class="avatar">
+                    <div class="user-info">
+                        <span class="user-name">Admin User</span>
+                        <span class="user-role">Super Admin</span>
+                    </div>
+                    <i class="fas fa-chevron-down dropdown-icon"></i>
+                </div>
+            </div>
+        </header>
+
+        <!-- ── Dashboard Body ────────────────────────────────── -->
+        <div class="dashboard-content">
+            {% block content %}
+
+            <!-- ── Stat Cards ─────────────────────────────────── -->
+            <div class="stats-grid">
+
+                <div class="stat-card card-blue">
+                    <div class="stat-icon icon-blue"><i class="fas fa-university"></i></div>
+                    <div class="stat-details">
+                        <h3>Total Colleges</h3>
+                        <p class="stat-number">{{ total_colleges|default:"12" }}</p>
                     </div>
                 </div>
-            </footer>
-        </main>
-    </div>
 
-    <!-- Scripts -->
-    <script>
-        // Real-time DateTime updater
-        function updateDateTime() {
-            const now = new Date();
-            const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
-            const dtElement = document.getElementById('current-datetime');
-            if (dtElement) {
-                dtElement.textContent = now.toLocaleDateString('en-US', options);
+                <div class="stat-card card-green">
+                    <div class="stat-icon icon-green"><i class="fas fa-user-check"></i></div>
+                    <div class="stat-details">
+                        <h3>Active Students</h3>
+                        <p class="stat-number">{{ active_students|default:"8,432" }}</p>
+                    </div>
+                </div>
+
+                <div class="stat-card card-red">
+                    <div class="stat-icon icon-red"><i class="fas fa-eye"></i></div>
+                    <div class="stat-details">
+                        <h3>Today's Views</h3>
+                        <p class="stat-number">{{ today_views|default:"1,204" }}</p>
+                    </div>
+                </div>
+
+                <div class="stat-card card-purple">
+                    <div class="stat-icon icon-purple"><i class="fas fa-chart-line"></i></div>
+                    <div class="stat-details">
+                        <h3>Monthly Views</h3>
+                        <p class="stat-number">{{ this_month_views|default:"45,912" }}</p>
+                    </div>
+                </div>
+
+                <div class="stat-card card-orange">
+                    <div class="stat-icon icon-orange"><i class="fas fa-user-tie"></i></div>
+                    <div class="stat-details">
+                        <h3>Total HODs</h3>
+                        <p class="stat-number">{{ total_hods|default:"48" }}</p>
+                    </div>
+                </div>
+
+                <div class="stat-card card-teal">
+                    <div class="stat-icon icon-teal"><i class="fas fa-video"></i></div>
+                    <div class="stat-details">
+                        <h3>Total Videos</h3>
+                        <p class="stat-number">{{ total_videos|default:"342" }}</p>
+                    </div>
+                </div>
+
+                <div class="stat-card card-pink">
+                    <div class="stat-icon icon-pink"><i class="fas fa-user-graduate"></i></div>
+                    <div class="stat-details">
+                        <h3>Total Students</h3>
+                        <p class="stat-number">{{ total_students|default:"9,512" }}</p>
+                    </div>
+                </div>
+
+                <div class="stat-card card-yellow">
+                    <div class="stat-icon icon-yellow"><i class="fas fa-user-plus"></i></div>
+                    <div class="stat-details">
+                        <h3>New Registrations</h3>
+                        <p class="stat-number">142</p>
+                    </div>
+                </div>
+
+                <div class="stat-card card-indigo">
+                    <div class="stat-icon icon-indigo"><i class="fas fa-chalkboard-teacher"></i></div>
+                    <div class="stat-details">
+                        <h3>Total Principals</h3>
+                        <p class="stat-number">{{ total_principals|default:"12" }}</p>
+                    </div>
+                </div>
+
+                <div class="stat-card card-cyan">
+                    <div class="stat-icon icon-cyan"><i class="fas fa-server"></i></div>
+                    <div class="stat-details">
+                        <h3>System Status</h3>
+                        <p class="stat-number">99.9%</p>
+                    </div>
+                </div>
+
+            </div><!-- /stats-grid -->
+
+            <!-- ── Charts ──────────────────────────────────────── -->
+            <div class="charts-grid mt-4">
+                <div class="chart-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-bar-chart" style="color:var(--db-primary);margin-right:.4rem;font-size:.85rem;"></i>Weekly Watch Activity</h3>
+                        <span class="card-header-tag">This week</span>
+                    </div>
+                    <div class="chart-container" style="position:relative;">
+                        <div class="chart-skeleton" id="skel-weekly">
+                            <div class="chart-skeleton__bars">
+                                <div class="chart-skeleton__bar"></div>
+                                <div class="chart-skeleton__bar"></div>
+                                <div class="chart-skeleton__bar"></div>
+                                <div class="chart-skeleton__bar"></div>
+                                <div class="chart-skeleton__bar"></div>
+                                <div class="chart-skeleton__bar"></div>
+                                <div class="chart-skeleton__bar"></div>
+                            </div>
+                            <div class="chart-skeleton__axis"></div>
+                        </div>
+                        <canvas id="watchOverviewChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-chart-area" style="color:var(--db-teal);margin-right:.4rem;font-size:.85rem;"></i>Monthly Analytics</h3>
+                        <span class="card-header-tag">Last 6 months</span>
+                    </div>
+                    <div class="chart-container" style="position:relative;">
+                        <div class="chart-skeleton chart-skeleton--line" id="skel-monthly">
+                            <div class="chart-skeleton__bars">
+                                <div class="chart-skeleton__bar"></div>
+                                <div class="chart-skeleton__bar"></div>
+                                <div class="chart-skeleton__bar"></div>
+                                <div class="chart-skeleton__bar"></div>
+                                <div class="chart-skeleton__bar"></div>
+                                <div class="chart-skeleton__bar"></div>
+                            </div>
+                            <div class="chart-skeleton__axis"></div>
+                        </div>
+                        <canvas id="monthlyWatchChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-chart-pie" style="color:var(--db-amber);margin-right:.4rem;font-size:.85rem;"></i>College Distribution</h3>
+                        <span class="card-header-tag">Share of views</span>
+                    </div>
+                    <div class="chart-container" style="position:relative;">
+                        <div class="chart-skeleton chart-skeleton--doughnut" id="skel-college">
+                            <div style="display:flex;flex-direction:column;align-items:center;">
+                                <div class="chart-skeleton__donut"></div>
+                                <div class="chart-skeleton__label-row">
+                                    <div class="chart-skeleton__label" style="width:40px;"></div>
+                                    <div class="chart-skeleton__label" style="width:55px;"></div>
+                                    <div class="chart-skeleton__label" style="width:35px;"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <canvas id="collegeDistributionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Main Grid ────────────────────────────────────── -->
+            <div class="main-grid mt-4">
+
+                <!-- Left Column -->
+                <div class="left-column">
+
+                    <!-- Quick Actions -->
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-bolt" style="color:var(--db-warning);margin-right:.4rem;font-size:.85rem;"></i>Quick Actions</h3>
+                        </div>
+                        <div class="quick-actions-grid">
+                            <a href="{% url 'college_add' %}" class="quick-btn">
+                                <i class="fas fa-university"></i>
+                                Add College
+                            </a>
+                            <a href="{% url 'principal_add' %}" class="quick-btn">
+                                <i class="fas fa-chalkboard-teacher"></i>
+                                Add Principal
+                            </a>
+                            <a href="{% url 'hod_management' %}" class="quick-btn">
+                                <i class="fas fa-user-tie"></i>
+                                Manage HODs
+                            </a>
+                            <a href="{% url 'student_add' %}" class="quick-btn">
+                                <i class="fas fa-user-plus"></i>
+                                Add Student
+                            </a>
+                            <a href="{% url 'video_add' %}" class="quick-btn">
+                                <i class="fas fa-upload"></i>
+                                Upload Video
+                            </a>
+                            <a href="{% url 'video_analytics' %}" class="quick-btn">
+                                <i class="fas fa-chart-line"></i>
+                                Analytics
+                            </a>
+                            <a href="{% url 'reports' %}" class="quick-btn">
+                                <i class="fas fa-file-export"></i>
+                                Reports
+                            </a>
+                            <a href="{% url 'user_management' %}" class="quick-btn">
+                                <i class="fas fa-users-cog"></i>
+                                Manage Users
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Top Performing Colleges -->
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-trophy" style="color:var(--db-warning);margin-right:.4rem;font-size:.85rem;"></i>Top Performing Colleges</h3>
+                            <span class="card-header-tag">{{ now|date:"F Y" }}</span>
+                        </div>
+                        <ul class="rank-list">
+                            {% for college in top_colleges %}
+                            <li class="rank-item">
+                                <span class="rank-badge {% if forloop.counter == 1 %}rank-1{% elif forloop.counter == 2 %}rank-2{% elif forloop.counter == 3 %}rank-3{% endif %}">
+                                    {{ forloop.counter }}
+                                </span>
+                                <div class="rank-info">
+                                    <p>{{ college.college_name }}</p>
+                                    <div class="progress-track">
+                                        <div class="progress-fill" style="width:{{ college.progress }}%"></div>
+                                    </div>
+                                    <div class="rank-meta">
+                                        <i class="fas fa-eye" style="font-size:.65rem;"></i>
+                                        <strong>{{ college.monthly_views }}</strong> views this month
+                                    </div>
+                                </div>
+                                <span class="rank-pct">{{ college.progress }}%</span>
+                            </li>
+                            {% empty %}
+                            <li style="text-align:center;color:var(--db-text-muted);font-size:.83rem;padding:1rem 0;">
+                                No college data available.
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+
+                    <!-- Recent Activity -->
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-history" style="color:var(--db-primary);margin-right:.4rem;font-size:.85rem;"></i>Recent Watch Activity</h3>
+                            <span class="card-header-tag">Live</span>
+                        </div>
+                        <ul class="ra-list">
+                            {% for wa in recent_activity %}
+                            <li class="ra-item">
+                                <div class="ra-avatar">
+                                    <i class="fas fa-user-graduate"></i>
+                                </div>
+                                <div class="ra-info">
+                                    <p><strong>{{ wa.student.full_name|default:"Student" }}</strong> watched <strong>{{ wa.video.title|truncatechars:30 }}</strong></p>
+                                    <span>{{ wa.watched_at|timesince }} ago</span>
+                                </div>
+                                <span class="ra-badge"><i class="fas fa-play"></i></span>
+                            </li>
+                            {% empty %}
+                            <li class="ra-empty">
+                                <i class="fas fa-film" style="font-size:2rem;color:var(--db-border);display:block;margin-bottom:.5rem;"></i>
+                                No watch activity yet
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+
+                    <!-- System Overview -->
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-server" style="color:var(--db-teal);margin-right:.4rem;font-size:.85rem;"></i>System Overview</h3>
+                            <span class="card-header-tag" style="background:#d1fae5;color:#065f46;border-color:#a7f3d0;">● Live</span>
+                        </div>
+                        <div class="sysov-grid">
+                            <div class="sysov-item">
+                                <i class="fas fa-university sysov-icon" style="color:#4f46e5;background:#ede9fe;"></i>
+                                <div>
+                                    <p class="sysov-label">Colleges</p>
+                                    <p class="sysov-val">{{ total_colleges|default:"0" }}</p>
+                                </div>
+                            </div>
+                            <div class="sysov-item">
+                                <i class="fas fa-user-graduate sysov-icon" style="color:#ec4899;background:#fce7f3;"></i>
+                                <div>
+                                    <p class="sysov-label">Students</p>
+                                    <p class="sysov-val">{{ total_students|default:"0" }}</p>
+                                </div>
+                            </div>
+                            <div class="sysov-item">
+                                <i class="fas fa-video sysov-icon" style="color:#0d9488;background:#ccfbf1;"></i>
+                                <div>
+                                    <p class="sysov-label">Videos</p>
+                                    <p class="sysov-val">{{ total_videos|default:"0" }}</p>
+                                </div>
+                            </div>
+                            <div class="sysov-item">
+                                <i class="fas fa-chalkboard-teacher sysov-icon" style="color:#f97316;background:#ffedd5;"></i>
+                                <div>
+                                    <p class="sysov-label">Principals</p>
+                                    <p class="sysov-val">{{ total_principals|default:"0" }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div><!-- /left-column -->
+
+                <!-- Right Column -->
+                <div class="right-column">
+
+                    <!-- Monthly Activities -->
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-calendar-alt" style="color:var(--db-primary);margin-right:.4rem;font-size:.85rem;"></i>Monthly Activities</h3>
+                            <span class="card-header-tag">Last 6 Months</span>
+                        </div>
+                        <ul class="activity-list">
+                            {% for item in monthly_activities %}
+                            <li class="activity-item">
+                                <div class="activity-icon icon-blue">
+                                    <i class="fas fa-calendar-check"></i>
+                                </div>
+                                <div class="activity-content">
+                                    <p>{{ item.month|date:"F Y" }}</p>
+                                    <div class="activity-chips">
+                                        <span class="chip chip-views"><i class="fas fa-eye"></i> {{ item.total_views }} Views</span>
+                                        <span class="chip chip-students"><i class="fas fa-user-graduate"></i> {{ item.active_students }} Students</span>
+                                        <span class="chip chip-videos"><i class="fas fa-film"></i> {{ item.videos_watched }} Videos</span>
+                                    </div>
+                                </div>
+                            </li>
+                            {% empty %}
+                            <li style="text-align:center;color:var(--db-text-muted);font-size:.83rem;padding:1rem 0;">
+                                No monthly activity available.
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+
+                    <!-- Most Watched Videos -->
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-fire" style="color:var(--db-rose);margin-right:.4rem;font-size:.85rem;"></i>Most Watched Videos</h3>
+                            <span class="card-header-tag">{{ now|date:"F Y" }}</span>
+                        </div>
+                        <ul class="video-list">
+                            {% for video in top_videos %}
+                            <li class="video-item">
+                                <span class="video-rank {% if forloop.counter == 1 %}r1{% elif forloop.counter == 2 %}r2{% elif forloop.counter == 3 %}r3{% endif %}">
+                                    {{ forloop.counter }}
+                                </span>
+                                <div class="video-thumb"><i class="fas fa-play"></i></div>
+                                <div class="video-info">
+                                    <p title="{{ video.title }}">{{ video.title }}</p>
+                                    <span>{{ video.category }}</span>
+                                </div>
+                                <span class="video-views">
+                                    <i class="fas fa-eye"></i>
+                                    {{ video.month_views }}
+                                </span>
+                            </li>
+                            {% empty %}
+                            <li style="text-align:center;color:var(--db-text-muted);font-size:.83rem;padding:1rem 0;">
+                                No videos watched this month.
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+
+                </div><!-- /right-column -->
+
+            </div><!-- /main-grid -->
+
+            {% endblock %}
+        </div><!-- /dashboard-content -->
+
+        <!-- ── Footer ─────────────────────────────────────────── -->
+        <footer class="dashboard-footer">
+            <div class="footer-content">
+                <p>Copyright &copy; 2026 College Video Management System.</p>
+                <div class="footer-right">
+                    <span>Designed for Super Admin</span>
+                    <span class="version-badge">v1.0</span>
+                </div>
+            </div>
+        </footer>
+
+    </main>
+</div>
+
+<!-- Scripts -->
+<script>
+    function updateDateTime() {
+        const now = new Date();
+        const el = document.getElementById('current-datetime');
+        if (el) el.textContent = now.toLocaleDateString('en-US', {
+            weekday:'short', year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'
+        });
+    }
+    setInterval(updateDateTime, 60000);
+    updateDateTime();
+</script>
+
+<!-- Page Animation Script -->
+<script>
+    /* ── Animated Number Counter ───────────────────────────── */
+    function animateCounter(el, target, duration) {
+        const isDecimal = String(target).includes('.');
+        const hasComma  = String(target).includes(',');
+        const cleanNum  = parseFloat(String(target).replace(/,/g, ''));
+        if (isNaN(cleanNum)) return;
+
+        const start    = performance.now();
+        const startVal = 0;
+
+        function step(now) {
+            const elapsed  = now - start;
+            const progress = Math.min(elapsed / duration, 1);
+            // Ease-out-quart
+            const ease = 1 - Math.pow(1 - progress, 4);
+            const current = Math.round(startVal + (cleanNum - startVal) * ease);
+            const suffix  = el.dataset.suffix || '';
+            if (hasComma && cleanNum >= 1000) {
+                el.textContent = current.toLocaleString() + suffix;
+            } else {
+                el.textContent = current + suffix;
+            }
+            if (progress < 1) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+    }
+
+    /* Run counters after a short delay */
+    window.addEventListener('DOMContentLoaded', () => {
+        setTimeout(() => {
+            document.querySelectorAll('.stat-number').forEach(el => {
+                const raw    = el.dataset.target || el.textContent.trim();
+                const suffix = raw.match(/[^\d,\.]+$/) ? raw.match(/[^\d,\.]+$/)[0] : '';
+                el.dataset.suffix = suffix;
+                el.dataset.target = raw;
+                animateCounter(el, raw, 1600);
+            });
+        }, 600); /* matches animation-delay on .stat-number */
+    });
+</script>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+{% block extra_js %}
+<script>
+    Chart.defaults.color          = '#8b93b8';
+    Chart.defaults.font.family    = "'Inter', sans-serif";
+    Chart.defaults.font.size      = 11;
+
+    const weekLabels   = {{ week_labels|safe|default:"[]" }};
+    const weekData     = {{ week_data|safe|default:"[]" }};
+    const monthLabels  = {{ month_labels|safe|default:"[]" }};
+    const monthData    = {{ month_data|safe|default:"[]" }};
+    const collegeLabels= {{ college_labels|safe|default:"[]" }};
+    const collegeData  = {{ college_data|safe|default:"[]" }};
+
+    /* ── Bar: Weekly Watch ──────────────────────────────────── */
+    const weeklyChart = new Chart(document.getElementById('watchOverviewChart'), {
+        type: 'bar',
+        data: {
+            labels: weekLabels,
+            datasets: [{
+                label: 'Videos Watched',
+                data: weekData,
+                backgroundColor: 'rgba(79,70,229,.80)',
+                borderRadius: 8,
+                borderSkipped: false,
+                maxBarThickness: 30
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, grid: { color: '#f0f2f8' }, ticks: { stepSize: 1 } },
+                x: { grid: { display: false } }
+            },
+            animation: {
+                onComplete: () => {
+                    document.getElementById('skel-weekly').classList.add('hidden');
+                }
             }
         }
-        setInterval(updateDateTime, 60000);
-        updateDateTime();
-    </script>
+    });
 
-    <!-- Chart.js CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <!-- Block for page specific JS -->
-    {% block extra_js %}
-    <script>
-        Chart.defaults.color = '#64748b';
-        Chart.defaults.font.family = "'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
-
-        // Data passed in from the Django view (see views.py)
-        const weekLabels = {{ week_labels|safe|default:"[]" }};
-        const weekData = {{ week_data|safe|default:"[]" }};
-        const monthLabels = {{ month_labels|safe|default:"[]" }};
-        const monthData = {{ month_data|safe|default:"[]" }};
-        const collegeLabels = {{ college_labels|safe|default:"[]" }};
-        const collegeData = {{ college_data|safe|default:"[]" }};
-
-        // 1. Student Video Watch Overview (Bar Chart) — last 7 days
-        const ctxWatch = document.getElementById('watchOverviewChart').getContext('2d');
-        new Chart(ctxWatch, {
-            type: 'bar',
-            data: {
-                labels: weekLabels,
-                datasets: [{
-                    label: 'Videos Watched',
-                    data: weekData,
-                    backgroundColor: '#2563eb',
-                    borderRadius: 6,
-                    maxBarThickness: 28
-                }]
+    /* ── Line: Monthly Watch ────────────────────────────────── */
+    new Chart(document.getElementById('monthlyWatchChart'), {
+        type: 'line',
+        data: {
+            labels: monthLabels,
+            datasets: [{
+                label: 'Total Watches',
+                data: monthData,
+                borderColor: '#0d9488',
+                backgroundColor: 'rgba(13,148,136,.10)',
+                borderWidth: 2.5,
+                pointBackgroundColor: '#0d9488',
+                pointBorderColor: '#fff', pointBorderWidth: 2,
+                pointRadius: 4, fill: true, tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, grid: { color: '#f0f2f8' } },
+                x: { grid: { display: false } }
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    y: { beginAtZero: true, grid: { color: '#eef2f7' } },
-                    x: { grid: { display: false } }
+            animation: {
+                onComplete: () => {
+                    document.getElementById('skel-monthly').classList.add('hidden');
                 }
             }
-        });
+        }
+    });
 
-        // 2. Monthly Video Watch Analytics (Line/Area Chart) — last 6 months
-        const ctxMonthly = document.getElementById('monthlyWatchChart').getContext('2d');
-        new Chart(ctxMonthly, {
-            type: 'line',
-            data: {
-                labels: monthLabels,
-                datasets: [{
-                    label: 'Total Watches',
-                    data: monthData,
-                    borderColor: '#0d9488',
-                    backgroundColor: 'rgba(13, 148, 136, 0.12)',
-                    borderWidth: 2.5,
-                    pointBackgroundColor: '#0d9488',
-                    fill: true,
-                    tension: 0.4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    y: { beginAtZero: true, grid: { color: '#eef2f7' } },
-                    x: { grid: { display: false } }
+    /* ── Doughnut: College Distribution ─────────────────────── */
+    new Chart(document.getElementById('collegeDistributionChart'), {
+        type: 'doughnut',
+        data: {
+            labels: collegeLabels,
+            datasets: [{
+                data: collegeData,
+                backgroundColor: ['#4f46e5','#0d9488','#f59e0b','#f43f5e','#8b5cf6','#06b6d4'],
+                borderWidth: 0, hoverOffset: 6
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            cutout: '68%',
+            plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, padding: 12, usePointStyle: true, pointStyle: 'circle' } } },
+            animation: {
+                onComplete: () => {
+                    document.getElementById('skel-college').classList.add('hidden');
                 }
             }
-        });
-
-        // 3. College-wise Video Watch Distribution (Doughnut Chart)
-        const ctxCollege = document.getElementById('collegeDistributionChart').getContext('2d');
-        new Chart(ctxCollege, {
-            type: 'doughnut',
-            data: {
-                labels: collegeLabels,
-                datasets: [{
-                    data: collegeData,
-                    backgroundColor: ['#2563eb', '#0d9488', '#f59e0b', '#f43f5e', '#94a3b8'],
-                    borderWidth: 0,
-                    hoverOffset: 6
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { position: 'bottom', labels: { boxWidth: 10, padding: 14 } }
-                },
-                cutout: '68%'
-            }
-        });
-    </script>
-    {% endblock %}
+        }
+    });
+</script>
+{% endblock %}
 </body>
 </html>

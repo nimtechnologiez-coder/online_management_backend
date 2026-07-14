@@ -40,6 +40,19 @@ class Principal(models.Model):
         default="active"
     )
 
+    username = models.CharField(
+        max_length=100,
+        unique=True,
+        null=True,
+        blank=True
+    )
+
+    password = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -152,8 +165,7 @@ class Student(models.Model):
         max_length=100
     )
 
-    profile_pic = models.ImageField(
-        upload_to="students/",
+    end_date = models.DateField(
         blank=True,
         null=True
     )

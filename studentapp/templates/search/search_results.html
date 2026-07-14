@@ -1,0 +1,202 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search: "{{ query }}" | Admin Panel</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/sidebar.css' %}">
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+    <style>
+        .sr-main      { flex:1; margin-left:264px; padding:2rem; min-width:0; }
+        .sr-header    { display:flex; align-items:center; gap:1rem; margin-bottom:1.75rem; flex-wrap:wrap; }
+        .sr-back      { display:inline-flex; align-items:center; gap:.4rem; font-size:.82rem; font-weight:600; color:#4b5580; text-decoration:none; padding:.4rem .85rem; border:1.5px solid #e4e7f2; border-radius:8px; background:#fff; transition:all .2s; }
+        .sr-back:hover{ background:#f1f3f9; color:#4f46e5; border-color:#4f46e5; }
+        .sr-title     { font-size:1.5rem; font-weight:800; color:#0d1131; margin:0; }
+        .sr-subtitle  { font-size:.85rem; color:#8b93b8; margin:.2rem 0 0; }
+
+        .sr-searchbar { display:flex; gap:.5rem; margin-bottom:1.75rem; }
+        .sr-input     { flex:1; padding:.65rem 1rem .65rem 2.5rem; border:1.5px solid #e4e7f2; border-radius:10px; font-size:.9rem; font-family:'Inter',sans-serif; outline:none; transition:border-color .2s, box-shadow .2s; background:#fff; }
+        .sr-input:focus { border-color:#4f46e5; box-shadow:0 0 0 3px rgba(79,70,229,.12); }
+        .sr-input-wrap{ position:relative; flex:1; }
+        .sr-input-wrap i { position:absolute; left:.85rem; top:50%; transform:translateY(-50%); color:#8b93b8; font-size:.85rem; }
+        .sr-go        { padding:.65rem 1.25rem; background:#4f46e5; color:#fff; border:none; border-radius:10px; font-weight:700; font-size:.9rem; cursor:pointer; transition:opacity .2s; }
+        .sr-go:hover  { opacity:.88; }
+
+        .sr-empty     { text-align:center; padding:4rem 2rem; color:#8b93b8; }
+        .sr-empty i   { font-size:3rem; display:block; margin-bottom:1rem; opacity:.35; }
+        .sr-empty h3  { font-size:1.1rem; font-weight:700; color:#4b5580; margin:0 0 .4rem; }
+        .sr-empty p   { margin:0; font-size:.85rem; }
+
+        .sr-section   { margin-bottom:1.75rem; }
+        .sr-section-hdr{ display:flex; align-items:center; gap:.65rem; margin-bottom:.9rem; }
+        .sr-section-hdr h2 { font-size:.93rem; font-weight:700; color:#0d1131; margin:0; }
+        .sr-section-tag  { font-size:.7rem; font-weight:700; padding:.2rem .6rem; border-radius:999px; }
+        .tag-blue    { background:#ede9fe; color:#4f46e5; }
+        .tag-indigo  { background:#e0e7ff; color:#4338ca; }
+        .tag-teal    { background:#ccfbf1; color:#0f766e; }
+        .tag-amber   { background:#fef3c7; color:#92400e; }
+
+        .sr-grid      { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:.75rem; }
+        .sr-card      { background:#fff; border:1.5px solid #e4e7f2; border-radius:12px; padding:1rem 1.1rem; display:flex; align-items:center; gap:.85rem; box-shadow:0 2px 8px rgba(13,17,49,.05); transition:transform .2s,box-shadow .2s; text-decoration:none; color:inherit; }
+        .sr-card:hover{ transform:translateY(-2px); box-shadow:0 6px 20px rgba(13,17,49,.09); border-color:#4f46e5; }
+        .sr-icon      { width:42px; height:42px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0; }
+        .si-blue   { background:#ede9fe; color:#4f46e5; }
+        .si-indigo { background:#e0e7ff; color:#4338ca; }
+        .si-teal   { background:#ccfbf1; color:#0f766e; }
+        .si-amber  { background:#fef3c7; color:#92400e; }
+        .sr-card-body { min-width:0; flex:1; }
+        .sr-card-title{ font-size:.85rem; font-weight:700; color:#0d1131; margin:0 0 .15rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .sr-card-sub  { font-size:.73rem; color:#8b93b8; }
+
+        .sr-badge     { padding:.18rem .55rem; border-radius:999px; font-size:.67rem; font-weight:700; }
+        .badge-active { background:#d1fae5; color:#065f46; }
+        .badge-inactive{ background:#fee2e2; color:#991b1b; }
+
+        @media(max-width:768px){ .sr-main{ margin-left:0; padding:1rem; } }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    {% include 'includes/sidebar.html' %}
+
+    <div class="sr-main">
+
+        <!-- Back + Title -->
+        <div class="sr-header">
+            <a href="{% url 'dashboard' %}" class="sr-back"><i class="fas fa-arrow-left"></i> Dashboard</a>
+            <div>
+                <h1 class="sr-title">
+                    {% if query %}Search Results for "{{ query }}"{% else %}Global Search{% endif %}
+                </h1>
+                <p class="sr-subtitle">
+                    {% if query %}{{ total }} result{{ total|pluralize }} found across all modules{% else %}Enter a query above to search{% endif %}
+                </p>
+            </div>
+        </div>
+
+        <!-- Re-search bar -->
+        <form method="GET" action="{% url 'global_search' %}">
+            <div class="sr-searchbar">
+                <div class="sr-input-wrap">
+                    <i class="fas fa-search"></i>
+                    <input class="sr-input" type="text" name="q" value="{{ query }}" placeholder="Search colleges, students, videos, principals…" autofocus>
+                </div>
+                <button class="sr-go" type="submit"><i class="fas fa-search"></i> Search</button>
+            </div>
+        </form>
+
+        {% if not query %}
+        <div class="sr-empty">
+            <i class="fas fa-search"></i>
+            <h3>What are you looking for?</h3>
+            <p>Search across colleges, students, principals, and videos.</p>
+        </div>
+
+        {% elif total == 0 %}
+        <div class="sr-empty">
+            <i class="fas fa-face-frown"></i>
+            <h3>No results found</h3>
+            <p>We couldn't find anything matching "<strong>{{ query }}</strong>". Try a different keyword.</p>
+        </div>
+
+        {% else %}
+
+        <!-- Colleges -->
+        {% if colleges %}
+        <div class="sr-section">
+            <div class="sr-section-hdr">
+                <h2><i class="fas fa-university" style="color:#4f46e5;"></i> Colleges</h2>
+                <span class="sr-section-tag tag-blue">{{ colleges|length }} found</span>
+            </div>
+            <div class="sr-grid">
+                {% for c in colleges %}
+                <a href="{% url 'collegemanagement' %}?q={{ query }}" class="sr-card">
+                    <div class="sr-icon si-blue"><i class="fas fa-university"></i></div>
+                    <div class="sr-card-body">
+                        <p class="sr-card-title">{{ c.college_name }}</p>
+                        <span class="sr-card-sub"><i class="fas fa-users"></i> {{ c.students.count }} students</span>
+                    </div>
+                    <i class="fas fa-chevron-right" style="font-size:.7rem;color:#c0c5e0;"></i>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Principals -->
+        {% if principals %}
+        <div class="sr-section">
+            <div class="sr-section-hdr">
+                <h2><i class="fas fa-chalkboard-teacher" style="color:#4338ca;"></i> Principals</h2>
+                <span class="sr-section-tag tag-indigo">{{ principals|length }} found</span>
+            </div>
+            <div class="sr-grid">
+                {% for p in principals %}
+                <a href="{% url 'principal_management' %}?q={{ query }}" class="sr-card">
+                    <div class="sr-icon si-indigo"><i class="fas fa-chalkboard-teacher"></i></div>
+                    <div class="sr-card-body">
+                        <p class="sr-card-title">{{ p.principal_name }}</p>
+                        <span class="sr-card-sub">{{ p.college.college_name }} &bull; {{ p.principal_email }}</span>
+                    </div>
+                    <span class="sr-badge {% if p.status == 'active' %}badge-active{% else %}badge-inactive{% endif %}">{{ p.status|capfirst }}</span>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Students -->
+        {% if students %}
+        <div class="sr-section">
+            <div class="sr-section-hdr">
+                <h2><i class="fas fa-user-graduate" style="color:#0f766e;"></i> Students</h2>
+                <span class="sr-section-tag tag-teal">{{ students|length }} found</span>
+            </div>
+            <div class="sr-grid">
+                {% for s in students %}
+                <a href="{% url 'student_management' %}?q={{ query }}" class="sr-card">
+                    <div class="sr-icon si-teal"><i class="fas fa-user-graduate"></i></div>
+                    <div class="sr-card-body">
+                        <p class="sr-card-title">{{ s.full_name }}</p>
+                        <span class="sr-card-sub">{{ s.student_id }} &bull; {{ s.college.college_name }}</span>
+                    </div>
+                    <span class="sr-badge {% if s.status == 'active' %}badge-active{% else %}badge-inactive{% endif %}">{{ s.status|capfirst }}</span>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Videos -->
+        {% if videos %}
+        <div class="sr-section">
+            <div class="sr-section-hdr">
+                <h2><i class="fas fa-video" style="color:#92400e;"></i> Videos</h2>
+                <span class="sr-section-tag tag-amber">{{ videos|length }} found</span>
+            </div>
+            <div class="sr-grid">
+                {% for v in videos %}
+                <a href="{% url 'video_management' %}?q={{ query }}" class="sr-card">
+                    <div class="sr-icon si-amber"><i class="fas fa-film"></i></div>
+                    <div class="sr-card-body">
+                        <p class="sr-card-title">{{ v.title }}</p>
+                        <span class="sr-card-sub">{{ v.category }} &bull; {{ v.duration }}</span>
+                    </div>
+                    <span class="sr-badge {% if v.status == 'Published' %}badge-active{% else %}badge-inactive{% endif %}">{{ v.status }}</span>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% endif %}
+
+    </div><!-- /sr-main -->
+</div>
+
+</body>
+</html>

@@ -15,6 +15,9 @@
 
     <!-- Standalone page stylesheet (no Tailwind / no Bootstrap) -->
     <link rel="stylesheet" href="{% static 'css/collegelist.css' %}" />
+
+    <!-- SheetJS for Excel Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 
 <body>
@@ -100,8 +103,8 @@
                     <button type="button" title="Refresh" onclick="location.reload()" class="btn btn-icon">
                         <i class="fas fa-sync-alt"></i>
                     </button>
-                    <button type="button" class="btn btn-outline">
-                        <i class="fas fa-download"></i> Export
+                    <button type="button" class="btn btn-outline" onclick="exportToExcel()">
+                        <i class="fas fa-file-excel" style="color: #107c41;"></i> Export Excel
                     </button>
                     <a href="{% url 'college_add' %}" class="btn btn-primary">
                         <i class="fas fa-plus"></i> Add College
@@ -314,36 +317,23 @@
         // Dummy college data (replace with data rendered from backend)
         // -------------------------------------------------------------
         let collegeData = [
+            {% for college in colleges %}
             {
-                id: 1, code: 'TEC-001', name: 'Tech Engineering College', university: 'Anna University',
-                email: 'tec@example.com', phone: '+91 98765 43210', state: 'Tamil Nadu', district: 'Chennai',
-                depts: 8, students: 3200, status: 'active', created: '01 Jan 2020',
-                logo: 'https://ui-avatars.com/api/?name=Tech+Engineering&background=2563eb&color=fff&size=80'
-            },
-            {
-                id: 2, code: 'GIC-002', name: 'Global Institute of Commerce', university: 'Mumbai University',
-                email: 'gic@example.com', phone: '+91 87654 32109', state: 'Maharashtra', district: 'Mumbai',
-                depts: 6, students: 2850, status: 'active', created: '15 Mar 2019',
-                logo: 'https://ui-avatars.com/api/?name=Global+Institute&background=22c55e&color=fff&size=80'
-            },
-            {
-                id: 3, code: 'RAC-003', name: 'Royal Arts College', university: 'Bangalore University',
-                email: 'rac@example.com', phone: '+91 76543 21098', state: 'Karnataka', district: 'Bengaluru',
-                depts: 5, students: 1980, status: 'inactive', created: '20 Jun 2018',
-                logo: 'https://ui-avatars.com/api/?name=Royal+Arts&background=f59e0b&color=fff&size=80'
-            },
-            {
-                id: 4, code: 'PSC-004', name: 'Pioneer Science College', university: 'Kerala University',
-                email: 'psc@example.com', phone: '+91 65432 10987', state: 'Kerala', district: 'Thiruvananthapuram',
-                depts: 7, students: 2600, status: 'active', created: '10 Sep 2021',
-                logo: 'https://ui-avatars.com/api/?name=Pioneer+Science&background=0ea5e9&color=fff&size=80'
-            },
-            {
-                id: 5, code: 'NLC-005', name: 'National Law College', university: 'Madras University',
-                email: 'nlc@example.com', phone: '+91 54321 09876', state: 'Tamil Nadu', district: 'Coimbatore',
-                depts: 4, students: 1850, status: 'active', created: '05 Apr 2022',
-                logo: 'https://ui-avatars.com/api/?name=National+Law&background=8b5cf6&color=fff&size=80'
-            }
+                id: {{ college.id|default:0 }},
+                code: 'N/A',
+                name: '{{ college.college_name|escapejs }}',
+                university: 'N/A',
+                email: 'N/A',
+                phone: 'N/A',
+                state: 'N/A',
+                district: 'N/A',
+                depts: 0,
+                students: 0,
+                status: 'active',
+                created: 'N/A',
+                logo: 'https://ui-avatars.com/api/?name={{ college.college_name|urlencode }}&background=2563eb&color=fff&size=80'
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
         ];
 
         let deleteTargetId = null;
@@ -568,6 +558,38 @@
         document.getElementById('searchInput').addEventListener('input', applyFilters);
         document.getElementById('statusFilter').addEventListener('change', applyFilters);
         document.getElementById('stateFilter').addEventListener('change', applyFilters);
+
+        // -------------------------------------------------------------
+        // Export to Excel
+        // -------------------------------------------------------------
+        function exportToExcel() {
+            // Create a custom worksheet data array containing all colleges, avoiding HTML DOM parsing
+            const rows = [['S.No', 'Code', 'College Name', 'University', 'Email', 'Phone', 'State', 'District', 'Departments', 'Students', 'Status', 'Created']];
+            
+            collegeData.forEach((c, i) => {
+                rows.push([
+                    i + 1,
+                    c.code,
+                    c.name,
+                    c.university,
+                    c.email,
+                    c.phone,
+                    c.state,
+                    c.district,
+                    c.depts,
+                    c.students,
+                    c.status === 'active' ? 'Active' : 'Inactive',
+                    c.created
+                ]);
+            });
+
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(rows);
+            XLSX.utils.book_append_sheet(wb, ws, "Colleges List");
+            XLSX.writeFile(wb, "college_management_list.xlsx");
+            
+            showToast('Exported to Excel successfully!');
+        }
 
         // -------------------------------------------------------------
         // Init
