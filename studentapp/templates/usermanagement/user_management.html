@@ -1,0 +1,332 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>User Management | Admin Panel</title>
+    <meta name="description" content="Manage administrative users, roles, and system access." />
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <!-- CSS Links -->
+    <link rel="stylesheet" href="{% static 'css/sidebar.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/department.css' %}">
+    <link rel="stylesheet" href="{% static 'css/usermanagement.css' %}">
+</head>
+
+<body class="um-page">
+
+    <!-- Wrapper to prevent sidebar overlap -->
+    <div class="um-wrapper">
+        <!-- Sidebar -->
+        {% include 'includes/sidebar.html' %}
+
+        <div class="um-main">
+            <!-- Breadcrumb -->
+            <nav class="um-breadcrumb" aria-label="Breadcrumb">
+                <a href="{% url 'dashboard' %}"><i class="fas fa-home"></i> Dashboard</a>
+                <span class="um-breadcrumb__sep">/</span>
+                <span class="um-breadcrumb__current">User Management</span>
+            </nav>
+
+            <!-- Page Header -->
+            <div class="um-page-header">
+                <div>
+                    <h1 class="um-page-title">User Management</h1>
+                    <p class="um-page-subtitle">Manage system access, administrative roles, and user credentials.</p>
+                </div>
+                <div class="um-header-actions">
+                    <button class="um-btn um-btn--ghost" title="Export Users"><i class="fas fa-file-export"></i> Export</button>
+                    <button class="um-btn um-btn--ghost" title="Refresh" onclick="location.reload()"><i class="fas fa-rotate-left"></i> Refresh</button>
+                    <button class="um-btn um-btn--primary" onclick="openModal('addUserModal')">
+                        <i class="fas fa-user-plus"></i> Add New User
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="um-stats">
+                <div class="um-stat um-stat--blue">
+                    <div class="um-stat__icon"><i class="fas fa-users-gear"></i></div>
+                    <div class="um-stat__body">
+                        <span class="um-stat__label">Total Users</span>
+                        <span class="um-stat__value">42</span>
+                    </div>
+                    <div class="um-stat__bg-icon"><i class="fas fa-users-gear"></i></div>
+                </div>
+                <div class="um-stat um-stat--green">
+                    <div class="um-stat__icon"><i class="fas fa-user-check"></i></div>
+                    <div class="um-stat__body">
+                        <span class="um-stat__label">Active Users</span>
+                        <span class="um-stat__value">38</span>
+                    </div>
+                    <div class="um-stat__bg-icon"><i class="fas fa-user-check"></i></div>
+                </div>
+                <div class="um-stat um-stat--red">
+                    <div class="um-stat__icon"><i class="fas fa-user-slash"></i></div>
+                    <div class="um-stat__body">
+                        <span class="um-stat__label">Inactive Users</span>
+                        <span class="um-stat__value">4</span>
+                    </div>
+                    <div class="um-stat__bg-icon"><i class="fas fa-user-slash"></i></div>
+                </div>
+                <div class="um-stat um-stat--purple">
+                    <div class="um-stat__icon"><i class="fas fa-shield-halved"></i></div>
+                    <div class="um-stat__body">
+                        <span class="um-stat__label">Super Admins</span>
+                        <span class="um-stat__value">3</span>
+                    </div>
+                    <div class="um-stat__bg-icon"><i class="fas fa-shield-halved"></i></div>
+                </div>
+            </div>
+
+            <!-- Toolbar -->
+            <div class="um-toolbar">
+                <div class="um-toolbar__filters">
+                    <div class="um-search">
+                        <i class="fas fa-search um-search__icon"></i>
+                        <input type="text" id="searchInput" placeholder="Search by name, email, role..." class="um-search__input">
+                    </div>
+                    <select id="roleFilter" class="um-select">
+                        <option value="">All Roles</option>
+                        <option value="Super Admin">Super Admin</option>
+                        <option value="Admin">Admin</option>
+                        <option value="Editor">Editor</option>
+                        <option value="Viewer">Viewer</option>
+                    </select>
+                    <select id="collegeFilter" class="um-select">
+                        <option value="">All Colleges</option>
+                        <option value="ABC">ABC College</option>
+                        <option value="XYZ">XYZ College</option>
+                    </select>
+                    <select id="statusFilter" class="um-select">
+                        <option value="">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
+                <button class="um-btn um-btn--ghost" id="resetBtn">Reset Filters</button>
+            </div>
+
+            <!-- Table Card -->
+            <div class="um-card">
+                <div class="um-table-scroll">
+                    <table class="um-table" id="userTable">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Role</th>
+                                <th>College</th>
+                                <th>Dept</th>
+                                <th>Username</th>
+                                <th>Status</th>
+                                <th>Last Login</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            <!-- Row 1 -->
+                            <tr data-name="Admin Jane" data-role="Super Admin" data-status="active">
+                                <td>
+                                    <div class="um-user-info">
+                                        <div class="um-avatar um-avatar--purple">AJ</div>
+                                        <div>
+                                            <div class="um-user-name">Admin Jane</div>
+                                            <div class="um-user-email">jane.admin@college.edu</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><span class="um-role-tag um-role-tag--primary">Super Admin</span></td>
+                                <td class="um-td--muted">ABC College</td>
+                                <td class="um-td--muted">Administration</td>
+                                <td class="um-username">jane_super</td>
+                                <td><span class="um-badge um-badge--active">Active</span></td>
+                                <td class="um-td--muted">2 mins ago</td>
+                                <td>
+                                    <div class="um-actions">
+                                        <button class="um-icon-btn um-icon-btn--view" title="View" onclick="openModal('viewUserModal')"><i class="fas fa-eye"></i></button>
+                                        <button class="um-icon-btn um-icon-btn--edit" title="Edit" onclick="openModal('editUserModal')"><i class="fas fa-pen-to-square"></i></button>
+                                        <button class="um-icon-btn um-icon-btn--key" title="Reset Password" onclick="openModal('resetPassModal')"><i class="fas fa-key"></i></button>
+                                        <button class="um-icon-btn um-icon-btn--delete" title="Delete" onclick="openModal('deleteUserModal')"><i class="fas fa-trash-can"></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <!-- Row 2 -->
+                            <tr data-name="Mike Ross" data-role="Admin" data-status="inactive">
+                                <td>
+                                    <div class="um-user-info">
+                                        <div class="um-avatar um-avatar--blue">MR</div>
+                                        <div>
+                                            <div class="um-user-name">Mike Ross</div>
+                                            <div class="um-user-email">mike.ross@college.edu</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><span class="um-role-tag">Admin</span></td>
+                                <td class="um-td--muted">XYZ College</td>
+                                <td class="um-td--muted">CSE</td>
+                                <td class="um-username">mike_admin</td>
+                                <td><span class="um-badge um-badge--inactive">Inactive</span></td>
+                                <td class="um-td--muted">3 days ago</td>
+                                <td>
+                                    <div class="um-actions">
+                                        <button class="um-icon-btn um-icon-btn--view" title="View" onclick="openModal('viewUserModal')"><i class="fas fa-eye"></i></button>
+                                        <button class="um-icon-btn um-icon-btn--edit" title="Edit" onclick="openModal('editUserModal')"><i class="fas fa-pen-to-square"></i></button>
+                                        <button class="um-icon-btn um-icon-btn--key" title="Reset Password" onclick="openModal('resetPassModal')"><i class="fas fa-key"></i></button>
+                                        <button class="um-icon-btn um-icon-btn--delete" title="Delete" onclick="openModal('deleteUserModal')"><i class="fas fa-trash-can"></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="um-table-footer">
+                    <span class="um-table-footer__info">Showing <strong>1–2</strong> of <strong>42</strong> users</span>
+                    <div class="um-pagination">
+                        <button class="um-page-btn" disabled><i class="fas fa-chevron-left"></i></button>
+                        <button class="um-page-btn um-page-btn--active">1</button>
+                        <button class="um-page-btn">2</button>
+                        <button class="um-page-btn"><i class="fas fa-chevron-right"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODALS SECTION -->
+            <!-- Add/Edit User Modal -->
+            <div id="addUserModal" class="um-modal-overlay">
+                <div class="um-modal um-modal--large">
+                    <div class="um-modal__header">
+                        <h3 class="um-modal__title"><i class="fas fa-user-plus"></i> Account Details</h3>
+                        <button class="um-modal__close" onclick="closeModal('addUserModal')">&times;</button>
+                    </div>
+                    <div class="um-modal__body">
+                        <div class="um-form-grid">
+                            <div class="um-form-group">
+                                <label>Full Name</label>
+                                <input type="text" placeholder="Enter full name">
+                            </div>
+                            <div class="um-form-group">
+                                <label>Email Address</label>
+                                <input type="email" placeholder="email@college.edu">
+                            </div>
+                            <div class="um-form-group">
+                                <label>Username</label>
+                                <input type="text" placeholder="username">
+                            </div>
+                            <div class="um-form-group">
+                                <label>Role</label>
+                                <select class="um-select">
+                                    <option>Super Admin</option>
+                                    <option>Admin</option>
+                                    <option>Editor</option>
+                                </select>
+                            </div>
+                            <div class="um-form-group">
+                                <label>College</label>
+                                <select class="um-select">
+                                    <option>ABC College</option>
+                                    <option>XYZ College</option>
+                                </select>
+                            </div>
+                            <div class="um-form-group">
+                                <label>Department</label>
+                                <input type="text" placeholder="e.g. CSE">
+                            </div>
+                            <div class="um-form-group um-form-group--full">
+                                <label>Password</label>
+                                <input type="password" placeholder="••••••••">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="um-modal__actions">
+                        <button onclick="closeModal('addUserModal')" class="um-btn um-btn--ghost">Cancel</button>
+                        <button class="um-btn um-btn--primary">Create Account</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reset Password Modal -->
+            <div id="resetPassModal" class="um-modal-overlay">
+                <div class="um-modal">
+                    <div class="um-modal__icon"><i class="fas fa-key"></i></div>
+                    <h3 class="um-modal__title">Reset Password</h3>
+                    <p class="um-modal__desc">Generate a new secure password for this user.</p>
+                    <div class="um-modal__body">
+                        <div class="um-form-group">
+                            <label>New Password</label>
+                            <input type="password" placeholder="Enter new password">
+                        </div>
+                    </div>
+                    <div class="um-modal__actions">
+                        <button onclick="closeModal('resetPassModal')" class="um-btn um-btn--ghost">Cancel</button>
+                        <button class="um-btn um-btn--primary">Update Password</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Delete Modal -->
+            <div id="deleteUserModal" class="um-modal-overlay">
+                <div class="um-modal">
+                    <div class="um-modal__icon"><i class="fas fa-triangle-exclamation"></i></div>
+                    <h3 class="um-modal__title">Delete User?</h3>
+                    <p class="um-modal__desc">This action will permanently remove the user's access. This cannot be undone.</p>
+                    <div class="um-modal__actions">
+                        <button onclick="closeModal('deleteUserModal')" class="um-btn um-btn--ghost">Cancel</button>
+                        <button class="um-btn um-btn--danger">Yes, Delete</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        function openModal(id) { document.getElementById(id).classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+        // Filter Logic
+        const searchInput = document.getElementById('searchInput');
+        const roleFilter = document.getElementById('roleFilter');
+        const collegeFilter = document.getElementById('collegeFilter');
+        const statusFilter = document.getElementById('statusFilter');
+
+        function filterTable() {
+            const q = searchInput.value.toLowerCase();
+            const role = roleFilter.value.toLowerCase();
+            const col = collegeFilter.value.toLowerCase();
+            const st = statusFilter.value.toLowerCase();
+
+            document.querySelectorAll('#tableBody tr').forEach(row => {
+                const text = row.textContent.toLowerCase();
+                const rowRole = row.querySelector('.um-role-tag').textContent.toLowerCase();
+                const rowCol = row.cells[2].textContent.toLowerCase();
+                const rowStatus = row.querySelector('.um-badge').textContent.toLowerCase();
+
+                const ok = text.includes(q) && 
+                           (!role || rowRole.includes(role)) && 
+                           (!col || rowCol.includes(col)) && 
+                           (!st || rowStatus.includes(st));
+                row.style.display = ok ? '' : 'none';
+            });
+        }
+
+        [searchInput, roleFilter, collegeFilter, statusFilter].forEach(el => 
+            el.addEventListener('input', filterTable)
+        );
+
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            [searchInput, roleFilter, collegeFilter, statusFilter].forEach(el => {
+                el.tagName === 'INPUT' ? el.value = '' : el.selectedIndex = 0;
+            });
+            filterTable();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,530 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Department Management | Admin Panel</title>
+    <meta name="description" content="Manage departments across all colleges." />
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <!-- Sidebar CSS -->
+    <link rel="stylesheet" href="{% static 'css/sidebar.css' %}" />
+
+    <!-- Base design tokens -->
+    <link rel="stylesheet" href="{% static 'css/department.css' %}">
+
+    <!-- Department list stylesheet (includes modal + toast styles) -->
+    <link rel="stylesheet" href="{% static 'css/department_list.css' %}">
+</head>
+
+<body class="dm-page">
+
+    <!-- Sidebar -->
+    {% include 'includes/sidebar.html' %}
+
+    <div class="dm-main">
+
+        <!-- ── Breadcrumb ───────────────────────────────────── -->
+        <nav class="dm-breadcrumb" aria-label="Breadcrumb">
+            <a href="{% url 'dashboard' %}"><i class="fas fa-home"></i> Dashboard</a>
+            <span class="dm-breadcrumb__sep">/</span>
+            <span class="dm-breadcrumb__current">Department Management</span>
+        </nav>
+
+        <!-- ── Page Header ─────────────────────────────────── -->
+        <div class="dm-page-header">
+            <div>
+                <h1 class="dm-page-title">Department Management</h1>
+                <p class="dm-page-subtitle">Manage departments across all colleges.</p>
+            </div>
+            <a href="{% url 'department_add' %}" class="dm-btn dm-btn--primary">
+                <i class="fas fa-plus"></i> Add Department
+            </a>
+        </div>
+
+        <!-- ── Stats Cards ─────────────────────────────────── -->
+        <div class="dm-stats">
+            <div class="dm-stat dm-stat--blue">
+                <div class="dm-stat__icon"><i class="fas fa-building"></i></div>
+                <div class="dm-stat__body">
+                    <span class="dm-stat__label">Total Departments</span>
+                    <span class="dm-stat__value" id="statTotal">4</span>
+                </div>
+                <div class="dm-stat__bg-icon"><i class="fas fa-building"></i></div>
+            </div>
+            <div class="dm-stat dm-stat--green">
+                <div class="dm-stat__icon"><i class="fas fa-circle-check"></i></div>
+                <div class="dm-stat__body">
+                    <span class="dm-stat__label">Active</span>
+                    <span class="dm-stat__value" id="statActive">3</span>
+                </div>
+                <div class="dm-stat__bg-icon"><i class="fas fa-circle-check"></i></div>
+            </div>
+            <div class="dm-stat dm-stat--red">
+                <div class="dm-stat__icon"><i class="fas fa-circle-xmark"></i></div>
+                <div class="dm-stat__body">
+                    <span class="dm-stat__label">Inactive</span>
+                    <span class="dm-stat__value" id="statInactive">1</span>
+                </div>
+                <div class="dm-stat__bg-icon"><i class="fas fa-circle-xmark"></i></div>
+            </div>
+            <div class="dm-stat dm-stat--purple">
+                <div class="dm-stat__icon"><i class="fas fa-university"></i></div>
+                <div class="dm-stat__body">
+                    <span class="dm-stat__label">Colleges</span>
+                    <span class="dm-stat__value" id="statColleges">3</span>
+                </div>
+                <div class="dm-stat__bg-icon"><i class="fas fa-university"></i></div>
+            </div>
+        </div>
+
+        <!-- ── Toolbar ─────────────────────────────────────── -->
+        <div class="dm-toolbar">
+            <div class="dm-toolbar__filters">
+                <div class="dm-search">
+                    <i class="fas fa-search dm-search__icon"></i>
+                    <input type="text" id="searchInput" placeholder="Search by name, code, HOD…" class="dm-search__input">
+                </div>
+
+                <select id="collegeFilter" class="dm-select">
+                    <option value="">All Colleges</option>
+                    <option value="Tech Engineering College">Tech Engineering College</option>
+                    <option value="Global Institute of Commerce">Global Institute of Commerce</option>
+                    <option value="Royal Arts College">Royal Arts College</option>
+                </select>
+
+                <select id="statusFilter" class="dm-select dm-select--sm">
+                    <option value="">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                </select>
+            </div>
+
+            <button class="dm-btn dm-btn--ghost" id="resetBtn" title="Reset filters">
+                <i class="fas fa-rotate-left"></i> Reset
+            </button>
+        </div>
+
+        <!-- ── Table Card ──────────────────────────────────── -->
+        <div class="dm-card">
+            <div class="dm-table-scroll">
+                <table class="dm-table" id="departmentTable">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Department</th>
+                            <th>College</th>
+                            <th>HOD</th>
+                            <th>Username</th>
+                            <th>Password</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <!-- Rows rendered by JS from departmentData -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Table Footer -->
+            <div class="dm-table-footer">
+                <span class="dm-table-footer__info">Showing <strong id="showingCount">1–4</strong> of <strong id="totalCount">4</strong> departments</span>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ── View Modal ──────────────────────────────────────── -->
+    <div id="viewModal" class="dm-modal-overlay">
+        <div class="dm-modal dm-modal--wide">
+            <div class="dm-modal__header">
+                <h3 class="dm-modal__title-inline"><i class="fas fa-eye"></i> Department Details</h3>
+                <button class="dm-modal__close" onclick="closeModal('viewModal')"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="dm-modal__body">
+                <div class="dm-view-head">
+                    <div class="dm-dept-badge dm-dept-badge--blue" id="viewBadge">--</div>
+                    <div>
+                        <div class="dm-view-head__name" id="viewName"></div>
+                        <div class="dm-view-head__sub" id="viewSub"></div>
+                    </div>
+                </div>
+                <div class="dm-detail-grid">
+                    <div class="dm-detail-item">
+                        <p class="dm-detail-label">College</p>
+                        <p class="dm-detail-value" id="viewCollege"></p>
+                    </div>
+                    <div class="dm-detail-item">
+                        <p class="dm-detail-label">Status</p>
+                        <p class="dm-detail-value" id="viewStatus"></p>
+                    </div>
+                    <div class="dm-detail-item">
+                        <p class="dm-detail-label">Head of Department</p>
+                        <p class="dm-detail-value" id="viewHod"></p>
+                    </div>
+                    <div class="dm-detail-item">
+                        <p class="dm-detail-label">Students</p>
+                        <p class="dm-detail-value" id="viewStudents"></p>
+                    </div>
+                    <div class="dm-detail-item">
+                        <p class="dm-detail-label">Username</p>
+                        <p class="dm-detail-value" id="viewUsername"></p>
+                    </div>
+                    <div class="dm-detail-item">
+                        <p class="dm-detail-label">Password</p>
+                        <p class="dm-detail-value" id="viewPassword"></p>
+                    </div>
+                    <div class="dm-detail-item">
+                        <p class="dm-detail-label">Created</p>
+                        <p class="dm-detail-value" id="viewCreated"></p>
+                    </div>
+                </div>
+            </div>
+            <div class="dm-modal__actions">
+                <button onclick="closeModal('viewModal')" class="dm-btn dm-btn--ghost">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Edit Modal ──────────────────────────────────────── -->
+    <div id="editModal" class="dm-modal-overlay">
+        <div class="dm-modal dm-modal--wide">
+            <div class="dm-modal__header">
+                <h3 class="dm-modal__title-inline"><i class="fas fa-pen-to-square"></i> Edit Department</h3>
+                <button class="dm-modal__close" onclick="closeModal('editModal')"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="dm-modal__body">
+                <form id="editForm">
+                    <input type="hidden" id="editId">
+                    <div class="dm-form-row">
+                        <div class="dm-form-group">
+                            <label for="editName">Department Name</label>
+                            <input type="text" id="editName" required>
+                        </div>
+                        <div class="dm-form-group">
+                            <label for="editSub">Category</label>
+                            <input type="text" id="editSub" required>
+                        </div>
+                    </div>
+                    <div class="dm-form-row">
+                        <div class="dm-form-group">
+                            <label for="editCode">Code</label>
+                            <input type="text" id="editCode" required>
+                        </div>
+                        <div class="dm-form-group">
+                            <label for="editCollege">College</label>
+                            <input type="text" id="editCollege" required>
+                        </div>
+                    </div>
+                    <div class="dm-form-row">
+                        <div class="dm-form-group">
+                            <label for="editHod">Head of Department</label>
+                            <input type="text" id="editHod" required>
+                        </div>
+                        <div class="dm-form-group">
+                            <label for="editStudents">Students</label>
+                            <input type="number" id="editStudents" min="0" required>
+                        </div>
+                    </div>
+                    <div class="dm-form-row">
+                        <div class="dm-form-group">
+                            <label for="editUsername">Username</label>
+                            <input type="text" id="editUsername" required>
+                        </div>
+                        <div class="dm-form-group">
+                            <label for="editStatus">Status</label>
+                            <select id="editStatus">
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="dm-modal__actions">
+                <button onclick="closeModal('editModal')" class="dm-btn dm-btn--ghost">Cancel</button>
+                <button onclick="saveEdit()" class="dm-btn dm-btn--primary">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Delete Modal ────────────────────────────────────── -->
+    <div id="deleteModal" class="dm-modal-overlay">
+        <div class="dm-modal">
+            <div class="dm-modal__icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h3 class="dm-modal__title">Delete Department?</h3>
+            <p class="dm-modal__desc">
+                Are you sure you want to permanently delete
+                <strong id="deleteName"></strong>?
+                This will remove all associated records and cannot be undone.
+            </p>
+            <div class="dm-modal__actions">
+                <button onclick="closeModal('deleteModal')" class="dm-btn dm-btn--ghost">Cancel</button>
+                <button onclick="confirmDelete()" class="dm-btn dm-btn--danger">Yes, Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Toast ───────────────────────────────────────────── -->
+    <div class="dm-toast" id="toast"><i class="fas fa-check-circle"></i><span id="toastMsg"></span></div>
+
+    <script>
+        // ── Data ──────────────────────────────────────────────
+        let departmentData = [
+            {
+                id: 1, code: 'CSE', name: 'Computer Science', sub: 'Engineering',
+                college: 'Tech Engineering College', hod: 'Dr. Ramesh Kumar', hodInitials: 'RK', hodColor: 'blue',
+                badgeColor: 'blue', username: 'TEC_CSE_HOD', password: 'yW9kP2rX',
+                students: 450, status: 'active', created: '12 Jan 2023'
+            },
+            {
+                id: 2, code: 'ECE', name: 'Electronics & Communication', sub: 'Engineering',
+                college: 'Tech Engineering College', hod: 'Dr. Anita Sharma', hodInitials: 'AS', hodColor: 'green',
+                badgeColor: 'teal', username: 'TEC_ECE_HOD', password: 'mT5vB8qL',
+                students: 380, status: 'active', created: '14 Feb 2023'
+            },
+            {
+                id: 3, code: 'BCOM', name: 'Commerce', sub: 'Commerce & Business',
+                college: 'Global Institute of Commerce', hod: 'Prof. Vijay Menon', hodInitials: 'VM', hodColor: 'amber',
+                badgeColor: 'orange', username: 'GIC_BCOM_HOD', password: 'kR2nC7wP',
+                students: 600, status: 'inactive', created: '05 Mar 2023'
+            },
+            {
+                id: 4, code: 'ENG', name: 'English Literature', sub: 'Arts & Humanities',
+                college: 'Royal Arts College', hod: 'Dr. Sarah George', hodInitials: 'SG', hodColor: 'rose',
+                badgeColor: 'rose', username: 'RAC_ENG_HOD', password: 'pX4hN6jQ',
+                students: 220, status: 'active', created: '20 Apr 2023'
+            }
+        ];
+
+        let deleteTargetId = null;
+
+        // ── Render table ──────────────────────────────────────
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+
+            departmentData.forEach((d, index) => {
+                const tr = document.createElement('tr');
+                tr.dataset.id = d.id;
+
+                const badgeClass = d.status === 'active' ? 'dm-badge--active' : 'dm-badge--inactive';
+                const badgeLabel = d.status === 'active' ? 'Active' : 'Inactive';
+
+                tr.innerHTML = `
+                    <td class="dm-td--no">${index + 1}</td>
+                    <td>
+                        <div class="dm-dept">
+                            <div class="dm-dept-badge dm-dept-badge--${d.badgeColor}">${d.code}</div>
+                            <div>
+                                <div class="dm-dept__name">${d.name}</div>
+                                <div class="dm-dept__sub">${d.sub}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="dm-td--muted">${d.college}</td>
+                    <td>
+                        <div class="dm-hod">
+                            <div class="dm-avatar dm-avatar--${d.hodColor}">${d.hodInitials}</div>
+                            <span>${d.hod}</span>
+                        </div>
+                    </td>
+                    <td><span class="dm-username">${d.username}</span></td>
+                    <td><span class="dm-password">${d.password}</span></td>
+                    <td><span class="dm-badge ${badgeClass}">${badgeLabel}</span></td>
+                    <td class="dm-td--muted">${d.created}</td>
+                    <td>
+                        <div class="dm-actions">
+                            <button class="dm-icon-btn dm-icon-btn--view" title="View" onclick="openView(${d.id})"><i class="fas fa-eye"></i></button>
+                            <button class="dm-icon-btn dm-icon-btn--edit" title="Edit" onclick="openEdit(${d.id})"><i class="fas fa-pen-to-square"></i></button>
+                            <button class="dm-icon-btn dm-icon-btn--delete" title="Delete" onclick="openDelete(${d.id})"><i class="fas fa-trash-can"></i></button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            updateStats();
+            filterTable();
+        }
+
+        // ── Stats ─────────────────────────────────────────────
+        function updateStats() {
+            const total = departmentData.length;
+            const active = departmentData.filter(d => d.status === 'active').length;
+            const inactive = total - active;
+            const colleges = new Set(departmentData.map(d => d.college)).size;
+
+            document.getElementById('statTotal').textContent = total;
+            document.getElementById('statActive').textContent = active;
+            document.getElementById('statInactive').textContent = inactive;
+            document.getElementById('statColleges').textContent = colleges;
+            document.getElementById('totalCount').textContent = total;
+            document.getElementById('showingCount').textContent = total > 0 ? `1–${total}` : '0';
+        }
+
+        // ── Filter / Search ───────────────────────────────────
+        const searchInput   = document.getElementById('searchInput');
+        const collegeFilter = document.getElementById('collegeFilter');
+        const statusFilter  = document.getElementById('statusFilter');
+        const resetBtn      = document.getElementById('resetBtn');
+
+        function filterTable() {
+            const q   = searchInput.value.toLowerCase();
+            const col = collegeFilter.value.toLowerCase();
+            const st  = statusFilter.value.toLowerCase();
+
+            document.querySelectorAll('#tableBody tr').forEach(row => {
+                const id = parseInt(row.dataset.id, 10);
+                const d = departmentData.find(x => x.id === id);
+                if (!d) return;
+
+                const text = row.textContent.toLowerCase();
+                const ok = text.includes(q)
+                    && (!col || d.college.toLowerCase() === col)
+                    && (!st  || d.status === st);
+
+                row.style.display = ok ? '' : 'none';
+            });
+        }
+
+        searchInput.addEventListener('input', filterTable);
+        collegeFilter.addEventListener('change', filterTable);
+        statusFilter.addEventListener('change', filterTable);
+
+        resetBtn.addEventListener('click', () => {
+            searchInput.value = '';
+            collegeFilter.selectedIndex = 0;
+            statusFilter.selectedIndex = 0;
+            filterTable();
+        });
+
+        // ── Modal helpers ─────────────────────────────────────
+        function openModal(id) {
+            document.getElementById(id).classList.add('active');
+        }
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.dm-modal-overlay.active').forEach(m => closeModal(m.id));
+            }
+        });
+
+        // ── View ──────────────────────────────────────────────
+        function openView(id) {
+            const d = departmentData.find(x => x.id === id);
+            if (!d) return;
+
+            document.getElementById('viewBadge').textContent = d.code;
+            document.getElementById('viewBadge').className = `dm-dept-badge dm-dept-badge--${d.badgeColor}`;
+            document.getElementById('viewName').textContent = d.name;
+            document.getElementById('viewSub').textContent = d.sub;
+            document.getElementById('viewCollege').textContent = d.college;
+            document.getElementById('viewStatus').textContent = d.status === 'active' ? 'Active' : 'Inactive';
+            document.getElementById('viewHod').textContent = d.hod;
+            document.getElementById('viewStudents').textContent = d.students.toLocaleString();
+            document.getElementById('viewUsername').textContent = d.username;
+            document.getElementById('viewPassword').textContent = d.password;
+            document.getElementById('viewCreated').textContent = d.created;
+
+            openModal('viewModal');
+        }
+
+        // ── Edit ──────────────────────────────────────────────
+        function openEdit(id) {
+            const d = departmentData.find(x => x.id === id);
+            if (!d) return;
+
+            document.getElementById('editId').value = d.id;
+            document.getElementById('editName').value = d.name;
+            document.getElementById('editSub').value = d.sub;
+            document.getElementById('editCode').value = d.code;
+            document.getElementById('editCollege').value = d.college;
+            document.getElementById('editHod').value = d.hod;
+            document.getElementById('editStudents').value = d.students;
+            document.getElementById('editUsername').value = d.username;
+            document.getElementById('editStatus').value = d.status;
+
+            openModal('editModal');
+        }
+
+        function saveEdit() {
+            const form = document.getElementById('editForm');
+            if (!form.reportValidity()) return;
+
+            const id = parseInt(document.getElementById('editId').value, 10);
+            const d = departmentData.find(x => x.id === id);
+            if (!d) return;
+
+            d.name = document.getElementById('editName').value.trim();
+            d.sub = document.getElementById('editSub').value.trim();
+            d.code = document.getElementById('editCode').value.trim();
+            d.college = document.getElementById('editCollege').value.trim();
+            d.hod = document.getElementById('editHod').value.trim();
+            d.hodInitials = d.hod.split(' ').filter(Boolean).map(w => w[0]).join('').slice(0, 2).toUpperCase();
+            d.students = parseInt(document.getElementById('editStudents').value, 10) || 0;
+            d.username = document.getElementById('editUsername').value.trim();
+            d.status = document.getElementById('editStatus').value;
+
+            renderTable();
+            closeModal('editModal');
+            showToast(`${d.name} updated successfully.`);
+
+            // TODO: replace with real backend call, e.g.
+            // fetch(`/departments/${id}/edit/`, { method: 'POST', body: new FormData(form) });
+        }
+
+        // ── Delete ────────────────────────────────────────────
+        function openDelete(id) {
+            const d = departmentData.find(x => x.id === id);
+            if (!d) return;
+
+            deleteTargetId = id;
+            document.getElementById('deleteName').textContent = d.name;
+            openModal('deleteModal');
+        }
+
+        function confirmDelete() {
+            if (deleteTargetId === null) return;
+
+            const d = departmentData.find(x => x.id === deleteTargetId);
+            departmentData = departmentData.filter(x => x.id !== deleteTargetId);
+
+            renderTable();
+            closeModal('deleteModal');
+            if (d) showToast(`${d.name} deleted.`);
+            deleteTargetId = null;
+
+            // TODO: replace with real backend call, e.g.
+            // fetch(`/departments/${deleteTargetId}/delete/`, { method: 'POST' });
+        }
+
+        // ── Toast ─────────────────────────────────────────────
+        let toastTimer = null;
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMsg').textContent = msg;
+            toast.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => toast.classList.remove('show'), 2600);
+        }
+
+        // ── Init ──────────────────────────────────────────────
+        renderTable();
+    </script>
+</body>
+</html>

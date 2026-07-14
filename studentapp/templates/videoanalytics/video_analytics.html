@@ -1,0 +1,267 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Video Analytics | Admin Panel</title>
+    <meta name="description" content="Monitor video performance, student engagement, and watch trends." />
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- CSS Links -->
+    <link rel="stylesheet" href="{% static 'css/sidebar.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/department.css' %}">
+    <link rel="stylesheet" href="{% static 'css/videoanalytics.css' %}">
+</head>
+
+<body class="va-page">
+
+    <div class="va-wrapper">
+        <!-- Sidebar -->
+        {% include 'includes/sidebar.html' %}
+
+        <!-- Main Content Area -->
+        <div class="va-main">
+            <!-- Breadcrumb -->
+            <nav class="va-breadcrumb" aria-label="Breadcrumb">
+                <a href="{% url 'dashboard' %}"><i class="fas fa-home"></i> Dashboard</a>
+                <span class="va-breadcrumb__sep">/</span>
+                <span class="va-breadcrumb__current">Video Analytics</span>
+            </nav>
+
+            <!-- Page Header -->
+            <div class="va-page-header">
+                <div class="va-header-text">
+                    <h1 class="va-page-title">Video Analytics</h1>
+                    <p class="va-page-subtitle">Insights into student engagement and video performance.</p>
+                </div>
+                <div class="va-header-actions">
+                    <button class="va-btn va-btn--ghost"><i class="fas fa-download"></i> Export Report</button>
+                    <button class="va-btn va-btn--primary"><i class="fas fa-calendar-alt"></i> Last 30 Days</button>
+                </div>
+            </div>
+
+            <!-- Summary Stats Cards -->
+            <div class="va-stats-grid">
+                <div class="va-stat-card">
+                    <div class="va-stat-card__icon va-icon-blue"><i class="fas fa-video"></i></div>
+                    <div class="va-stat-card__content">
+                        <span class="va-stat-label">Total Videos</span>
+                        <span class="va-stat-value">124</span>
+                        <span class="va-stat-trend va-trend-up"><i class="fas fa-arrow-up"></i> 12%</span>
+                    </div>
+                </div>
+                <div class="va-stat-card">
+                    <div class="va-stat-card__icon va-icon-green"><i class="fas fa-eye"></i></div>
+                    <div class="va-stat-card__content">
+                        <span class="va-stat-label">Total Views</span>
+                        <span class="va-stat-value">45.2K</span>
+                        <span class="va-stat-trend va-trend-up"><i class="fas fa-arrow-up"></i> 8%</span>
+                    </div>
+                </div>
+                <div class="va-stat-card">
+                    <div class="va-stat-card__icon va-icon-purple"><i class="fas fa-clock"></i></div>
+                    <div class="va-stat-card__content">
+                        <span class="va-stat-label">Watch Hours</span>
+                        <span class="va-stat-value">1,280h</span>
+                        <span class="va-stat-trend va-trend-up"><i class="fas fa-arrow-up"></i> 15%</span>
+                    </div>
+                </div>
+                <div class="va-stat-card">
+                    <div class="va-stat-card__icon va-icon-amber"><i class="fas fa-chart-pie"></i></div>
+                    <div class="va-stat-card__content">
+                        <span class="va-stat-label">Completion Rate</span>
+                        <span class="va-stat-value">68%</span>
+                        <span class="va-stat-trend va-trend-down"><i class="fas fa-arrow-down"></i> 2%</span>
+                    </div>
+                </div>
+                <div class="va-stat-card">
+                    <div class="va-stat-card__icon va-icon-red"><i class="fas fa-user-check"></i></div>
+                    <div class="va-stat-card__content">
+                        <span class="va-stat-label">Active Students</span>
+                        <span class="va-stat-value">842</span>
+                        <span class="va-stat-trend va-trend-up"><i class="fas fa-arrow-up"></i> 5%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="va-charts-grid">
+                <div class="va-chart-card va-chart-card--large">
+                    <div class="va-chart-header">
+                        <h3 class="va-chart-title">Video Views Trend</h3>
+                        <div class="va-chart-options">
+                            <select class="va-select-sm">
+                                <option>Daily</option>
+                                <option>Weekly</option>
+                                <option>Monthly</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="va-chart-body">
+                        <canvas id="viewsTrendChart"></canvas>
+                    </div>
+                </div>
+                <div class="va-chart-card">
+                    <div class="va-chart-header">
+                        <h3 class="va-chart-title">Department Views</h3>
+                    </div>
+                    <div class="va-chart-body">
+                        <canvas id="deptViewsChart"></canvas>
+                    </div>
+                </div>
+                <div class="va-chart-card">
+                    <div class="va-chart-header">
+                        <h3 class="va-chart-title">Completion Rate</h3>
+                    </div>
+                    <div class="va-chart-body">
+                        <canvas id="completionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tables Row -->
+            <div class="va-tables-grid">
+                <div class="va-table-card">
+                    <div class="va-table-header">
+                        <h3 class="va-table-title">Most Watched Videos</h3>
+                        <div class="va-table-toolbar">
+                            <div class="va-search-mini">
+                                <i class="fas fa-search"></i>
+                                <input type="text" placeholder="Search video...">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="va-table-scroll">
+                        <table class="va-table">
+                            <thead>
+                                <tr>
+                                    <th>Video Title</th>
+                                    <th>Department</th>
+                                    <th>Views</th>
+                                    <th>Watch Time</th>
+                                    <th>Completion %</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Python for Beginners</strong></td>
+                                    <td><span class="va-dept-tag">CSE</span></td>
+                                    <td>4,200</td>
+                                    <td>840h</td>
+                                    <td><div class="va-progress-bar"><div class="va-progress-fill" style="width: 85%;"></div><span class="va-progress-text">85%</span></div></td>
+                                    <td><span class="va-badge va-badge--active">Published</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Advanced Calculus</strong></td>
+                                    <td><span class="va-dept-tag va-dept-tag--teal">MATH</span></td>
+                                    <td>3,100</td>
+                                    <td>620h</td>
+                                    <td><div class="va-progress-bar"><div class="va-progress-fill" style="width: 62%;"></div><span class="va-progress-text">62%</span></div></td>
+                                    <td><span class="va-badge va-badge--active">Published</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="va-table-card">
+                    <div class="va-table-header">
+                        <h3 class="va-table-title">Recent Student Activity</h3>
+                    </div>
+                    <div class="va-table-scroll">
+                        <table class="va-table">
+                            <thead>
+                                <tr>
+                                    <th>Student Name</th>
+                                    <th>Video</th>
+                                    <th>Progress</th>
+                                    <th>Last Watched</th>
+                                    <th>Duration</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>John Doe</td>
+                                    <td>Python Basics</td>
+                                    <td><div class="va-progress-bar"><div class="va-progress-fill" style="width: 90%;"></div></div></td>
+                                    <td>2 mins ago</td>
+                                    <td>12:45</td>
+                                </tr>
+                                <tr>
+                                    <td>Jane Smith</td>
+                                    <td>Quantum Physics</td>
+                                    <td><div class="va-progress-bar"><div class="va-progress-fill" style="width: 30%;"></div></div></td>
+                                    <td>15 mins ago</td>
+                                    <td>45:00</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ctxTrend = document.getElementById('viewsTrendChart').getContext('2d');
+        new Chart(ctxTrend, {
+            type: 'line',
+            data: {
+                labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6'],
+                datasets: [{
+                    label: 'Total Views',
+                    data: [1200, 1900, 1500, 2500, 2200, 3000],
+                    borderColor: '#2563eb',
+                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    borderWidth: 3,
+                    pointRadius: 4
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+        });
+
+        const ctxDept = document.getElementById('deptViewsChart').getContext('2d');
+        new Chart(ctxDept, {
+            type: 'doughnut',
+            data: {
+                labels: ['CSE', 'IT', 'MATH', 'PHYSICS'],
+                datasets: [{
+                    data: [40, 25, 20, 15],
+                    backgroundColor: ['#2563eb', '#60a5fa', '#93c5fd', '#bfdbfe'],
+                    borderWidth: 0
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+        });
+
+        const ctxComp = document.getElementById('completionChart').getContext('2d');
+        new Chart(ctxComp, {
+            type: 'bar',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May'],
+                datasets: [{
+                    label: 'Completion %',
+                    data: [65, 72, 68, 80, 75],
+                    backgroundColor: '#7c3aed',
+                    borderRadius: 6
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+        });
+    </script>
+</body>
+</html>

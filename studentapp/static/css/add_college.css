@@ -1,0 +1,303 @@
+/* --- Add College Page Styles --- */
+/* Standalone stylesheet. No Bootstrap. No Tailwind. No dependency on other page CSS. */
+
+:root {
+    --primary-color: #4f46e5;
+    --primary-hover: #4338ca;
+    --secondary-color: #0ea5e9;
+    --secondary-hover: #0284c7;
+    --bg-color: #f8fafc;
+    --card-bg: #ffffff;
+    --text-main: #0f172a;
+    --text-muted: #334155;
+    --border-color: #e2e8f0;
+    --input-focus: #c7d2fe;
+    --error-color: #ef4444;
+}
+
+.ac-page {
+    background-color: var(--bg-color);
+    font-family: 'Inter', sans-serif;
+    color: var(--text-main);
+}
+
+/* Layout Wrapper */
+.ac-main {
+    margin-left: 260px; /* Adjust based on your sidebar width */
+    padding: 2rem;
+    transition: all 0.3s ease;
+}
+
+@media (max-width: 768px) {
+    .ac-main {
+        margin-left: 0;
+        padding: 1rem;
+    }
+}
+
+/* Breadcrumb */
+.ac-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+    margin-bottom: 1.5rem;
+}
+
+.ac-breadcrumb a {
+    text-decoration: none;
+    color: var(--text-muted);
+    transition: color 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.ac-breadcrumb a:hover {
+    color: var(--primary-color);
+}
+
+.ac-breadcrumb__sep {
+    color: #cbd5e1;
+}
+
+.ac-breadcrumb__current {
+    color: var(--text-main);
+    font-weight: 600;
+}
+
+/* Page Header */
+.ac-page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    gap: 1rem;
+}
+
+.ac-page-title {
+    font-size: 1.875rem;
+    font-weight: 800;
+    margin: 0;
+    color: var(--text-main);
+}
+
+.ac-page-subtitle {
+    color: var(--text-muted);
+    margin: 0.25rem 0 0 0;
+}
+
+@media (max-width: 768px) {
+    .ac-page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+}
+
+/* Form Card */
+.ac-form-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    padding: 2rem;
+    max-width: 900px;
+    margin: 0 auto;
+    border: 1px solid var(--border-color);
+}
+
+@media (max-width: 640px) {
+    .ac-form-card {
+        padding: 1.25rem;
+    }
+}
+
+/* Form Sections */
+.ac-form-section {
+    margin-bottom: 2.5rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.ac-form-section:last-of-type {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.ac-form-section__header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 1.5rem;
+    color: var(--primary-color);
+}
+
+.ac-form-section__header i {
+    font-size: 1.25rem;
+}
+
+.ac-form-section__header h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--text-main);
+}
+
+/* Form Grid */
+.ac-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+}
+
+.ac-col-span-2 {
+    grid-column: span 2;
+}
+
+@media (max-width: 768px) {
+    .ac-form-grid {
+        grid-template-columns: 1fr;
+    }
+    .ac-col-span-2 {
+        grid-column: span 1;
+    }
+}
+
+.ac-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.ac-form-group label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-main);
+}
+
+.req {
+    color: var(--error-color);
+}
+
+/* Inputs & Selects */
+.ac-form-group input,
+.ac-form-group textarea,
+.ac-select,
+.ac-textarea {
+    padding: 0.625rem 0.875rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    transition: all 0.2s ease;
+    width: 100%;
+    box-sizing: border-box;
+    color: var(--text-main);
+    background: #ffffff;
+}
+
+.ac-textarea {
+    resize: vertical;
+    min-height: 84px;
+}
+
+.ac-form-group input:focus,
+.ac-form-group textarea:focus,
+.ac-select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px var(--input-focus);
+}
+
+.ac-file-input {
+    padding: 0.5rem;
+    font-size: 0.875rem;
+}
+
+/* Logo preview */
+.ac-logo-preview {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0.625rem 0.875rem;
+    border: 1px dashed var(--border-color);
+    border-radius: 8px;
+    min-height: 44px;
+    background: var(--bg-color);
+}
+
+.ac-logo-preview img {
+    display: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid var(--border-color);
+}
+
+.ac-logo-preview span {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+/* Buttons */
+.ac-btn {
+    padding: 0.625rem 1.25rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    text-decoration: none;
+    border: 1px solid transparent;
+}
+
+.ac-btn--primary {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.ac-btn--primary:hover {
+    background-color: var(--primary-hover);
+}
+
+.ac-btn--secondary {
+    background-color: var(--secondary-color);
+    color: white;
+}
+
+.ac-btn--secondary:hover {
+    background-color: var(--secondary-hover);
+}
+
+.ac-btn--ghost {
+    background: transparent;
+    color: var(--text-muted);
+    border-color: var(--border-color);
+}
+
+.ac-btn--ghost:hover {
+    background-color: #f1f5f9;
+    color: var(--text-main);
+}
+
+.ac-form-footer {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+@media (max-width: 640px) {
+    .ac-form-footer {
+        justify-content: stretch;
+    }
+    .ac-form-footer .ac-btn {
+        flex: 1 1 auto;
+        justify-content: center;
+    }
+}

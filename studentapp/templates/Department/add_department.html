@@ -1,0 +1,192 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Add Department | Admin Panel</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <!-- Sidebar CSS -->
+    <link rel="stylesheet" href="{% static 'css/sidebar.css' %}" />
+    
+    <!-- Shared Base Design Tokens -->
+    <link rel="stylesheet" href="{% static 'css/department.css' %}">
+    
+    <!-- Exact mirrored styles from Add Student -->
+    <link rel="stylesheet" href="{% static 'css/add_department.css' %}">
+</head>
+
+<body class="sm-page">
+
+    <!-- Sidebar -->
+    {% include 'includes/sidebar.html' %}
+
+    <div class="sm-main">
+
+        <!-- ── Breadcrumb ───────────────────────────────────── -->
+        <nav class="sm-breadcrumb" aria-label="Breadcrumb">
+            <a href="{% url 'dashboard' %}"><i class="fas fa-home"></i> Dashboard</a>
+            <span class="sm-breadcrumb__sep">/</span>
+            <a href="{% url 'department_management' %}">Department Management</a>
+            <span class="sm-breadcrumb__sep">/</span>
+            <span class="sm-breadcrumb__current">Add Department</span>
+        </nav>
+
+        <!-- ── Page Header ─────────────────────────────────── -->
+        <div class="sm-page-header">
+            <div>
+                <h1 class="sm-page-title">Add New Department</h1>
+                <p class="sm-page-subtitle">Configure a new academic department and assign HOD credentials.</p>
+            </div>
+            <a href="{% url 'department_management' %}" class="sm-btn sm-btn--ghost">
+                <i class="fas fa-arrow-left"></i> Back to List
+            </a>
+        </div>
+
+        <!-- ── Form Card ──────────────────────────────────── -->
+        <div class="sm-form-card">
+            <form action="{% url 'department_add' %}" method="POST">
+                {% csrf_token %}
+
+                <!-- Section 1: Department Basics -->
+                <div class="sm-form-section">
+                    <div class="sm-form-section__header">
+                        <i class="fas fa-university"></i>
+                        <h3>Department Basics</h3>
+                    </div>
+                    <div class="sm-form-grid">
+                        <div class="sm-form-group">
+                            <label for="college">College <span class="req">*</span></label>
+                            <select id="college" name="college" class="sm-select" required>
+                                <option value="">Select College</option>
+                                <option value="ABC College">ABC College</option>
+                                <option value="XYZ College">XYZ College</option>
+                            </select>
+                        </div>
+                        <div class="sm-form-group">
+                            <label for="dept_code">Department Code <span class="req">*</span></label>
+                            <input type="text" id="dept_code" name="dept_code" placeholder="e.g. CSE" required>
+                        </div>
+                        <div class="sm-form-group">
+                            <label for="dept_name">Department Name <span class="req">*</span></label>
+                            <input type="text" id="dept_name" name="dept_name" placeholder="e.g. Computer Science and Engineering" required>
+                        </div>
+                        <div class="sm-form-group">
+                            <label for="dept_short_name">Short Name</label>
+                            <input type="text" id="dept_short_name" name="dept_short_name" placeholder="e.g. CSE-Dept">
+                        </div>
+                        <div class="sm-form-group">
+                            <label for="principal">Principal <span class="req">*</span></label>
+                            <input type="text" id="principal" name="principal" value="Dr. Sarah Jenkins" readonly style="background-color: #f1f5f9; cursor: not-allowed;">
+                        </div>
+                        <div class="sm-form-group">
+                            <label for="description">Description</label>
+                            <input type="text" id="description" name="description" placeholder="Optional department notes">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2: HOD Information -->
+                <div class="sm-form-section">
+                    <div class="sm-form-section__header">
+                        <i class="fas fa-user-tie"></i>
+                        <h3>Head of Department (HOD)</h3>
+                    </div>
+                    <div class="sm-form-grid">
+                        <div class="sm-form-group">
+                            <label for="hod_name">HOD Full Name <span class="req">*</span></label>
+                            <input type="text" id="hod_name" name="hod_name" placeholder="e.g. Dr. Ramesh Kumar" required>
+                        </div>
+                        <div class="sm-form-group">
+                            <label for="hod_email">HOD Email <span class="req">*</span></label>
+                            <input type="email" id="hod_email" name="hod_email" placeholder="hod.cse@abc.edu" required>
+                        </div>
+                        <div class="sm-form-group">
+                            <label for="hod_phone">HOD Phone Number</label>
+                            <input type="tel" id="hod_phone" name="hod_phone" placeholder="+91 00000 00000">
+                        </div>
+                        <div class="sm-form-group">
+                            <label for="status">Department Status</label>
+                            <select id="status" name="status" class="sm-select">
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 3: System Credentials -->
+                <div class="sm-form-section">
+                    <div class="sm-form-section__header">
+                        <i class="fas fa-lock"></i>
+                        <h3>System Credentials</h3>
+                    </div>
+                    <div class="sm-form-grid">
+                        <div class="sm-form-group">
+                            <label for="username">HOD Username <span class="req">*</span></label>
+                            <input type="text" id="username" name="username" placeholder="Auto-generated" required>
+                        </div>
+                        <div class="sm-form-group">
+                            <label for="password">Temporary Password <span class="req">*</span></label>
+                            <div class="sm-input-with-btn">
+                                <input type="text" id="password" name="password" placeholder="••••••••" required>
+                                <button type="button" id="refreshPass" class="sm-input-btn" title="Regenerate Password">
+                                    <i class="fas fa-rotate"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Footer -->
+                <div class="sm-form-footer">
+                    <button type="button" onclick="window.history.back()" class="sm-btn sm-btn--ghost">Cancel</button>
+                    <button type="submit" class="sm-btn sm-btn--primary">
+                        <i class="fas fa-save"></i> Save Department Record
+                    </button>
+                </div>
+            </form>
+        </div>
+
+    </div>
+
+    <!-- ── Logic for Auto-Generation ───────────────────── -->
+    <script>
+        const deptCodeInput = document.getElementById('dept_code');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        const refreshPassBtn = document.getElementById('refreshPass');
+
+        // Auto-populate Username based on Dept Code
+        deptCodeInput.addEventListener('input', () => {
+            usernameInput.value = deptCodeInput.value.toLowerCase().replace(/\s+/g, '_');
+        });
+
+        function generatePassword() {
+            const length = 10;
+            const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+            let retVal = "";
+            for (let i = 0; i < length; ++i) {
+                retVal += charset.charAt(Math.floor(Math.random() * charset.length));
+            }
+            return retVal;
+        }
+
+        window.onload = () => {
+            passwordInput.value = generatePassword();
+        };
+
+        refreshPassBtn.addEventListener('click', () => {
+            passwordInput.value = generatePassword();
+        });
+    </script>
+</body>
+</html>

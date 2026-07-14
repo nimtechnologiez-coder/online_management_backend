@@ -1,0 +1,117 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Add Principal | Admin Panel</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <!-- Sidebar CSS -->
+    <link rel="stylesheet" href="{% static 'css/sidebar.css' %}" />
+    
+    <!-- Separate Add Principal CSS (Mirrored from Student/Dept) -->
+    <link rel="stylesheet" href="{% static 'css/add_principal.css' %}">
+</head>
+
+<body class="sm-page">
+
+    <!-- Sidebar -->
+    {% include 'includes/sidebar.html' %}
+
+    <div class="sm-main">
+
+        <!-- ── Breadcrumb ───────────────────────────────────── -->
+        <nav class="sm-breadcrumb" aria-label="Breadcrumb">
+            <a href="{% url 'dashboard' %}"><i class="fas fa-home"></i> Dashboard</a>
+            <span class="sm-breadcrumb__sep">/</span>
+            <a href="{% url 'principal_management' %}">Principal Management</a>
+            <span class="sm-breadcrumb__sep">/</span>
+            <span class="sm-breadcrumb__current">Add Principal</span>
+        </nav>
+
+        <!-- ── Page Header ─────────────────────────────────── -->
+        <div class="sm-page-header">
+            <div>
+                <h1 class="sm-page-title">Add New Principal</h1>
+                <p class="sm-page-subtitle">Register a new principal and assign them to a college.</p>
+            </div>
+            <a href="{% url 'principal_management' %}" class="sm-btn sm-btn--ghost">
+                <i class="fas fa-arrow-left"></i> Back to List
+            </a>
+        </div>
+
+        <!-- ── Form Card ──────────────────────────────────── -->
+        <div class="sm-form-card">
+            <form action="{% url 'principal_add' %}" method="POST">
+                {% csrf_token %}
+
+                <!-- Section 1: College Assignment -->
+                <div class="sm-form-section">
+                    <div class="sm-form-section__header">
+                        <i class="fas fa-university"></i>
+                        <h3>College Assignment</h3>
+                    </div>
+                    <div class="sm-form-grid">
+                        <div class="sm-form-group">
+                            <label for="college">Select College <span class="req">*</span></label>
+                            <select id="college" name="college" class="sm-select" required>
+                                <option value="">Select College</option>
+                                <option value="Tech Engineering College">Tech Engineering College</option>
+                                <option value="Global Institute of Commerce">Global Institute of Commerce</option>
+                                <option value="Royal Arts College">Royal Arts College</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2: Personal Details -->
+                <div class="sm-form-section">
+                    <div class="sm-form-section__header">
+                        <i class="fas fa-user-tie"></i>
+                        <h3>Principal Details</h3>
+                    </div>
+                    <div class="sm-form-grid">
+                        <div class="sm-form-group">
+                            <label for="principal_name">Full Name <span class="req">*</span></label>
+                            <input type="text" id="principal_name" name="principal_name" placeholder="e.g. Dr. Rajesh Khanna" required>
+                        </div>
+                        <div class="sm-form-group">
+                            <label for="principal_email">Email Address <span class="req">*</span></label>
+                            <input type="email" id="principal_email" name="principal_email" placeholder="principal@college.edu" required>
+                        </div>
+                        <div class="sm-form-group">
+                            <label for="principal_mobile">Phone Number <span class="req">*</span></label>
+                            <input type="tel" id="principal_mobile" name="principal_mobile" placeholder="+91 00000 00000" required>
+                        </div>
+                        <div class="sm-form-group">
+                            <label for="status">Account Status</label>
+                            <select id="status" name="status" class="sm-select">
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Footer -->
+                <div class="sm-form-footer">
+                    <button type="button" onclick="window.history.back()" class="sm-btn sm-btn--ghost">Cancel</button>
+                    <button type="submit" class="sm-btn sm-btn--primary">
+                        <i class="fas fa-save"></i> Save Principal Record
+                    </button>
+                </div>
+            </form>
+        </div>
+
+    </div>
+
+</body>
+</html>

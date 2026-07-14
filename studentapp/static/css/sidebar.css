@@ -1,0 +1,203 @@
+/* Sidebar CSS Variables */
+:root {
+    --sidebar-bg: #1e293b;
+    --sidebar-text: #ffffff;
+    --sidebar-text-muted: #94a3b8;
+    --sidebar-hover-bg: #334155;
+    --sidebar-active-bg: #2563eb;
+    --sidebar-active-text: #ffffff;
+    --sidebar-width: 260px;
+    --sidebar-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Mobile Toggle Button */
+.mobile-toggle {
+    display: none; /* Hidden by default on desktop */
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    z-index: 1001;
+    background: var(--sidebar-active-bg);
+    color: var(--sidebar-text);
+    border: none;
+    border-radius: 8px;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    transition: var(--sidebar-transition);
+}
+
+.mobile-toggle:hover {
+    background: #1d4ed8;
+}
+
+/* Sidebar Overlay for Mobile */
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    backdrop-filter: blur(2px);
+}
+
+.sidebar-overlay.show {
+    display: block;
+    opacity: 1;
+}
+
+/* Main Sidebar Container */
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: var(--sidebar-width);
+    height: 100vh;
+    background-color: var(--sidebar-bg);
+    color: var(--sidebar-text);
+    box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    z-index: 1000;
+    transition: var(--sidebar-transition);
+    font-family: 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    overflow-y: auto;
+}
+
+/* Custom Scrollbar for Sidebar */
+.sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+.sidebar::-webkit-scrollbar-track {
+    background: transparent;
+}
+.sidebar::-webkit-scrollbar-thumb {
+    background-color: var(--sidebar-hover-bg);
+    border-radius: 20px;
+}
+.sidebar::-webkit-scrollbar-thumb:hover {
+    background-color: var(--sidebar-text-muted);
+}
+
+/* Sidebar Header */
+.sidebar-header {
+    padding: 1.5rem 1.25rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 1rem;
+}
+
+.sidebar-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0 0 0.25rem 0;
+    line-height: 1.2;
+    letter-spacing: -0.025em;
+}
+
+.sidebar-subtitle {
+    font-size: 0.875rem;
+    color: var(--sidebar-text-muted);
+    font-weight: 500;
+    display: block;
+}
+
+/* Navigation Menu */
+.sidebar-nav {
+    flex-grow: 1;
+    padding: 0 1rem 1rem 1rem;
+}
+
+.nav-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.nav-item {
+    margin: 0;
+}
+
+/* Navigation Links */
+.nav-link {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    color: var(--sidebar-text-muted);
+    text-decoration: none;
+    border-radius: 8px;
+    transition: var(--sidebar-transition);
+    font-size: 0.9375rem;
+    font-weight: 500;
+}
+
+.nav-icon {
+    width: 1.5rem;
+    font-size: 1.1rem;
+    margin-right: 0.75rem;
+    text-align: center;
+    transition: var(--sidebar-transition);
+}
+
+/* Hover Effects */
+.nav-link:hover {
+    background-color: var(--sidebar-hover-bg);
+    color: var(--sidebar-text);
+    transform: translateX(4px);
+}
+
+.nav-link:hover .nav-icon {
+    color: var(--sidebar-text);
+    transform: scale(1.1);
+}
+
+/* Active State */
+.nav-link.active {
+    background-color: var(--sidebar-active-bg);
+    color: var(--sidebar-active-text);
+    box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.4), 0 2px 4px -1px rgba(37, 99, 235, 0.3);
+}
+
+.nav-link.active .nav-icon {
+    color: var(--sidebar-active-text);
+}
+
+/* Divider */
+.nav-divider {
+    height: 1px;
+    background-color: rgba(255, 255, 255, 0.1);
+    margin: 1rem 0;
+}
+
+/* Logout Link Special Styling */
+.logout-link:hover {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+.logout-link:hover .nav-icon {
+    color: #ef4444;
+}
+
+/* Responsive Design (Mobile below 768px) */
+@media (max-width: 768px) {
+    .mobile-toggle {
+        display: block;
+    }
+
+    .sidebar {
+        transform: translateX(-100%);
+    }
+
+    .sidebar.show {
+        transform: translateX(0);
+    }
+}

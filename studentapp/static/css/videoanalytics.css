@@ -1,0 +1,269 @@
+/* ============================================================
+   Video Analytics – videoanalytics.css
+   ============================================================ */
+
+:root {
+    --va-primary: #2563eb;
+    --va-primary-hover: #1d4ed8;
+    --va-bg: #f8fafc;
+    --va-card-bg: #ffffff;
+    --va-text-main: #0f172a;
+    --va-text-muted: #64748b;
+    --va-border: #e2e8f0;
+    --va-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* ── Layout Wrapper ────────────────────────────────────────── */
+.va-page {
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', sans-serif;
+    background-color: var(--va-bg);
+}
+
+.va-wrapper {
+    display: flex;
+    min-height: 100vh;
+    width: 100%;
+}
+
+.va-main {
+    flex: 1;
+    margin-left: 260px; /* Match your sidebar width exactly */
+    padding: 2rem;
+    box-sizing: border-box;
+    transition: all 0.3s ease;
+}
+
+@media (max-width: 768px) {
+    .va-main {
+        margin-left: 0;
+        padding: 1rem;
+    }
+}
+
+/* ── Breadcrumb ────────────────────────────────────────────────── */
+.va-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    margin-bottom: 1.5rem;
+    color: var(--va-text-muted);
+}
+.va-breadcrumb a {
+    text-decoration: none;
+    color: var(--va-text-muted);
+    transition: color 0.2s;
+}
+.va-breadcrumb a:hover { color: var(--va-primary); }
+.va-breadcrumb__sep { color: #cbd5e1; }
+.va-breadcrumb__current { font-weight: 600; color: var(--va-text-main); }
+
+/* ── Page Header ──────────────────────────────────────────────── */
+.va-page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+.va-page-title { font-size: 1.75rem; font-weight: 800; margin: 0; color: var(--va-text-main); }
+.va-page-subtitle { color: var(--va-text-muted); margin: 0.25rem 0 0 0; font-size: 0.9rem; }
+
+.va-header-actions { display: flex; gap: 0.75rem; }
+
+/* ── Buttons ───────────────────────────────────────────────────── */
+.va-btn {
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid transparent;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s;
+    font-size: 0.85rem;
+}
+.va-btn--primary { background: var(--va-primary); color: white; }
+.va-btn--primary:hover { background: var(--va-primary-hover); }
+.va-btn--ghost { background: white; border-color: var(--va-border); color: var(--va-text-main); }
+.va-btn--ghost:hover { background: #f1f5f9; }
+
+/* ── Stats Grid ────────────────────────────────────────────────── */
+.va-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 2rem;
+}
+.va-stat-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    box-shadow: var(--va-shadow);
+    border: 1px solid var(--va-border);
+}
+.va-stat-card__icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    flex-shrink: 0;
+}
+.va-icon-blue { background: #eff6ff; color: #2563eb; }
+.va-icon-green { background: #f0fdf4; color: #16a34a; }
+.va-icon-purple { background: #faf5ff; color: #9333ea; }
+.va-icon-amber { background: #fffbeb; color: #d97706; }
+.va-icon-red { background: #fef2f2; color: #dc2626; }
+
+.va-stat-label { display: block; color: var(--va-text-muted); font-size: 0.8rem; font-weight: 500; }
+.va-stat-value { display: block; font-size: 1.5rem; font-weight: 800; color: var(--va-text-main); }
+.va-stat-trend { font-size: 0.75rem; font-weight: 600; }
+.va-trend-up { color: #16a34a; }
+.va-trend-down { color: #dc2626; }
+
+/* ── Charts Grid ────────────────────────────────────────────────── */
+.va-charts-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+.va-chart-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 16px;
+    border: 1px solid var(--va-border);
+    box-shadow: var(--va-shadow);
+    display: flex;
+    flex-direction: column;
+}
+.va-chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+.va-chart-title { font-size: 1rem; font-weight: 700; margin: 0; color: var(--va-text-main); }
+.va-chart-body { height: 300px; position: relative; flex: 1; }
+
+.va-select-sm {
+    padding: 0.3rem 0.8rem;
+    border-radius: 6px;
+    border: 1px solid var(--va-border);
+    font-size: 0.75rem;
+}
+
+/* ── Tables Grid ────────────────────────────────────────────────── */
+.va-tables-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+    gap: 1.5rem;
+}
+.va-table-card {
+    background: white;
+    border-radius: 16px;
+    border: 1px solid var(--va-border);
+    box-shadow: var(--va-shadow);
+    overflow: hidden;
+}
+.va-table-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--va-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.va-table-title { font-size: 1rem; font-weight: 700; margin: 0; }
+
+.va-search-mini {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+.va-search-mini i {
+    position: absolute;
+    left: 10px;
+    font-size: 0.8rem;
+    color: var(--va-text-muted);
+}
+.va-search-mini input {
+    padding: 0.4rem 0.8rem 0.4rem 2rem;
+    border: 1px solid var(--va-border);
+    border-radius: 6px;
+    font-size: 0.8rem;
+    outline: none;
+}
+
+.va-table-scroll { overflow-x: auto; }
+.va-table { width: 100%; border-collapse: collapse; text-align: left; }
+.va-table th {
+    background: #f8fafc;
+    padding: 1rem;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: var(--va-text-muted);
+    font-weight: 600;
+    border-bottom: 1px solid var(--va-border);
+}
+.va-table td { padding: 1rem; border-bottom: 1px solid var(--va-border); font-size: 0.85rem; }
+
+/* ── UI Components ──────────────────────────────────────────────── */
+.va-dept-tag {
+    padding: 0.2rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    background: #eff6ff;
+    color: #2563eb;
+}
+.va-dept-tag--teal { background: #f0fdfa; color: #0d9488; }
+
+.va-badge {
+    padding: 0.25rem 0.6rem;
+    border-radius: 99px;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+.va-badge--active { background: #dcfce7; color: #16a34a; }
+
+.va-progress-bar {
+    width: 100px;
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+.va-progress-fill {
+    height: 100%;
+    background: var(--va-primary);
+    border-radius: 4px;
+}
+.va-progress-text {
+    position: absolute;
+    left: 105px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--va-text-muted);
+}
+
+/* Responsive ───────────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+    .va-charts-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+    .va-main { padding: 1rem; }
+    .va-page-header { flex-direction: column; align-items: flex-start; }
+    .va-header-actions { width: 100%; justify-content: flex-end; }
+    .va-tables-grid { grid-template-columns: 1fr; }
+}

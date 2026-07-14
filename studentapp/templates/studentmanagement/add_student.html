@@ -1,0 +1,213 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Add Student | Admin Panel</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <!-- Sidebar CSS -->
+    <link rel="stylesheet" href="{% static 'css/sidebar.css' %}" />
+    
+    <!-- Base design tokens (from your previous pages) -->
+    <link rel="stylesheet" href="{% static 'css/department.css' %}">
+    
+    <!-- Separate Add Student CSS -->
+    <link rel="stylesheet" href="{% static 'css/add_student.css' %}">
+</head>
+
+<body class="sm-page">
+
+    <!-- Sidebar -->
+    {% include 'includes/sidebar.html' %}
+
+    <div class="sm-main">
+
+        <!-- ── Breadcrumb ───────────────────────────────────── -->
+        <nav class="sm-breadcrumb" aria-label="Breadcrumb">
+            <a href="{% url 'dashboard' %}"><i class="fas fa-home"></i> Dashboard</a>
+            <span class="sm-breadcrumb__sep">/</span>
+            <a href="{% url 'student_management' %}">Student Management</a>
+            <span class="sm-breadcrumb__sep">/</span>
+            <span class="sm-breadcrumb__current">Add Student</span>
+        </nav>
+
+        <!-- ── Page Header ─────────────────────────────────── -->
+        <div class="sm-page-header">
+            <div>
+                <h1 class="sm-page-title">Add New Student</h1>
+                <p class="sm-page-subtitle">Enroll a new student and generate their system credentials.</p>
+            </div>
+            <a href="{% url 'student_management' %}" class="sm-btn sm-btn--ghost">
+                <i class="fas fa-arrow-left"></i> Back to List
+            </a>
+        </div>
+
+        <!-- ── Form Card ──────────────────────────────────── -->
+        <div class="sm-form-card">
+            <form action="{% url 'student_add' %}" method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <!-- Section 1: Personal Information -->
+                <div class="sm-form-section">
+                    <div class="sm-form-section__header">
+                        <i class="fas fa-user"></i>
+                        <h3>Personal Information</h3>
+                    </div>
+                    <div class="sm-form-grid">
+                        <div class="sm-form-group">
+                            <label for="full_name">Full Name <span class="req">*</span></label>
+                            <input type="text" id="full_name" name="full_name" placeholder="e.g. John Peter" required>
+                        </div>
+                        <div class="sm-form-group">
+                            <label for="email">Email Address <span class="req">*</span></label>
+                            <input type="email" id="email" name="email" placeholder="john.peter@abc.edu" required>
+                        </div>
+                        <div class="sm-form-group">
+                            <label for="phone">Phone Number</label>
+                            <input type="tel" id="phone" name="phone" placeholder="+91 00000 00000">
+                        </div>
+                        <div class="sm-form-group">
+                            <label for="gender">Gender</label>
+                            <select id="gender" name="gender" class="sm-select">
+                                <option value="">Select Gender</option>
+                                <option value="male">Male</option>
+                                <option value="female">Female</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2: Academic Details -->
+                <div class="sm-form-section">
+                    <div class="sm-form-section__header">
+                        <i class="fas fa-university"></i>
+                        <h3>Academic Details</h3>
+                    </div>
+                    <div class="sm-form-grid">
+                        <div class="sm-form-group">
+                            <label for="student_id">Student ID <span class="req">*</span></label>
+                            <input type="text" id="student_id" name="student_id" placeholder="STU000000" required>
+                        </div>
+                        <div class="sm-form-group">
+                            <label for="college">College <span class="req">*</span></label>
+                            <select id="college" name="college" class="sm-select" required>
+                                <option value="">Select College</option>
+                                <option value="ABC College">ABC College</option>
+                                <option value="XYZ College">XYZ College</option>
+                            </select>
+                        </div>
+                        <div class="sm-form-group">
+                            <label for="department">Department <span class="req">*</span></label>
+                            <select id="department" name="department" class="sm-select" required>
+                                <option value="">Select Department</option>
+                                <option value="CSE">CSE</option>
+                                <option value="ECE">ECE</option>
+                                <option value="IT">IT</option>
+                                <option value="MECH">MECH</option>
+                                <option value="CIVIL">CIVIL</option>
+                            </select>
+                        </div>
+                        <div class="sm-form-group">
+                            <label for="year">Year <span class="req">*</span></label>
+                            <select id="year" name="year" class="sm-select" required>
+                                <option value="">Select Year</option>
+                                <option value="I">Year I</option>
+                                <option value="II">Year II</option>
+                                <option value="III">Year III</option>
+                                <option value="IV">Year IV</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 3: Account Credentials -->
+                <div class="sm-form-section">
+                    <div class="sm-form-section__header">
+                        <i class="fas fa-lock"></i>
+                        <h3>Account Credentials</h3>
+                    </div>
+                    <div class="sm-form-grid">
+                        <div class="sm-form-group">
+                            <label for="username">Username <span class="req">*</span></label>
+                            <input type="text" id="username" name="username" placeholder="Auto-generated" required>
+                        </div>
+                        <div class="sm-form-group">
+                            <label for="password">Password <span class="req">*</span></label>
+                            <div class="sm-input-with-btn">
+                                <input type="text" id="password" name="password" placeholder="••••••••" required>
+                                <button type="button" id="refreshPass" class="sm-input-btn" title="Regenerate Password">
+                                    <i class="fas fa-rotate"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="sm-form-group">
+                            <label for="status">Account Status</label>
+                            <select id="status" name="status" class="sm-select">
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
+                        </div>
+                        <div class="sm-form-group">
+                            <label for="profile_pic">Profile Picture</label>
+                            <input type="file" id="profile_pic" name="profile_pic" class="sm-file-input">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Footer -->
+                <div class="sm-form-footer">
+                    <button type="button" onclick="window.history.back()" class="sm-btn sm-btn--ghost">Cancel</button>
+                    <button type="submit" class="sm-btn sm-btn--primary">
+                        <i class="fas fa-save"></i> Save Student Record
+                    </button>
+                </div>
+            </form>
+        </div>
+
+    </div>
+
+    <!-- ── Automatic Generation Logic ───────────────────── -->
+    <script>
+        const studentIdInput = document.getElementById('student_id');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        const refreshPassBtn = document.getElementById('refreshPass');
+
+        // Auto-populate Username when Student ID is typed
+        studentIdInput.addEventListener('input', () => {
+            usernameInput.value = studentIdInput.value;
+        });
+
+        // Secure Random Password Generator
+        function generatePassword() {
+            const length = 10;
+            const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+            let retVal = "";
+            for (let i = 0; i < length; ++i) {
+                retVal += charset.charAt(Math.floor(Math.random() * charset.length));
+            }
+            return retVal;
+        }
+
+        // Initialize password on load
+        window.onload = () => {
+            passwordInput.value = generatePassword();
+        };
+
+        // Regenerate password on button click
+        refreshPassBtn.addEventListener('click', () => {
+            passwordInput.value = generatePassword();
+        });
+    </script>
+</body>
+</html>

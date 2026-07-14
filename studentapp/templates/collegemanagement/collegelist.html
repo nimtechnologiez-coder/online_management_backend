@@ -1,0 +1,580 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>College Management | Admin Panel</title>
+
+    <!-- Font Awesome (icons only) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <!-- Sidebar CSS -->
+    <link rel="stylesheet" href="{% static 'css/sidebar.css' %}" />
+
+    <!-- Standalone page stylesheet (no Tailwind / no Bootstrap) -->
+    <link rel="stylesheet" href="{% static 'css/collegelist.css' %}" />
+</head>
+
+<body>
+
+    <!-- Sidebar Include -->
+    {% include 'includes/sidebar.html' %}
+
+    <!-- Main Page Content -->
+    <div class="college-main">
+        <div class="page-wrap">
+
+            <!-- ===================== PAGE HEADER ===================== -->
+            <div class="page-header">
+                <nav class="breadcrumb" aria-label="Breadcrumb">
+                    <a href="{% url 'dashboard' %}">Dashboard</a>
+                    <svg class="sep" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                    <span class="current">College Management</span>
+                </nav>
+                <h1 class="page-title">College Management</h1>
+                <p class="page-subtitle">Manage all registered colleges efficiently.</p>
+            </div>
+
+            <!-- ===================== STATISTICS CARDS ===================== -->
+            <div class="stats-grid">
+                <!-- Total Colleges -->
+                <div class="stat-card blue">
+                    <div class="stat-info">
+                        <p class="stat-label">Total Colleges</p>
+                        <h2 class="stat-value" id="statTotal">5</h2>
+                    </div>
+                    <div class="stat-icon"><i class="fas fa-university"></i></div>
+                </div>
+                <!-- Active Colleges -->
+                <div class="stat-card green">
+                    <div class="stat-info">
+                        <p class="stat-label">Active Colleges</p>
+                        <h2 class="stat-value" id="statActive">4</h2>
+                    </div>
+                    <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+                </div>
+                <!-- Inactive Colleges -->
+                <div class="stat-card red">
+                    <div class="stat-info">
+                        <p class="stat-label">Inactive Colleges</p>
+                        <h2 class="stat-value" id="statInactive">1</h2>
+                    </div>
+                    <div class="stat-icon"><i class="fas fa-times-circle"></i></div>
+                </div>
+                <!-- Total Students -->
+                <div class="stat-card purple">
+                    <div class="stat-info">
+                        <p class="stat-label">Total Students</p>
+                        <h2 class="stat-value" id="statStudents">12,480</h2>
+                    </div>
+                    <div class="stat-icon"><i class="fas fa-user-graduate"></i></div>
+                </div>
+            </div>
+
+            <!-- ===================== TOP ACTION BAR ===================== -->
+            <div class="action-bar">
+                <div class="filters-group">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchInput" placeholder="Search colleges..." />
+                    </div>
+                    <select id="statusFilter" class="select-filter">
+                        <option value="">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                    <select class="select-filter" id="stateFilter">
+                        <option value="">All States</option>
+                        <option>Tamil Nadu</option>
+                        <option>Maharashtra</option>
+                        <option>Karnataka</option>
+                        <option>Kerala</option>
+                    </select>
+                </div>
+
+                <div class="actions-group">
+                    <button type="button" title="Refresh" onclick="location.reload()" class="btn btn-icon">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline">
+                        <i class="fas fa-download"></i> Export
+                    </button>
+                    <a href="{% url 'college_add' %}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Add College
+                    </a>
+                </div>
+            </div>
+
+            <!-- ===================== COLLEGE TABLE ===================== -->
+            <div class="table-card">
+                <div class="table-scroll-wrapper">
+                    <table class="college-table" id="collegeTable">
+                        <thead>
+                            <tr>
+                                <th>S.No</th>
+                                <th>Logo</th>
+                                <th>Code</th>
+                                <th>College Name</th>
+                                <th>University</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>State</th>
+                                <th>District</th>
+                                <th class="cell-center">Depts</th>
+                                <th class="cell-center">Students</th>
+                                <th class="cell-center">Status</th>
+                                <th>Created</th>
+                                <th class="cell-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            <!-- Rows are rendered by JS from collegeData -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- ===================== PAGINATION ===================== -->
+                <div class="pagination-bar">
+                    <p class="pagination-info">
+                        Showing <strong id="showingCount">1–5</strong> of
+                        <strong id="totalCount">5</strong> Colleges
+                    </p>
+                    <div class="pagination-controls">
+                        <button type="button" class="page-btn" disabled>Prev</button>
+                        <button type="button" class="page-btn active">1</button>
+                        <button type="button" class="page-btn" disabled>Next</button>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- end page-wrap -->
+    </div><!-- end college-main -->
+
+    <!-- ===================== VIEW MODAL ===================== -->
+    <div class="modal-overlay" id="viewModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fas fa-eye"></i> College Details</h3>
+                <button class="modal-close" onclick="closeModal('viewModal')"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="view-avatar-row">
+                    <img id="viewLogo" src="" alt="" />
+                    <div>
+                        <div class="name" id="viewName"></div>
+                        <div class="code" id="viewCode"></div>
+                    </div>
+                </div>
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <p class="detail-label">University</p>
+                        <p class="detail-value" id="viewUniversity"></p>
+                    </div>
+                    <div class="detail-item">
+                        <p class="detail-label">Status</p>
+                        <p class="detail-value" id="viewStatus"></p>
+                    </div>
+                    <div class="detail-item">
+                        <p class="detail-label">Email</p>
+                        <p class="detail-value" id="viewEmail"></p>
+                    </div>
+                    <div class="detail-item">
+                        <p class="detail-label">Phone</p>
+                        <p class="detail-value" id="viewPhone"></p>
+                    </div>
+                    <div class="detail-item">
+                        <p class="detail-label">State</p>
+                        <p class="detail-value" id="viewState"></p>
+                    </div>
+                    <div class="detail-item">
+                        <p class="detail-label">District</p>
+                        <p class="detail-value" id="viewDistrict"></p>
+                    </div>
+                    <div class="detail-item">
+                        <p class="detail-label">Departments</p>
+                        <p class="detail-value" id="viewDepts"></p>
+                    </div>
+                    <div class="detail-item">
+                        <p class="detail-label">Students</p>
+                        <p class="detail-value" id="viewStudents"></p>
+                    </div>
+                    <div class="detail-item">
+                        <p class="detail-label">Created</p>
+                        <p class="detail-value" id="viewCreated"></p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" onclick="closeModal('viewModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== EDIT MODAL ===================== -->
+    <div class="modal-overlay" id="editModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fas fa-edit"></i> Edit College</h3>
+                <button class="modal-close" onclick="closeModal('editModal')"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="editForm">
+                    <input type="hidden" id="editId" />
+                    <div class="form-group">
+                        <label for="editName">College Name</label>
+                        <input type="text" id="editName" required />
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editCode">Code</label>
+                            <input type="text" id="editCode" required />
+                        </div>
+                        <div class="form-group">
+                            <label for="editUniversity">University</label>
+                            <input type="text" id="editUniversity" required />
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editEmail">Email</label>
+                            <input type="email" id="editEmail" required />
+                        </div>
+                        <div class="form-group">
+                            <label for="editPhone">Phone</label>
+                            <input type="text" id="editPhone" required />
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editState">State</label>
+                            <input type="text" id="editState" required />
+                        </div>
+                        <div class="form-group">
+                            <label for="editDistrict">District</label>
+                            <input type="text" id="editDistrict" required />
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editDepts">Departments</label>
+                            <input type="number" id="editDepts" min="0" required />
+                        </div>
+                        <div class="form-group">
+                            <label for="editStudents">Students</label>
+                            <input type="number" id="editStudents" min="0" required />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="editStatus">Status</label>
+                        <select id="editStatus">
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" onclick="closeModal('editModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="saveEdit()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== DELETE MODAL ===================== -->
+    <div class="modal-overlay" id="deleteModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fas fa-trash"></i> Delete College</h3>
+                <button class="modal-close" onclick="closeModal('deleteModal')"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="delete-warning">
+                    <div class="warn-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                    <p>Are you sure you want to delete<br /><strong id="deleteName"></strong>?<br />This action
+                        cannot be undone.</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" onclick="closeModal('deleteModal')">Cancel</button>
+                <button class="btn btn-danger" onclick="confirmDelete()">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== TOAST ===================== -->
+    <div class="toast" id="toast"><i class="fas fa-check-circle"></i><span id="toastMsg"></span></div>
+
+    <!-- ===================== SCRIPT ===================== -->
+    <script>
+        // -------------------------------------------------------------
+        // Dummy college data (replace with data rendered from backend)
+        // -------------------------------------------------------------
+        let collegeData = [
+            {
+                id: 1, code: 'TEC-001', name: 'Tech Engineering College', university: 'Anna University',
+                email: 'tec@example.com', phone: '+91 98765 43210', state: 'Tamil Nadu', district: 'Chennai',
+                depts: 8, students: 3200, status: 'active', created: '01 Jan 2020',
+                logo: 'https://ui-avatars.com/api/?name=Tech+Engineering&background=2563eb&color=fff&size=80'
+            },
+            {
+                id: 2, code: 'GIC-002', name: 'Global Institute of Commerce', university: 'Mumbai University',
+                email: 'gic@example.com', phone: '+91 87654 32109', state: 'Maharashtra', district: 'Mumbai',
+                depts: 6, students: 2850, status: 'active', created: '15 Mar 2019',
+                logo: 'https://ui-avatars.com/api/?name=Global+Institute&background=22c55e&color=fff&size=80'
+            },
+            {
+                id: 3, code: 'RAC-003', name: 'Royal Arts College', university: 'Bangalore University',
+                email: 'rac@example.com', phone: '+91 76543 21098', state: 'Karnataka', district: 'Bengaluru',
+                depts: 5, students: 1980, status: 'inactive', created: '20 Jun 2018',
+                logo: 'https://ui-avatars.com/api/?name=Royal+Arts&background=f59e0b&color=fff&size=80'
+            },
+            {
+                id: 4, code: 'PSC-004', name: 'Pioneer Science College', university: 'Kerala University',
+                email: 'psc@example.com', phone: '+91 65432 10987', state: 'Kerala', district: 'Thiruvananthapuram',
+                depts: 7, students: 2600, status: 'active', created: '10 Sep 2021',
+                logo: 'https://ui-avatars.com/api/?name=Pioneer+Science&background=0ea5e9&color=fff&size=80'
+            },
+            {
+                id: 5, code: 'NLC-005', name: 'National Law College', university: 'Madras University',
+                email: 'nlc@example.com', phone: '+91 54321 09876', state: 'Tamil Nadu', district: 'Coimbatore',
+                depts: 4, students: 1850, status: 'active', created: '05 Apr 2022',
+                logo: 'https://ui-avatars.com/api/?name=National+Law&background=8b5cf6&color=fff&size=80'
+            }
+        ];
+
+        let deleteTargetId = null;
+
+        // -------------------------------------------------------------
+        // Render table
+        // -------------------------------------------------------------
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+
+            collegeData.forEach((c, index) => {
+                const tr = document.createElement('tr');
+                tr.dataset.id = c.id;
+
+                const badgeClass = c.status === 'active' ? 'active' : 'inactive';
+                const badgeLabel = c.status === 'active' ? 'Active' : 'Inactive';
+
+                tr.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td><img class="college-logo" src="${c.logo}" alt="${c.name} logo" /></td>
+                    <td class="cell-code">${c.code}</td>
+                    <td class="cell-strong">${c.name}</td>
+                    <td>${c.university}</td>
+                    <td>${c.email}</td>
+                    <td>${c.phone}</td>
+                    <td>${c.state}</td>
+                    <td>${c.district}</td>
+                    <td class="cell-center">${c.depts}</td>
+                    <td class="cell-center">${c.students.toLocaleString()}</td>
+                    <td class="cell-center">
+                        <span class="badge ${badgeClass}"><span class="dot"></span>${badgeLabel}</span>
+                    </td>
+                    <td>${c.created}</td>
+                    <td>
+                        <div class="row-actions">
+                            <button class="icon-btn view" title="View" onclick="openView(${c.id})"><i class="fas fa-eye"></i></button>
+                            <button class="icon-btn edit" title="Edit" onclick="openEdit(${c.id})"><i class="fas fa-edit"></i></button>
+                            <button class="icon-btn delete" title="Delete" onclick="openDelete(${c.id})"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            updateStats();
+            applyFilters();
+        }
+
+        // -------------------------------------------------------------
+        // Stats
+        // -------------------------------------------------------------
+        function updateStats() {
+            const total = collegeData.length;
+            const active = collegeData.filter(c => c.status === 'active').length;
+            const inactive = total - active;
+            const students = collegeData.reduce((sum, c) => sum + c.students, 0);
+
+            document.getElementById('statTotal').textContent = total;
+            document.getElementById('statActive').textContent = active;
+            document.getElementById('statInactive').textContent = inactive;
+            document.getElementById('statStudents').textContent = students.toLocaleString();
+            document.getElementById('totalCount').textContent = total;
+            document.getElementById('showingCount').textContent = total > 0 ? `1–${total}` : '0';
+        }
+
+        // -------------------------------------------------------------
+        // Modal helpers
+        // -------------------------------------------------------------
+        function openModal(id) {
+            document.getElementById(id).classList.add('open');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('open');
+        }
+
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) closeModal(overlay.id);
+            });
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal-overlay.open').forEach(m => closeModal(m.id));
+            }
+        });
+
+        // -------------------------------------------------------------
+        // View
+        // -------------------------------------------------------------
+        function openView(id) {
+            const c = collegeData.find(x => x.id === id);
+            if (!c) return;
+
+            document.getElementById('viewLogo').src = c.logo;
+            document.getElementById('viewName').textContent = c.name;
+            document.getElementById('viewCode').textContent = c.code;
+            document.getElementById('viewUniversity').textContent = c.university;
+            document.getElementById('viewStatus').textContent = c.status === 'active' ? 'Active' : 'Inactive';
+            document.getElementById('viewEmail').textContent = c.email;
+            document.getElementById('viewPhone').textContent = c.phone;
+            document.getElementById('viewState').textContent = c.state;
+            document.getElementById('viewDistrict').textContent = c.district;
+            document.getElementById('viewDepts').textContent = c.depts;
+            document.getElementById('viewStudents').textContent = c.students.toLocaleString();
+            document.getElementById('viewCreated').textContent = c.created;
+
+            openModal('viewModal');
+        }
+
+        // -------------------------------------------------------------
+        // Edit
+        // -------------------------------------------------------------
+        function openEdit(id) {
+            const c = collegeData.find(x => x.id === id);
+            if (!c) return;
+
+            document.getElementById('editId').value = c.id;
+            document.getElementById('editName').value = c.name;
+            document.getElementById('editCode').value = c.code;
+            document.getElementById('editUniversity').value = c.university;
+            document.getElementById('editEmail').value = c.email;
+            document.getElementById('editPhone').value = c.phone;
+            document.getElementById('editState').value = c.state;
+            document.getElementById('editDistrict').value = c.district;
+            document.getElementById('editDepts').value = c.depts;
+            document.getElementById('editStudents').value = c.students;
+            document.getElementById('editStatus').value = c.status;
+
+            openModal('editModal');
+        }
+
+        function saveEdit() {
+            const form = document.getElementById('editForm');
+            if (!form.reportValidity()) return;
+
+            const id = parseInt(document.getElementById('editId').value, 10);
+            const c = collegeData.find(x => x.id === id);
+            if (!c) return;
+
+            c.name = document.getElementById('editName').value.trim();
+            c.code = document.getElementById('editCode').value.trim();
+            c.university = document.getElementById('editUniversity').value.trim();
+            c.email = document.getElementById('editEmail').value.trim();
+            c.phone = document.getElementById('editPhone').value.trim();
+            c.state = document.getElementById('editState').value.trim();
+            c.district = document.getElementById('editDistrict').value.trim();
+            c.depts = parseInt(document.getElementById('editDepts').value, 10) || 0;
+            c.students = parseInt(document.getElementById('editStudents').value, 10) || 0;
+            c.status = document.getElementById('editStatus').value;
+
+            renderTable();
+            closeModal('editModal');
+            showToast(`${c.name} updated successfully.`);
+
+            // TODO: replace with real backend call, e.g.
+            // fetch(`/colleges/${id}/edit/`, { method: 'POST', body: new FormData(form) });
+        }
+
+        // -------------------------------------------------------------
+        // Delete
+        // -------------------------------------------------------------
+        function openDelete(id) {
+            const c = collegeData.find(x => x.id === id);
+            if (!c) return;
+
+            deleteTargetId = id;
+            document.getElementById('deleteName').textContent = c.name;
+            openModal('deleteModal');
+        }
+
+        function confirmDelete() {
+            if (deleteTargetId === null) return;
+
+            const c = collegeData.find(x => x.id === deleteTargetId);
+            collegeData = collegeData.filter(x => x.id !== deleteTargetId);
+
+            renderTable();
+            closeModal('deleteModal');
+            if (c) showToast(`${c.name} deleted.`);
+            deleteTargetId = null;
+
+            // TODO: replace with real backend call, e.g.
+            // fetch(`/colleges/${deleteTargetId}/delete/`, { method: 'POST' });
+        }
+
+        // -------------------------------------------------------------
+        // Toast
+        // -------------------------------------------------------------
+        let toastTimer = null;
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMsg').textContent = msg;
+            toast.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => toast.classList.remove('show'), 2600);
+        }
+
+        // -------------------------------------------------------------
+        // Search + Filters
+        // -------------------------------------------------------------
+        function applyFilters() {
+            const q = document.getElementById('searchInput').value.toLowerCase();
+            const statusF = document.getElementById('statusFilter').value.toLowerCase();
+            const stateF = document.getElementById('stateFilter').value.toLowerCase();
+
+            document.querySelectorAll('#tableBody tr').forEach(row => {
+                const id = parseInt(row.dataset.id, 10);
+                const c = collegeData.find(x => x.id === id);
+                if (!c) return;
+
+                const matchesText = row.textContent.toLowerCase().includes(q);
+                const matchesStatus = !statusF || c.status === statusF;
+                const matchesState = !stateF || c.state.toLowerCase() === stateF;
+
+                row.style.display = (matchesText && matchesStatus && matchesState) ? '' : 'none';
+            });
+        }
+
+        document.getElementById('searchInput').addEventListener('input', applyFilters);
+        document.getElementById('statusFilter').addEventListener('change', applyFilters);
+        document.getElementById('stateFilter').addEventListener('change', applyFilters);
+
+        // -------------------------------------------------------------
+        // Init
+        // -------------------------------------------------------------
+        renderTable();
+    </script>
+
+</body>
+
+</html>

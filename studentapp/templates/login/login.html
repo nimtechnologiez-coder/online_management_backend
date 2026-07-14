@@ -1,0 +1,104 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login</title>
+
+    <link rel="stylesheet" href="{% static 'css/login.css' %}">
+</head>
+<body>
+
+<div class="container">
+
+    <!-- Left Side -->
+    <div class="left-panel">
+
+        <!-- <img src="{% static 'images/login-banner.jpg' %}" alt="Login"> -->
+
+        <div class="overlay">
+            <h1>College Management System</h1>
+
+            <p>
+                Manage Colleges, Departments, HODs, Principals,
+                Students, Videos, Reports and Analytics from one
+                centralized dashboard.
+            </p>
+        </div>
+
+    </div>
+
+    <!-- Right Side -->
+    <div class="right-panel">
+
+        <div class="login-card">
+
+            <div class="logo">
+                <div class="circle">
+                    A
+                </div>
+            </div>
+
+            <h2>Welcome Back</h2>
+
+            <p>Please login to continue</p>
+
+            <form method="POST">
+
+                {% csrf_token %}
+
+                <div class="input-group">
+
+                    <label>Email Address</label>
+
+                    <input
+                        type="email"
+                        name="email"
+                        placeholder="admin@example.com"
+                        required>
+
+                </div>
+
+                <div class="input-group">
+
+                    <label>Password</label>
+
+                    <input
+                        type="password"
+                        name="password"
+                        placeholder="Enter Password"
+                        required>
+
+                </div>
+
+                <div class="options">
+
+                    <label>
+
+                        <input type="checkbox">
+
+                        Remember Me
+
+                    </label>
+
+                    <!-- <a href="#">Forgot Password?</a> -->
+
+                </div>
+
+                <button>
+
+                    Login
+
+                </button>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>

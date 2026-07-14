@@ -1,0 +1,336 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Principal Management | Admin Panel</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="{% static 'css/sidebar.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/department.css' %}">
+    <link rel="stylesheet" href="{% static 'css/principal.css' %}">
+</head>
+<body class="pm-page">
+
+    {% include 'includes/sidebar.html' %}
+
+    <div class="pm-main">
+        <!-- Breadcrumb -->
+        <nav class="pm-breadcrumb" aria-label="Breadcrumb">
+            <a href="{% url 'dashboard' %}"><i class="fas fa-home"></i> Dashboard</a>
+            <span class="pm-breadcrumb__sep">/</span>
+            <span class="pm-breadcrumb__current">Principal Management</span>
+        </nav>
+
+        <!-- Page Header -->
+        <div class="pm-page-header">
+            <div class="pm-header-title-group">
+                <h1 class="pm-page-title">Principal Management</h1>
+                <p class="pm-page-subtitle">Manage college principals and their login credentials.</p>
+            </div>
+            <button onclick="openAddModal()" class="pm-btn pm-btn--primary">
+                <i class="fas fa-user-plus"></i> Add Principal
+            </button>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="pm-stats">
+            <div class="pm-stat pm-stat--blue">
+                <div class="pm-stat__icon"><i class="fas fa-chalkboard-teacher"></i></div>
+                <div class="pm-stat__body">
+                    <span class="pm-stat__label">Total Principals</span>
+                    <span class="pm-stat__value">24</span>
+                </div>
+                <div class="pm-stat__bg-icon"><i class="fas fa-chalkboard-teacher"></i></div>
+            </div>
+            <div class="pm-stat pm-stat--green">
+                <div class="pm-stat__icon"><i class="fas fa-circle-check"></i></div>
+                <div class="pm-stat__body">
+                    <span class="pm-stat__label">Active</span>
+                    <span class="pm-stat__value">22</span>
+                </div>
+                <div class="pm-stat__bg-icon"><i class="fas fa-circle-check"></i></div>
+            </div>
+            <div class="pm-stat pm-stat--red">
+                <div class="pm-stat__icon"><i class="fas fa-circle-xmark"></i></div>
+                <div class="pm-stat__body">
+                    <span class="pm-stat__label">Inactive</span>
+                    <span class="pm-stat__value">2</span>
+                </div>
+                <div class="pm-stat__bg-icon"><i class="fas fa-circle-xmark"></i></div>
+            </div>
+            <div class="pm-stat pm-stat--purple">
+                <div class="pm-stat__icon"><i class="fas fa-university"></i></div>
+                <div class="pm-stat__body">
+                    <span class="pm-stat__label">Colleges</span>
+                    <span class="pm-stat__value">12</span>
+                </div>
+                <div class="pm-stat__bg-icon"><i class="fas fa-university"></i></div>
+            </div>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="pm-toolbar">
+            <div class="pm-toolbar__left">
+                <div class="pm-search">
+                    <i class="fas fa-search pm-search__icon"></i>
+                    <input type="text" id="searchInput" placeholder="Search by name, email..." class="pm-search__input">
+                </div>
+                <div class="pm-toolbar__filters">
+                    <select id="collegeFilter" class="pm-select">
+                        <option value="">All Colleges</option>
+                        <option value="tech">Tech Engineering College</option>
+                    </select>
+                    <select id="statusFilter" class="pm-select pm-select--sm">
+                        <option value="">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
+            </div>
+            <button class="pm-btn pm-btn--ghost" id="resetBtn">
+                <i class="fas fa-rotate-left"></i> Reset
+            </button>
+        </div>
+
+        <!-- Table Card -->
+        <div class="pm-card">
+            <div class="pm-table-scroll">
+                <table class="pm-table" id="principalTable">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Principal</th>
+                            <th>Email</th>
+                            <th>College</th>
+                            <th>Username</th>
+                            <th>Password</th>
+                            <th>Status</th>
+                            <th>Joined</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <!-- Demo Row 1 -->
+                        <tr>
+                            <td class="pm-td--no">1</td>
+                            <td>
+                                <div class="pm-principal">
+                                    <div class="pm-avatar pm-avatar--blue">RK</div>
+                                    <div>
+                                        <div class="pm-principal__name">Dr. Rajesh Khanna</div>
+                                        <div class="pm-principal__role">Principal</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="pm-td--muted">rajesh.khanna@tec.edu</td>
+                            <td class="pm-td--muted">Tech Engineering College</td>
+                            <td><span class="pm-username">TEC_PRINCIPAL</span></td>
+                            <td>
+                                <!-- Password Show/Hide Container -->
+                                <div class="pm-password-wrapper">
+                                    <span class="pm-password" data-password="Pass12345">••••••••</span>
+                                    <button class="pm-password-toggle" onclick="togglePassword(this)">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </td>
+                            <td><span class="pm-badge pm-badge--active">Active</span></td>
+                            <td class="pm-td--muted">01 Jun 2022</td>
+                            <td>
+                                <div class="pm-actions">
+                                    <button class="pm-icon-btn pm-icon-btn--view" onclick="openViewModal('Dr. Rajesh Khanna', 'rajesh.khanna@tec.edu', 'Tech Engineering College', 'TEC_PRINCIPAL')"><i class="fas fa-eye"></i></button>
+                                    <button class="pm-icon-btn pm-icon-btn--edit" onclick="openEditModal('Dr. Rajesh Khanna')"><i class="fas fa-pen-to-square"></i></button>
+                                    <button class="pm-icon-btn pm-icon-btn--delete" onclick="openDeleteModal('Dr. Rajesh Khanna')"><i class="fas fa-trash-can"></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="pm-table-footer">
+                <span class="pm-table-footer__info">Showing <strong id="pageRange">1–10</strong> of <strong id="totalCount">24</strong> principals</span>
+                <div class="pm-pagination">
+                    <button class="pm-btn pm-btn--ghost pm-pagination-btn" id="prevPage"><i class="fas fa-chevron-left"></i> Previous</button>
+                    <button class="pm-btn pm-btn--ghost pm-pagination-btn" id="nextPage">Next <i class="fas fa-chevron-right"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── MODALS ────────────────────────────────────────── -->
+    <!-- Add Modal -->
+    <div id="addModal" class="pm-modal-overlay">
+        <div class="pm-modal pm-modal--form">
+            <div class="pm-modal__header">
+                <h3 class="pm-modal__title">Add New Principal</h3>
+                <button class="pm-close-btn" onclick="closeAllModals()">&times;</button>
+            </div>
+            <form id="addPrincipalForm" class="pm-form-grid">
+                <div class="pm-form-group">
+                    <label>Full Name</label>
+                    <input type="text" name="full_name" placeholder="e.g. Dr. Jane Doe" required>
+                </div>
+                <div class="pm-form-group">
+                    <label>Email Address</label>
+                    <input type="email" name="email" placeholder="jane.doe@college.edu" required>
+                </div>
+                <div class="pm-form-group">
+                    <label>College</label>
+                    <select name="college" class="pm-select" required>
+                        <option value="" disabled selected>Select College</option>
+                        <option value="tech">Tech Engineering College</option>
+                        <option value="global">Global Institute</option>
+                    </select>
+                </div>
+                <div class="pm-form-group">
+                    <label>Username</label>
+                    <input type="text" name="username" placeholder="COLLEGE_PRINCIPAL" required>
+                </div>
+                <div class="pm-form-group">
+                    <label>Password</label>
+                    <input type="password" name="password" placeholder="••••••••" required>
+                </div>
+                <div class="pm-form-group">
+                    <label>Status</label>
+                    <select name="status" class="pm-select">
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
+            </form>
+            <div class="pm-modal__actions">
+                <button onclick="closeAllModals()" class="pm-btn pm-btn--ghost">Cancel</button>
+                <button type="submit" form="addPrincipalForm" class="pm-btn pm-btn--primary">Create Account</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Modal -->
+    <div id="viewModal" class="pm-modal-overlay">
+        <div class="pm-modal pm-modal--view">
+            <div class="pm-modal__header">
+                <h3 class="pm-modal__title">Principal Details</h3>
+                <button class="pm-close-btn" onclick="closeAllModals()">&times;</button>
+            </div>
+            <div class="pm-view-content">
+                <div class="pm-view-profile">
+                    <div class="pm-avatar pm-avatar--blue" style="width: 60px; height: 60px; font-size: 1.2rem; margin: 0 auto 1rem;">RK</div>
+                    <h2 id="viewName">Dr. Rajesh Khanna</h2>
+                    <p class="pm-principal__role">Principal</p>
+                </div>
+                <div class="pm-view-grid">
+                    <div class="pm-view-item"><strong>Email:</strong> <span id="viewEmail">rajesh.khanna@tec.edu</span></div>
+                    <div class="pm-view-item"><strong>College:</strong> <span id="viewCollege">Tech Engineering College</span></div>
+                    <div class="pm-view-item"><strong>Username:</strong> <span id="viewUsername">TEC_PRINCIPAL</span></div>
+                    <div class="pm-view-item"><strong>Status:</strong> <span class="pm-badge pm-badge--active">Active</span></div>
+                </div>
+            </div>
+            <div class="pm-modal__actions">
+                <button onclick="closeAllModals()" class="pm-btn pm-btn--ghost">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="editModal" class="pm-modal-overlay">
+        <div class="pm-modal pm-modal--form">
+            <div class="pm-modal__header">
+                <h3 class="pm-modal__title">Edit Principal</h3>
+                <button class="pm-close-btn" onclick="closeAllModals()">&times;</button>
+            </div>
+            <form id="editForm" class="pm-form-grid">
+                <div class="pm-form-group">
+                    <label>Full Name</label>
+                    <input type="text" value="Dr. Rajesh Khanna" required>
+                </div>
+                <div class="pm-form-group">
+                    <label>Email</label>
+                    <input type="email" value="rajesh.khanna@tec.edu" required>
+                </div>
+                <div class="pm-form-group">
+                    <label>College</label>
+                    <select class="pm-select">
+                        <option>Tech Engineering College</option>
+                        <option>Global Institute</option>
+                    </select>
+                </div>
+                <div class="pm-form-group">
+                    <label>Status</label>
+                    <select class="pm-select">
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
+            </form>
+            <div class="pm-modal__actions">
+                <button onclick="closeAllModals()" class="pm-btn pm-btn--ghost">Cancel</button>
+                <button class="pm-btn pm-btn--primary">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Modal -->
+    <div id="deleteModal" class="pm-modal-overlay">
+        <div class="pm-modal">
+            <div class="pm-modal__icon"><i class="fas fa-exclamation-triangle"></i></div>
+            <h3 class="pm-modal__title">Delete Principal?</h3>
+            <p class="pm-modal__desc">Are you sure you want to delete <strong id="deleteName"></strong>? This action cannot be undone.</p>
+            <div class="pm-modal__actions">
+                <button onclick="closeAllModals()" class="pm-btn pm-btn--ghost">Cancel</button>
+                <button class="pm-btn pm-btn--danger">Yes, Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Password Toggle Logic
+        function togglePassword(btn) {
+            const pwdSpan = btn.previousElementSibling;
+            const isHidden = pwdSpan.innerText === '••••••••';
+            const realPassword = pwdSpan.getAttribute('data-password');
+
+            if (isHidden) {
+                pwdSpan.innerText = realPassword;
+                btn.innerHTML = '<i class="fas fa-eye-slash"></i>';
+            } else {
+                pwdSpan.innerText = '••••••••';
+                btn.innerHTML = '<i class="fas fa-eye"></i>';
+            }
+        }
+
+        // Modal Controls
+        function openAddModal() { document.getElementById('addModal').classList.add('active'); }
+        function openViewModal(name, email, college, username) {
+            document.getElementById('viewName').innerText = name;
+            document.getElementById('viewEmail').innerText = email;
+            document.getElementById('viewCollege').innerText = college;
+            document.getElementById('viewUsername').innerText = username;
+            document.getElementById('viewModal').classList.add('active');
+        }
+        function openEditModal(name) { document.getElementById('editModal').classList.add('active'); }
+        function openDeleteModal(name) {
+            document.getElementById('deleteName').innerText = name;
+            document.getElementById('deleteModal').classList.add('active');
+        }
+        function closeAllModals() {
+            const modals = document.querySelectorAll('.pm-modal-overlay');
+            modals.forEach(modal => modal.classList.remove('active'));
+        }
+
+        window.onclick = function(event) {
+            if (event.target.classList.contains('pm-modal-overlay')) { closeAllModals(); }
+        }
+
+        document.getElementById('addPrincipalForm')?.addEventListener('submit', function(e) {
+            e.preventDefault();
+            alert("Principal added successfully!");
+            closeAllModals();
+            this.reset();
+        });
+    </script>
+</body>
+</html>

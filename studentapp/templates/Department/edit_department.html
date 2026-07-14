@@ -1,0 +1,233 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Department | Department Management</title>
+
+    <!-- Stand-alone stylesheet (no Bootstrap / Tailwind) -->
+    <link rel="stylesheet" href="{% static 'css/department.css' %}">
+</head>
+
+<body class="dp-page">
+
+    <main class="dp-container">
+
+        <!-- ==================================================================
+         Breadcrumb navigation
+         ================================================================== -->
+        <nav class="dp-breadcrumb" aria-label="Breadcrumb">
+            <ol class="dp-breadcrumb__list">
+                <li>
+                    <a href="{% url 'dashboard' %}">Dashboard</a>
+                </li>
+                <li class="dp-breadcrumb__separator" aria-hidden="true">/</li>
+                <li>
+                    <a href="{% url 'department_management' %}">Department Management</a>
+                </li>
+                <li class="dp-breadcrumb__separator" aria-hidden="true">/</li>
+                <li class="dp-breadcrumb__current" aria-current="page">Edit Department</li>
+            </ol>
+        </nav>
+
+        <!-- ==================================================================
+         Page header
+         ================================================================== -->
+        <header class="dp-header">
+            <h1 class="dp-header__title">Edit Department</h1>
+            <p class="dp-header__subtitle">Update the existing department information.</p>
+        </header>
+
+        <!-- ==================================================================
+         Django Messages Framework — success / error / info alerts
+         ================================================================== -->
+        {% if messages %}
+        {% for message in messages %}
+        <div class="dp-alert {% if message.tags == 'error' %}dp-alert--error{% elif message.tags == 'success' %}dp-alert--success{% else %}dp-alert--info{% endif %}"
+            role="status">
+            {% if message.tags == 'success' %}
+            <svg class="dp-alert__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+                aria-hidden="true">
+                <path fill-rule="evenodd"
+                    d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
+                    clip-rule="evenodd" />
+            </svg>
+            {% elif message.tags == 'error' %}
+            <svg class="dp-alert__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+                aria-hidden="true">
+                <path fill-rule="evenodd"
+                    d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 6a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 6zm0 8a1 1 0 100-2 1 1 0 000 2z"
+                    clip-rule="evenodd" />
+            </svg>
+            {% else %}
+            <svg class="dp-alert__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+                aria-hidden="true">
+                <path fill-rule="evenodd"
+                    d="M18 10A8 8 0 11 2 10a8 8 0 0116 0zM9 9a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1zm1 3a1 1 0 100 2h.01a1 1 0 100-2H10z"
+                    clip-rule="evenodd" />
+            </svg>
+            {% endif %}
+            <div>{{ message }}</div>
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        <!-- Non-field form errors -->
+        {% if form.non_field_errors %}
+        <div class="dp-alert dp-alert--error" role="alert">
+            <svg class="dp-alert__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+                aria-hidden="true">
+                <path fill-rule="evenodd"
+                    d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 6a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 6zm0 8a1 1 0 100-2 1 1 0 000 2z"
+                    clip-rule="evenodd" />
+            </svg>
+            <div>{{ form.non_field_errors }}</div>
+        </div>
+        {% endif %}
+
+        <!-- ==================================================================
+         Edit Department form
+         ================================================================== -->
+        <form method="post" novalidate class="dp-card">
+            {% csrf_token %}
+
+            <!-- ---------------- Section 1: Department Details ---------------- -->
+            <section class="dp-section">
+                <h2 class="dp-section__title">Department Details</h2>
+                <p class="dp-section__hint">Basic information that identifies the department.</p>
+
+                <div class="dp-grid">
+
+                    <!-- Select College -->
+                    <div class="dp-field dp-field--full {% if form.college.errors %}dp-field--error{% endif %}">
+                        <label class="dp-label" for="id_college">
+                            Select College<span class="dp-required">*</span>
+                        </label>
+                        <select name="college" id="id_college" required class="dp-select">
+                            <option value="" disabled {% if not form.college.value %}selected{% endif %}>Choose a
+                                college</option>
+                            <!-- Dummy Data for Edit Demo -->
+                            <option value="Tech Engineering College" selected>Tech Engineering College</option>
+                            <option value="Global Institute of Commerce">Global Institute of Commerce</option>
+                            <option value="Royal Arts College">Royal Arts College</option>
+                        </select>
+                        {% for error in form.college.errors %}
+                        <p class="dp-error-text">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Department Code -->
+                    <div class="dp-field {% if form.department_code.errors %}dp-field--error{% endif %}">
+                        <label class="dp-label" for="id_department_code">
+                            Department Code<span class="dp-required">*</span>
+                        </label>
+                        <input type="text" name="department_code" id="id_department_code" required
+                            value="CSE" placeholder="e.g. CSE" class="dp-input">
+                        {% for error in form.department_code.errors %}
+                        <p class="dp-error-text">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Department Name -->
+                    <div class="dp-field {% if form.department_name.errors %}dp-field--error{% endif %}">
+                        <label class="dp-label" for="id_department_name">
+                            Department Name<span class="dp-required">*</span>
+                        </label>
+                        <input type="text" name="department_name" id="id_department_name" required
+                            value="Computer Science and Engineering"
+                            placeholder="e.g. Computer Science and Engineering" class="dp-input">
+                        {% for error in form.department_name.errors %}
+                        <p class="dp-error-text">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- ---------------- Section 2: Head of Department ---------------- -->
+            <section class="dp-section">
+                <h2 class="dp-section__title">Head of Department</h2>
+                <p class="dp-section__hint">Information about the current HOD.</p>
+
+                <div class="dp-grid">
+
+                    <!-- HOD Name -->
+                    <div class="dp-field {% if form.hod_name.errors %}dp-field--error{% endif %}">
+                        <label class="dp-label" for="id_hod_name">
+                            HOD Name<span class="dp-required">*</span>
+                        </label>
+                        <input type="text" name="hod_name" id="id_hod_name" required
+                            value="Dr. Ramesh Kumar" placeholder="e.g. Dr. Ramesh Kumar"
+                            class="dp-input">
+                        {% for error in form.hod_name.errors %}
+                        <p class="dp-error-text">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+
+                    <!-- HOD Email -->
+                    <div class="dp-field {% if form.hod_email.errors %}dp-field--error{% endif %}">
+                        <label class="dp-label" for="id_hod_email">
+                            HOD Email<span class="dp-required">*</span>
+                        </label>
+                        <input type="email" name="hod_email" id="id_hod_email" required
+                            value="hod.cse@college.edu" placeholder="hod.cse@college.edu"
+                            class="dp-input">
+                        {% for error in form.hod_email.errors %}
+                        <p class="dp-error-text">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+
+                    <!-- HOD Mobile Number -->
+                    <div class="dp-field {% if form.hod_mobile.errors %}dp-field--error{% endif %}">
+                        <label class="dp-label" for="id_hod_mobile">
+                            HOD Mobile Number<span class="dp-required">*</span>
+                        </label>
+                        <input type="tel" name="hod_mobile" id="id_hod_mobile" required
+                            value="+91 9876543210" placeholder="+91 98765 43210"
+                            class="dp-input">
+                        {% for error in form.hod_mobile.errors %}
+                        <p class="dp-error-text">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Status -->
+                    <div class="dp-field">
+                        <span class="dp-label">Status</span>
+                        <div class="dp-status-toggle" role="radiogroup" aria-label="Department status">
+                            <input type="radio" name="status" id="status_active" value="active" checked>
+                            <label for="status_active">Active</label>
+
+                            <input type="radio" name="status" id="status_inactive" value="inactive">
+                            <label for="status_inactive">Inactive</label>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+
+
+            <!-- ---------------- Action bar ---------------- -->
+            <div class="dp-actions">
+                <div class="dp-actions__left">
+                    <a href="{% url 'department_management' %}" class="dp-btn dp-btn-text">
+                        Cancel
+                    </a>
+                </div>
+
+                <div class="dp-actions__right">
+                    <button type="submit" name="action" value="save" class="dp-btn dp-btn-primary">
+                        Save Changes
+                    </button>
+                </div>
+            </div>
+
+        </form>
+
+    </main>
+
+</body>
+
+</html>

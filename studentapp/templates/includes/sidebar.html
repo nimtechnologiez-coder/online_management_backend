@@ -1,0 +1,163 @@
+{% load static %}
+<!-- Font Awesome CDN for icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<!-- Custom Sidebar CSS -->
+<link rel="stylesheet" href="{% static 'css/sidebar.css' %}">
+
+<!-- Mobile Toggle Button -->
+<button class="mobile-toggle" id="sidebarToggle" aria-label="Toggle Sidebar">
+    <i class="fas fa-bars"></i>
+</button>
+
+<!-- Overlay for mobile view -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- Sidebar Container -->
+<aside class="sidebar" id="sidebar">
+    <!-- Sidebar Header -->
+    <div class="sidebar-header">
+        <h2 class="sidebar-title">College Management System</h2>
+        <span class="sidebar-subtitle">Admin Panel</span>
+    </div>
+
+    <!-- Navigation Menu -->
+    <nav class="sidebar-nav">
+        <ul class="nav-list">
+            <!-- Dashboard -->
+            <li class="nav-item">
+                <a href="{% url 'dashboard' %}"
+                    class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                    <i class="fas fa-tachometer-alt nav-icon"></i>
+                    <span class="nav-text">Dashboard</span>
+                </a>
+            </li>
+
+            <!-- College Management -->
+            <li class="nav-item">
+                <a href="{% url 'collegemanagement' %}"
+                    class="nav-link {% if request.resolver_match.url_name == 'collegemanagement' %}active{% endif %}">
+                    <i class="fas fa-university nav-icon"></i>
+                    <span class="nav-text">College Management</span>
+                </a>
+            </li>
+
+            <!-- Department Management -->
+            <li class="nav-item">
+                <a href="{% url 'department_management' %}"
+                    class="nav-link {% if request.resolver_match.url_name == 'department_management' %}active{% endif %}">
+                    <i class="fas fa-building nav-icon"></i>
+                    <span class="nav-text">Department Management</span>
+                </a>
+            </li>
+
+            <!-- HOD Management -->
+            <!-- <li class="nav-item">
+                <a href="{% url 'hod_management' %}" class="nav-link {% if request.resolver_match.url_name == 'hod_management' %}active{% endif %}">
+                    <i class="fas fa-user-tie nav-icon"></i>
+                    <span class="nav-text">HOD Management</span>
+                </a>
+            </li> -->
+
+            <!-- Principal Management -->
+            <li class="nav-item">
+                <a href="{% url 'principal_management' %}"
+                    class="nav-link {% if request.resolver_match.url_name == 'principal_management' %}active{% endif %}">
+                    <i class="fas fa-chalkboard-teacher nav-icon"></i>
+                    <span class="nav-text">Principal Management</span>
+                </a>
+            </li>
+
+            <!-- Student Management -->
+            <li class="nav-item">
+                <a href="{% url 'student_management' %}"
+                    class="nav-link {% if request.resolver_match.url_name == 'student_management' %}active{% endif %}">
+                    <i class="fas fa-user-graduate nav-icon"></i>
+                    <span class="nav-text">Student Management</span>
+                </a>
+            </li>
+
+            <!-- Video Management -->
+            <li class="nav-item">
+                <a href="{% url 'video_management' %}"
+                    class="nav-link {% if request.resolver_match.url_name == 'video_management' %}active{% endif %}">
+                    <i class="fas fa-video nav-icon"></i>
+                    <span class="nav-text">Video Management</span>
+                </a>
+            </li>
+
+            <!-- Video Analytics -->
+            <li class="nav-item">
+                <a href="{% url 'video_analytics' %}"
+                    class="nav-link {% if request.resolver_match.url_name == 'video_analytics' %}active{% endif %}">
+                    <i class="fas fa-chart-line nav-icon"></i>
+                    <span class="nav-text">Video Analytics</span>
+                </a>
+            </li>
+
+            <!-- Reports -->
+            <li class="nav-item">
+                <a href="{% url 'reports' %}"
+                    class="nav-link {% if request.resolver_match.url_name == 'reports' %}active{% endif %}">
+                    <i class="fas fa-file-alt nav-icon"></i>
+                    <span class="nav-text">Reports</span>
+                </a>
+            </li>
+
+            <!-- User Management -->
+            <!-- <li class="nav-item">
+                <a href="{% url 'user_management' %}"
+                    class="nav-link {% if request.resolver_match.url_name == 'user_management' %}active{% endif %}">
+                    <i class="fas fa-users nav-icon"></i>
+                    <span class="nav-text">User Management</span>
+                </a>
+            </li> -->
+
+            <!-- System Settings -->
+            <!-- <li class="nav-item">
+                <a href="{% url 'system_settings' %}"
+                    class="nav-link {% if request.resolver_match.url_name == 'system_settings' %}active{% endif %}">
+                    <i class="fas fa-cogs nav-icon"></i>
+                    <span class="nav-text">System Settings</span>
+                </a>
+            </li> -->
+
+            <li class="nav-divider"></li>
+
+            <!-- Profile -->
+            <li class="nav-item">
+                <a href="{% url 'profile' %}"
+                    class="nav-link {% if request.resolver_match.url_name == 'profile' %}active{% endif %}">
+                    <i class="fas fa-user-circle nav-icon"></i>
+                    <span class="nav-text">Profile</span>
+                </a>
+            </li>
+
+            <!-- Logout -->
+            <li class="nav-item">
+                <a href="{% url 'logout' %}" class="nav-link logout-link">
+                    <i class="fas fa-sign-out-alt nav-icon"></i>
+                    <span class="nav-text">Logout</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</aside>
+
+<!-- Sidebar Toggle Script -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const sidebar = document.getElementById('sidebar');
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+        function toggleSidebar() {
+            sidebar.classList.toggle('show');
+            sidebarOverlay.classList.toggle('show');
+        }
+
+        if (sidebarToggle && sidebarOverlay) {
+            sidebarToggle.addEventListener('click', toggleSidebar);
+            sidebarOverlay.addEventListener('click', toggleSidebar);
+        }
+    });
+</script>

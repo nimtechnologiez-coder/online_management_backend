@@ -1,0 +1,119 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Add New Video | Admin Panel</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <!-- CSS Links -->
+    <link rel="stylesheet" href="{% static 'css/sidebar.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/department.css' %}">
+    <link rel="stylesheet" href="{% static 'css/videomanagement.css' %}">
+</head>
+
+<body class="vm-page">
+
+    <!-- Sidebar -->
+    {% include 'includes/sidebar.html' %}
+
+    <div class="vm-main">
+        <!-- Breadcrumb -->
+        <nav class="vm-breadcrumb" aria-label="Breadcrumb">
+            <a href="{% url 'dashboard' %}"><i class="fas fa-home"></i> Dashboard</a>
+            <span class="vm-breadcrumb__sep">/</span>
+            <a href="{% url 'video_management' %}">Video Management</a>
+            <span class="vm-breadcrumb__sep">/</span>
+            <span class="vm-breadcrumb__current">Add New Video</span>
+        </nav>
+
+        <div class="vm-page-header">
+            <div>
+                <h1 class="vm-page-title">Add New Video</h1>
+                <p class="vm-page-subtitle">Upload a new educational video to the student library.</p>
+            </div>
+        </div>
+
+        <!-- Form Card -->
+        <div class="vm-card vm-form-card">
+            <div class="vm-form-section">
+                <h3 class="vm-section-title"><i class="fas fa-file-video"></i> Basic Information</h3>
+                <div class="vm-form-grid">
+                    <div class="vm-form-group vm-form-group--full">
+                        <label>Video Title <span class="required">*</span></label>
+                        <input type="text" placeholder="Enter a catchy title for the video" required>
+                    </div>
+                    <div class="vm-form-group">
+                        <label>Category <span class="required">*</span></label>
+                        <select required>
+                            <option value="">Select Category</option>
+                            <option value="Programming">Programming</option>
+                            <option value="Mathematics">Mathematics</option>
+                            <option value="Physics">Physics</option>
+                            <option value="Soft Skills">Soft Skills</option>
+                        </select>
+                    </div>
+                    <div class="vm-form-group">
+                        <label>Duration (MM:SS) <span class="required">*</span></label>
+                        <input type="text" placeholder="e.g. 12:30" required>
+                    </div>
+                    <div class="vm-form-group vm-form-group--full">
+                        <label>Video Description</label>
+                        <textarea rows="4" placeholder="Provide a detailed overview of what this video covers..."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="vm-form-section">
+                <h3 class="vm-section-title"><i class="fas fa-cloud-arrow-up"></i> Media Upload</h3>
+                <div class="vm-form-grid">
+                    <div class="vm-form-group">
+                        <label>Video File <span class="required">*</span></label>
+                        <div class="vm-upload-box">
+                            <i class="fas fa-file-video"></i>
+                            <p>Drag & drop or <span>Browse</span></p>
+                            <input type="file" accept="video/*" required>
+                        </div>
+                    </div>
+                    <div class="vm-form-group">
+                        <label>Thumbnail Image <span class="required">*</span></label>
+                        <div class="vm-upload-box">
+                            <i class="fas fa-image"></i>
+                            <p>Drag & drop or <span>Browse</span></p>
+                            <input type="file" accept="image/*" required>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="vm-form-section">
+                <h3 class="vm-section-title"><i class="fas fa-sliders"></i> Settings</h3>
+                <div class="vm-form-grid">
+                    <div class="vm-form-group">
+                        <label>Visibility Status</label>
+                        <select>
+                            <option value="Published">Published (Visible to Students)</option>
+                            <option value="Draft">Draft (Hidden)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="vm-form-footer">
+                <a href="{% url 'video_management' %}" class="vm-btn vm-btn--ghost">Cancel</a>
+                <button type="submit" class="vm-btn vm-btn--primary">
+                    <i class="fas fa-save"></i> Save Video
+                </button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

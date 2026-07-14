@@ -1,0 +1,370 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Video Management | Admin Panel</title>
+    <meta name="description" content="Manage educational video content and tutorials." />
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <!-- CSS Links -->
+    <link rel="stylesheet" href="{% static 'css/sidebar.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/department.css' %}">
+    <link rel="stylesheet" href="{% static 'css/videomanagement.css' %}">
+</head>
+
+<body class="vm-page">
+
+    <!-- Sidebar -->
+    {% include 'includes/sidebar.html' %}
+
+    <div class="vm-main">
+        <!-- Breadcrumb -->
+        <nav class="vm-breadcrumb" aria-label="Breadcrumb">
+            <a href="{% url 'dashboard' %}"><i class="fas fa-home"></i> Dashboard</a>
+            <span class="vm-breadcrumb__sep">/</span>
+            <span class="vm-breadcrumb__current">Video Management</span>
+        </nav>
+
+        <!-- Page Header -->
+        <div class="vm-page-header">
+            <div>
+                <h1 class="vm-page-title">Video Management</h1>
+                <p class="vm-page-subtitle">Upload and manage educational content for all students.</p>
+            </div>
+            <a href="{% url 'video_add' %}" class="vm-btn vm-btn--primary">
+                <i class="fas fa-video"></i> Add Video
+            </a>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="vm-stats">
+            <div class="vm-stat vm-stat--blue">
+                <div class="vm-stat__icon"><i class="fas fa-video"></i></div>
+                <div class="vm-stat__body">
+                    <span class="vm-stat__label">Total Videos</span>
+                    <span class="vm-stat__value">124</span>
+                </div>
+                <div class="vm-stat__bg-icon"><i class="fas fa-video"></i></div>
+            </div>
+            <div class="vm-stat vm-stat--green">
+                <div class="vm-stat__icon"><i class="fas fa-circle-check"></i></div>
+                <div class="vm-stat__body">
+                    <span class="vm-stat__label">Published</span>
+                    <span class="vm-stat__value">110</span>
+                </div>
+                <div class="vm-stat__bg-icon"><i class="fas fa-circle-check"></i></div>
+            </div>
+            <div class="vm-stat vm-stat--red">
+                <div class="vm-stat__icon"><i class="fas fa-clock"></i></div>
+                <div class="vm-stat__body">
+                    <span class="vm-stat__label">Drafts</span>
+                    <span class="vm-stat__value">14</span>
+                </div>
+                <div class="vm-stat__bg-icon"><i class="fas fa-clock"></i></div>
+            </div>
+            <div class="vm-stat vm-stat--purple">
+                <div class="vm-stat__icon"><i class="fas fa-eye"></i></div>
+                <div class="vm-stat__body">
+                    <span class="vm-stat__label">Total Views</span>
+                    <span class="vm-stat__value">12.5K</span>
+                </div>
+                <div class="vm-stat__bg-icon"><i class="fas fa-eye"></i></div>
+            </div>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="vm-toolbar">
+            <div class="vm-toolbar__filters">
+                <div class="vm-search">
+                    <i class="fas fa-search vm-search__icon"></i>
+                    <input type="text" id="searchInput" placeholder="Search video title..." class="vm-search__input">
+                </div>
+                <select id="categoryFilter" class="vm-select">
+                    <option value="">All Categories</option>
+                    <option value="Programming">Programming</option>
+                    <option value="Mathematics">Mathematics</option>
+                    <option value="Physics">Physics</option>
+                    <option value="Soft Skills">Soft Skills</option>
+                </select>
+                <select id="statusFilter" class="vm-select vm-select--sm">
+                    <option value="">All Status</option>
+                    <option value="published">Published</option>
+                    <option value="draft">Draft</option>
+                </select>
+            </div>
+            <div class="vm-toolbar__actions">
+                <button class="vm-btn vm-btn--ghost" title="Refresh" onclick="location.reload()">
+                    <i class="fas fa-rotate-left"></i> Refresh
+                </button>
+                <button class="vm-btn vm-btn--ghost" title="Export Data">
+                    <i class="fas fa-file-export"></i> Export
+                </button>
+            </div>
+        </div>
+
+        <!-- Table Card -->
+        <div class="vm-card">
+            <div class="vm-table-scroll">
+                <table class="vm-table" id="videoTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 50px;">S.No</th>
+                            <th style="width: 100px;">Thumbnail</th>
+                            <th>Video Title</th>
+                            <th>Category</th>
+                            <th style="width: 100px;">Duration</th>
+                            <th>Description</th>
+                            <th style="width: 130px;">Uploaded Date</th>
+                            <th style="width: 120px;">Status</th>
+                            <th style="width: 150px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <!-- Row 1 -->
+                        <tr data-title="Introduction to Python" data-cat="Programming" data-dur="12:45" data-date="2023-10-12" data-status="Published" data-desc="A comprehensive guide to getting started with Python programming for beginners.">
+                            <td class="vm-td--no">1</td>
+                            <td>
+                                <div class="vm-thumb">
+                                    <img src="https://via.placeholder.com/80x45" alt="Thumbnail">
+                                    <i class="fas fa-play vm-thumb__play"></i>
+                                </div>
+                            </td>
+                            <td><span class="vm-video-title">Introduction to Python</span></td>
+                            <td><span class="vm-dept-tag">Programming</span></td>
+                            <td class="vm-td--muted">12:45</td>
+                            <td><span class="vm-description-truncate" title="A comprehensive guide to getting started with Python programming for beginners.">A comprehensive guide to getting started with Python programming for beginners...</span></td>
+                            <td class="vm-td--muted">2023-10-12</td>
+                            <td><span class="vm-badge vm-badge--active">Published</span></td>
+                            <td>
+                                <div class="vm-actions">
+                                    <button class="vm-icon-btn vm-icon-btn--view" title="View" onclick="openViewModal(this)"><i class="fas fa-eye"></i></button>
+                                    <button class="vm-icon-btn vm-icon-btn--edit" title="Edit" onclick="openEditModal(this)"><i class="fas fa-pen-to-square"></i></button>
+                                    <button class="vm-icon-btn vm-icon-btn--delete" title="Delete" onclick="openDeleteModal(this)"><i class="fas fa-trash-can"></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                        <!-- Row 2 -->
+                        <tr data-title="Advanced Calculus Basics" data-cat="Mathematics" data-dur="45:20" data-date="2023-11-05" data-status="Draft" data-desc="Deep dive into calculus limits and derivatives for advanced students.">
+                            <td class="vm-td--no">2</td>
+                            <td>
+                                <div class="vm-thumb">
+                                    <img src="https://via.placeholder.com/80x45" alt="Thumbnail">
+                                    <i class="fas fa-play vm-thumb__play"></i>
+                                </div>
+                            </td>
+                            <td><span class="vm-video-title">Advanced Calculus Basics</span></td>
+                            <td><span class="vm-dept-tag vm-dept-tag--teal">Mathematics</span></td>
+                            <td class="vm-td--muted">45:20</td>
+                            <td><span class="vm-description-truncate" title="Deep dive into calculus limits and derivatives for advanced students.">Deep dive into calculus limits and derivatives for advanced students...</span></td>
+                            <td class="vm-td--muted">2023-11-05</td>
+                            <td><span class="vm-badge vm-badge--inactive">Draft</span></td>
+                            <td>
+                                <div class="vm-actions">
+                                    <button class="vm-icon-btn vm-icon-btn--view" title="View" onclick="openViewModal(this)"><i class="fas fa-eye"></i></button>
+                                    <button class="vm-icon-btn vm-icon-btn--edit" title="Edit" onclick="openEditModal(this)"><i class="fas fa-pen-to-square"></i></button>
+                                    <button class="vm-icon-btn vm-icon-btn--delete" title="Delete" onclick="openDeleteModal(this)"><i class="fas fa-trash-can"></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="vm-table-footer">
+                <span class="vm-table-footer__info">Showing <strong>1–2</strong> of <strong>124</strong> videos</span>
+                <div class="vm-pagination">
+                    <button class="vm-page-btn" id="prevBtn" disabled><i class="fas fa-chevron-left"></i></button>
+                    <button class="vm-page-btn vm-page-btn--active">1</button>
+                    <button class="vm-page-btn">2</button>
+                    <button class="vm-page-btn">3</button>
+                    <span class="vm-page-ellipsis">…</span>
+                    <button class="vm-page-btn">25</button>
+                    <button class="vm-page-btn" id="nextBtn"><i class="fas fa-chevron-right"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── MODALS ────────────────────────────────────────────── -->
+    <!-- View Modal -->
+    <div id="viewModal" class="vm-modal-overlay">
+        <div class="vm-modal vm-modal--large">
+            <div class="vm-modal__header">
+                <h3 class="vm-modal__title"><i class="fas fa-circle-info"></i> Video Details</h3>
+                <button class="vm-modal__close" onclick="closeModal('viewModal')">&times;</button>
+            </div>
+            <div class="vm-modal__body">
+                <div class="vm-detail-grid">
+                    <div class="vm-detail-item"><strong>Video Title:</strong> <span id="viewTitle"></span></div>
+                    <div class="vm-detail-item"><strong>Category:</strong> <span id="viewCat"></span></div>
+                    <div class="vm-detail-item"><strong>Duration:</strong> <span id="viewDur"></span></div>
+                    <div class="vm-detail-item"><strong>Upload Date:</strong> <span id="viewDate"></span></div>
+                    <div class="vm-detail-item"><strong>Status:</strong> <span id="viewStatus"></span></div>
+                    <div class="vm-detail-item vm-detail-item--full"><strong>Description:</strong> <span id="viewDesc"></span></div>
+                </div>
+            </div>
+            <div class="vm-modal__actions">
+                <button onclick="closeModal('viewModal')" class="vm-btn vm-btn--ghost">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Modal (NOW INCLUDING VIDEO AND THUMBNAIL EDIT) -->
+    <div id="editModal" class="vm-modal-overlay">
+        <div class="vm-modal vm-modal--large">
+            <div class="vm-modal__header">
+                <h3 class="vm-modal__title"><i class="fas fa-pen-to-square"></i> Edit Video</h3>
+                <button class="vm-modal__close" onclick="closeModal('editModal')">&times;</button>
+            </div>
+            <form class="vm-modal__body">
+                <!-- Section 1: Basic Info -->
+                <div class="vm-modal-section">
+                    <h4 class="vm-modal-section-title">Basic Information</h4>
+                    <div class="vm-form-grid">
+                        <div class="vm-form-group vm-form-group--full">
+                            <label>Video Title</label>
+                            <input type="text" id="editTitle">
+                        </div>
+                        <div class="vm-form-group">
+                            <label>Category</label>
+                            <select id="editCat" class="vm-select">
+                                <option value="Programming">Programming</option>
+                                <option value="Mathematics">Mathematics</option>
+                                <option value="Physics">Physics</option>
+                                <option value="Soft Skills">Soft Skills</option>
+                            </select>
+                        </div>
+                        <div class="vm-form-group">
+                            <label>Duration (MM:SS)</label>
+                            <input type="text" id="editDur">
+                        </div>
+                        <div class="vm-form-group vm-form-group--full">
+                            <label>Description</label>
+                            <textarea id="editDesc" rows="3" style="padding:0.6rem; border-radius:8px; border:1px solid #e2e8f0; font-family:inherit; width: 100%; box-sizing: border-box;"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2: Media Update -->
+                <div class="vm-modal-section">
+                    <h4 class="vm-modal-section-title">Media Update</h4>
+                    <div class="vm-form-grid">
+                        <div class="vm-form-group">
+                            <label>Update Video File</label>
+                            <div class="vm-upload-box">
+                                <i class="fas fa-file-video"></i>
+                                <p>Change Video <span class="browse-txt">Browse</span></p>
+                                <input type="file" accept="video/*">
+                            </div>
+                        </div>
+                        <div class="vm-form-group">
+                            <label>Update Thumbnail</label>
+                            <div class="vm-upload-box">
+                                <i class="fas fa-image"></i>
+                                <p>Change Thumbnail <span class="browse-txt">Browse</span></p>
+                                <input type="file" accept="image/*">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 3: Settings -->
+                <div class="vm-modal-section">
+                    <h4 class="vm-modal-section-title">Settings</h4>
+                    <div class="vm-form-grid">
+                        <div class="vm-form-group">
+                            <label>Status</label>
+                            <select id="editStatus" class="vm-select">
+                                <option value="Published">Published</option>
+                                <option value="Draft">Draft</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </form>
+            <div class="vm-modal__actions">
+                <button onclick="closeModal('editModal')" class="vm-btn vm-btn--ghost">Cancel</button>
+                <button onclick="confirmEdit()" class="vm-btn vm-btn--primary">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Modal -->
+    <div id="deleteModal" class="vm-modal-overlay">
+        <div class="vm-modal">
+            <div class="vm-modal__icon"><i class="fas fa-exclamation-triangle"></i></div>
+            <h3 class="vm-modal__title">Delete Video?</h3>
+            <p class="vm-modal__desc">Are you sure you want to delete <strong id="deleteTitle"></strong>? This cannot be undone.</p>
+            <div class="vm-modal__actions">
+                <button onclick="closeModal('deleteModal')" class="vm-btn vm-btn--ghost">Cancel</button>
+                <button onclick="confirmDelete()" class="vm-btn vm-btn--danger">Yes, Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+        
+        function openViewModal(btn) {
+            const row = btn.closest('tr');
+            document.getElementById('viewTitle').textContent = row.dataset.title;
+            document.getElementById('viewCat').textContent = row.dataset.cat;
+            document.getElementById('viewDur').textContent = row.dataset.dur;
+            document.getElementById('viewDate').textContent = row.dataset.date;
+            document.getElementById('viewStatus').textContent = row.dataset.status;
+            document.getElementById('viewDesc').textContent = row.dataset.desc;
+            document.getElementById('viewModal').classList.add('active');
+        }
+
+        function openEditModal(btn) {
+            const row = btn.closest('tr');
+            document.getElementById('editTitle').value = row.dataset.title;
+            document.getElementById('editCat').value = row.dataset.cat;
+            document.getElementById('editDur').value = row.dataset.dur;
+            document.getElementById('editStatus').value = row.dataset.status;
+            document.getElementById('editDesc').value = row.dataset.desc;
+            document.getElementById('editModal').classList.add('active');
+        }
+
+        function openDeleteModal(btn) {
+            const row = btn.closest('tr');
+            document.getElementById('deleteTitle').textContent = row.dataset.title;
+            document.getElementById('deleteModal').classList.add('active');
+        }
+
+        function confirmEdit() { alert('Video updated successfully!'); closeModal('editModal'); }
+        function confirmDelete() { alert('Video deleted successfully!'); closeModal('deleteModal'); }
+
+        // Filtering Logic
+        const searchInput = document.getElementById('searchInput');
+        const categoryFilter = document.getElementById('categoryFilter');
+        const statusFilter = document.getElementById('statusFilter');
+
+        function filterTable() {
+            const q = searchInput.value.toLowerCase();
+            const cat = categoryFilter.value.toLowerCase();
+            const st = statusFilter.value.toLowerCase();
+
+            document.querySelectorAll('#tableBody tr').forEach(row => {
+                const text = row.textContent.toLowerCase();
+                const rowCat = row.dataset.cat.toLowerCase();
+                const rowStat = row.dataset.status.toLowerCase();
+
+                const ok = text.includes(q) && (!cat || rowCat === cat) && (!st || rowStat.includes(st));
+                row.style.display = ok ? '' : 'none';
+            });
+        }
+
+        [searchInput, categoryFilter, statusFilter].forEach(el => el.addEventListener('input', filterTable));
+    </script>
+</body>
+</html>
