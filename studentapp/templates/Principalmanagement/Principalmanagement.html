@@ -1,6 +1,7 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -12,6 +13,7 @@
     <link rel="stylesheet" href="{% static 'css/department.css' %}">
     <link rel="stylesheet" href="{% static 'css/principal.css' %}">
 </head>
+
 <body class="pm-page">
 
     {% include 'includes/sidebar.html' %}
@@ -76,23 +78,27 @@
             <div class="pm-toolbar__left">
                 <div class="pm-search">
                     <i class="fas fa-search pm-search__icon"></i>
-                    <input type="text" name="q" value="{{ q }}" placeholder="Search by name, email..." class="pm-search__input" onkeydown="if(event.key === 'Enter'){this.form.submit();}">
+                    <input type="text" name="q" value="{{ q }}" placeholder="Search by name, email..."
+                        class="pm-search__input" onkeydown="if(event.key === 'Enter'){this.form.submit();}">
                 </div>
                 <div class="pm-toolbar__filters">
                     <select name="college" class="pm-select" onchange="this.form.submit()">
                         <option value="">All Colleges</option>
                         {% for c in all_colleges %}
-                        <option value="{{ c.id }}" {% if selected_college == c.id|stringformat:"s" %}selected{% endif %}>{{ c.college_name }}</option>
+                        <option value="{{ c.id }}" {% if selected_college==c.id|stringformat:"s" %}selected{% endif %}>
+                            {{ c.college_name }}</option>
                         {% endfor %}
                     </select>
                     <select name="status" class="pm-select pm-select--sm" onchange="this.form.submit()">
                         <option value="">All Status</option>
-                        <option value="active" {% if selected_status == 'active' %}selected{% endif %}>Active</option>
-                        <option value="inactive" {% if selected_status == 'inactive' %}selected{% endif %}>Inactive</option>
+                        <option value="active" {% if selected_status=='active' %}selected{% endif %}>Active</option>
+                        <option value="inactive" {% if selected_status=='inactive' %}selected{% endif %}>Inactive
+                        </option>
                     </select>
                 </div>
             </div>
-            <a href="{% url 'principal_management' %}" class="pm-btn pm-btn--ghost" id="resetBtn" style="text-decoration: none;">
+            <a href="{% url 'principal_management' %}" class="pm-btn pm-btn--ghost" id="resetBtn"
+                style="text-decoration: none;">
                 <i class="fas fa-rotate-left"></i> Reset
             </a>
         </form>
@@ -123,7 +129,9 @@
 
             <div class="pm-table-footer">
                 <span class="pm-table-footer__info" id="pageInfo">
-                    Showing <strong id="infoStart">{{ page_obj.start_index|default:0 }}</strong>–<strong id="infoEnd">{{ page_obj.end_index|default:0 }}</strong> of <strong id="infoTotal">{{ page_obj.paginator.count }}</strong> principals
+                    Showing <strong id="infoStart">{{ page_obj.start_index|default:0 }}</strong>–<strong id="infoEnd">{{
+                        page_obj.end_index|default:0 }}</strong> of <strong id="infoTotal">{{ page_obj.paginator.count
+                        }}</strong> principals
                 </span>
                 <div class="pm-pagination" id="paginationContainer">
                     <!-- Rendered by JS -->
@@ -156,11 +164,13 @@
                 {% csrf_token %}
                 <div class="pm-form-group">
                     <label>Full Name <span style="color:#ef4444">*</span></label>
-                    <input type="text" id="addName" name="principal_name" placeholder="e.g. Dr. Jane Doe" required oninput="generateCredentials()">
+                    <input type="text" id="addName" name="principal_name" placeholder="e.g. Dr. Jane Doe" required
+                        oninput="generateCredentials()">
                 </div>
                 <div class="pm-form-group">
                     <label>Email Address <span style="color:#ef4444">*</span></label>
-                    <input type="email" id="addEmail" name="principal_email" placeholder="jane.doe@college.edu" required>
+                    <input type="email" id="addEmail" name="principal_email" placeholder="jane.doe@college.edu"
+                        required>
                 </div>
                 <div class="pm-form-group">
                     <label>Mobile Number <span style="color:#ef4444">*</span></label>
@@ -189,7 +199,8 @@
             </form>
             <div class="pm-modal__actions">
                 <button onclick="closeAllModals()" class="pm-btn pm-btn--ghost">Cancel</button>
-                <button type="submit" form="addPrincipalForm" class="pm-btn pm-btn--primary"><i class="fas fa-check"></i> Create Account</button>
+                <button type="submit" form="addPrincipalForm" class="pm-btn pm-btn--primary"><i
+                        class="fas fa-check"></i> Create Account</button>
             </div>
         </div>
     </div>
@@ -197,11 +208,13 @@
     <!-- Credentials Success Modal (shown after principal is created) -->
     <div id="credSuccessModal" class="pm-modal-overlay">
         <div class="pm-modal" style="max-width:480px; text-align:center;">
-            <div style="width:64px;height:64px;border-radius:50%;background:#d1fae5;display:flex;align-items:center;justify-content:center;font-size:1.6rem;color:#10b981;margin:0 auto 1.25rem;">
+            <div
+                style="width:64px;height:64px;border-radius:50%;background:#d1fae5;display:flex;align-items:center;justify-content:center;font-size:1.6rem;color:#10b981;margin:0 auto 1.25rem;">
                 <i class="fas fa-check-circle"></i>
             </div>
             <h3 class="pm-modal__title" style="margin-bottom:.5rem;">Principal Created!</h3>
-            <p style="font-size:.85rem;color:#4b5580;margin-bottom:1.5rem;">Account credentials have been generated. Share these with the principal securely.</p>
+            <p style="font-size:.85rem;color:#4b5580;margin-bottom:1.5rem;">Account credentials have been generated.
+                Share these with the principal securely.</p>
             <div class="pm-credentials-preview" style="text-align:left;margin-bottom:1.5rem;">
                 <div class="pm-cred-header"><i class="fas fa-magic"></i> Login Credentials</div>
                 <div class="pm-cred-grid">
@@ -219,7 +232,8 @@
                         <span class="pm-cred-value" id="successPassword"></span>
                     </div>
                 </div>
-                <p class="pm-cred-note"><i class="fas fa-exclamation-circle"></i> Save these credentials — they will not be shown again.</p>
+                <p class="pm-cred-note"><i class="fas fa-exclamation-circle"></i> Save these credentials — they will not
+                    be shown again.</p>
             </div>
             <div class="pm-modal__actions" style="justify-content:center;">
                 <button onclick="closeAllModals()" class="pm-btn pm-btn--primary">Done</button>
@@ -236,7 +250,8 @@
             </div>
             <div class="pm-view-content">
                 <div class="pm-view-profile">
-                    <div id="viewInitials" class="pm-avatar pm-avatar--blue" style="width: 60px; height: 60px; font-size: 1.2rem; margin: 0 auto 1rem;">RK</div>
+                    <div id="viewInitials" class="pm-avatar pm-avatar--blue"
+                        style="width: 60px; height: 60px; font-size: 1.2rem; margin: 0 auto 1rem;">RK</div>
                     <h2 id="viewName">Dr. Rajesh Khanna</h2>
                     <p class="pm-principal__role">Principal</p>
                 </div>
@@ -259,7 +274,8 @@
                     </div>
                     <div class="pm-view-item" style="grid-column: 1 / -1;">
                         <div class="pm-view-label"><i class="fas fa-circle-check"></i> Status</div>
-                        <div class="pm-view-value"><span class="pm-badge pm-badge--active" id="viewStatus">Active</span></div>
+                        <div class="pm-view-value"><span class="pm-badge pm-badge--active" id="viewStatus">Active</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -309,7 +325,8 @@
             </form>
             <div class="pm-modal__actions">
                 <button onclick="closeAllModals()" class="pm-btn pm-btn--ghost">Cancel</button>
-                <button type="submit" form="editForm" class="pm-btn pm-btn--primary"><i class="fas fa-save"></i> Save Changes</button>
+                <button type="submit" form="editForm" class="pm-btn pm-btn--primary"><i class="fas fa-save"></i> Save
+                    Changes</button>
             </div>
         </div>
     </div>
@@ -319,7 +336,8 @@
         <div class="pm-modal">
             <div class="pm-modal__icon"><i class="fas fa-exclamation-triangle"></i></div>
             <h3 class="pm-modal__title">Delete Principal?</h3>
-            <p class="pm-modal__desc">Are you sure you want to delete <strong id="deleteName"></strong>? This action cannot be undone.</p>
+            <p class="pm-modal__desc">Are you sure you want to delete <strong id="deleteName"></strong>? This action
+                cannot be undone.</p>
             <div class="pm-modal__actions">
                 <button onclick="closeAllModals()" class="pm-btn pm-btn--ghost">Cancel</button>
                 <button class="pm-btn pm-btn--danger">Yes, Delete</button>
@@ -341,10 +359,10 @@
         }
 
         /* ─── AJAX Pagination ─────────────────────────────────────── */
-        const tbody    = document.getElementById('tableBody');
-        const pagCont  = document.getElementById('paginationContainer');
+        const tbody = document.getElementById('tableBody');
+        const pagCont = document.getElementById('paginationContainer');
         const infoStart = document.getElementById('infoStart');
-        const infoEnd   = document.getElementById('infoEnd');
+        const infoEnd = document.getElementById('infoEnd');
         const infoTotal = document.getElementById('infoTotal');
 
         // Bootstrap from server-rendered JSON island
@@ -419,16 +437,16 @@
                 .then(data => {
                     tbody.innerHTML = data.rows_html;
                     infoStart.textContent = data.start_index;
-                    infoEnd.textContent   = data.end_index;
+                    infoEnd.textContent = data.end_index;
                     infoTotal.textContent = data.total;
 
                     pageState = {
-                        currentPage:  data.current_page,
-                        numPages:     data.num_pages,
-                        hasPrevious:  data.has_previous,
-                        hasNext:      data.has_next,
+                        currentPage: data.current_page,
+                        numPages: data.num_pages,
+                        hasPrevious: data.has_previous,
+                        hasNext: data.has_next,
                         previousPage: data.previous_page,
-                        nextPage:     data.next_page,
+                        nextPage: data.next_page,
                     };
                     renderPagination(pageState);
                     history.pushState(null, '', buildUrl(page));
@@ -448,8 +466,8 @@
 
         document.addEventListener('keydown', e => {
             if (document.querySelector('.pm-modal-overlay.active')) return;
-            if (e.key === 'ArrowLeft'  && pageState.hasPrevious) goToPage(pageState.previousPage);
-            if (e.key === 'ArrowRight' && pageState.hasNext)     goToPage(pageState.nextPage);
+            if (e.key === 'ArrowLeft' && pageState.hasPrevious) goToPage(pageState.previousPage);
+            if (e.key === 'ArrowRight' && pageState.hasNext) goToPage(pageState.nextPage);
         });
 
         window.addEventListener('popstate', () => location.reload());
@@ -463,11 +481,11 @@
             document.getElementById('viewCollege').innerText = college;
             document.getElementById('viewUsername').innerText = username;
             document.getElementById('viewInitials').innerText = name.substring(0, 2).toUpperCase();
-            
+
             const statusEl = document.getElementById('viewStatus');
             statusEl.innerText = status;
             statusEl.className = status.toLowerCase() === 'active' ? 'pm-badge pm-badge--active' : 'pm-badge pm-badge--inactive';
-            
+
             document.getElementById('viewModal').classList.add('active');
         }
         function openEditModal(id, name, email, mobile, college_id, status) {
@@ -477,7 +495,7 @@
             document.getElementById('editMobile').value = mobile;
             document.getElementById('editCollege').value = college_id;
             document.getElementById('editStatus').value = status;
-            document.getElementById('editModal').classList.add('active'); 
+            document.getElementById('editModal').classList.add('active');
         }
         function openDeleteModal(name) {
             document.getElementById('deleteName').innerText = name;
@@ -488,7 +506,7 @@
             modals.forEach(modal => modal.classList.remove('active'));
         }
 
-        window.onclick = function(event) {
+        window.onclick = function (event) {
             if (event.target.classList.contains('pm-modal-overlay')) { closeAllModals(); }
         }
 
@@ -512,7 +530,7 @@
             document.getElementById('hiddenPassword').value = password;
         }
 
-        document.getElementById('addPrincipalForm')?.addEventListener('submit', function(e) {
+        document.getElementById('addPrincipalForm')?.addEventListener('submit', function (e) {
             // Ensure credentials are generated before submit
             generateCredentials();
             const username = document.getElementById('hiddenUsername').value;
@@ -524,8 +542,8 @@
 
         // Auto-open credentials success modal if Django passes new_credentials via session
         {% if new_credentials %}
-        window.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('successName').textContent     = "{{ new_credentials.name|escapejs }}";
+        window.addEventListener('DOMContentLoaded', function () {
+            document.getElementById('successName').textContent = "{{ new_credentials.name|escapejs }}";
             document.getElementById('successUsername').textContent = "{{ new_credentials.username|escapejs }}";
             document.getElementById('successPassword').textContent = "{{ new_credentials.password|escapejs }}";
             document.getElementById('credSuccessModal').classList.add('active');
@@ -533,4 +551,5 @@
         {% endif %}
     </script>
 </body>
+
 </html>
