@@ -9,6 +9,17 @@ class College(models.Model):
     college_name = models.CharField(max_length=200)
     university = models.CharField(max_length=200, blank=True, null=True)
     college_type = models.CharField(max_length=50, blank=True, null=True)
+    college_stream = models.CharField(
+        max_length=50,
+        choices=[
+            ('engineering', 'Engineering'),
+            ('arts_science', 'Arts & Science'),
+            ('other', 'Other'),
+        ],
+        default='other',
+        blank=True,
+        null=True
+    )
     status = models.CharField(max_length=20, default='active')
     state = models.CharField(max_length=100, blank=True, null=True)
     district = models.CharField(max_length=100, blank=True, null=True)
@@ -133,6 +144,7 @@ class Student(models.Model):
     STATUS = (
         ("active", "Active"),
         ("inactive", "Inactive"),
+        ("expired", "Expired"),
     )
 
     YEAR = (
@@ -176,6 +188,8 @@ class Student(models.Model):
     password = models.CharField(
         max_length=100
     )
+
+    join_date = models.DateField(blank=True, null=True)
 
     end_date = models.DateField(
         blank=True,

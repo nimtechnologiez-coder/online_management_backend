@@ -86,7 +86,7 @@
                         </div>
                         <div class="sm-form-group">
                             <label for="principal">Principal <span class="req">*</span></label>
-                            <input type="text" id="principal" name="principal" value="Dr. Sarah Jenkins" readonly style="background-color: #f1f5f9; cursor: not-allowed;">
+                            <input type="text" id="principal" name="principal" placeholder="No Principal Assigned" readonly style="background-color: #f1f5f9; cursor: not-allowed;">
                         </div>
                         <div class="sm-form-group">
                             <label for="description">Description</label>
@@ -139,10 +139,25 @@
 
     <!-- ── Logic for Auto-Generation ───────────────────── -->
     <script>
+        const collegeInput = document.getElementById('college');
+        const principalInput = document.getElementById('principal');
         const deptCodeInput = document.getElementById('dept_code');
         const usernameInput = document.getElementById('username');
         const passwordInput = document.getElementById('password');
         const refreshPassBtn = document.getElementById('refreshPass');
+
+        // Map college ID to principal name
+        const collegePrincipals = {
+            {% for college in colleges %}
+            "{{ college.id }}": "{{ college.principals.first.principal_name|default:'No Principal Assigned'|escapejs }}"{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        };
+
+        // Update Principal on College select
+        collegeInput.addEventListener('change', () => {
+            const val = collegeInput.value;
+            principalInput.value = collegePrincipals[val] || 'No Principal Assigned';
+        });
 
         // Auto-populate Username based on Dept Code
         deptCodeInput.addEventListener('input', () => {

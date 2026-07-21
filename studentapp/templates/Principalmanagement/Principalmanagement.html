@@ -32,9 +32,6 @@
                 <h1 class="pm-page-title">Principal Management</h1>
                 <p class="pm-page-subtitle">Manage college principals and their login credentials.</p>
             </div>
-            <button onclick="openAddModal()" class="pm-btn pm-btn--primary">
-                <i class="fas fa-user-plus"></i> Add Principal
-            </button>
         </div>
 
         <!-- Stats Cards -->
@@ -151,93 +148,6 @@
     </div>
 
     <!-- ── MODALS ────────────────────────────────────────── -->
-    <!-- Add Modal -->
-    <div id="addModal" class="pm-modal-overlay">
-        <div class="pm-modal pm-modal--form">
-            <div class="pm-modal__header">
-                <h3 class="pm-modal__title"><i class="fas fa-user-plus"></i> Add New Principal</h3>
-                <button class="pm-close-btn" onclick="closeAllModals()">&times;</button>
-            </div>
-            <form id="addPrincipalForm" class="pm-form-grid" action="{% url 'principal_add' %}" method="POST">
-                {% csrf_token %}
-                <div class="pm-form-group">
-                    <label>Full Name <span style="color:#ef4444">*</span></label>
-                    <input type="text" id="addName" name="principal_name" placeholder="e.g. Dr. Jane Doe" required
-                        oninput="generateCredentials()">
-                </div>
-                <div class="pm-form-group">
-                    <label>Email Address <span style="color:#ef4444">*</span></label>
-                    <input type="email" id="addEmail" name="principal_email" placeholder="jane.doe@college.edu"
-                        required>
-                </div>
-                <div class="pm-form-group">
-                    <label>Mobile Number <span style="color:#ef4444">*</span></label>
-                    <input type="tel" id="addMobile" name="principal_mobile" placeholder="+91 00000 00000" required>
-                </div>
-                <div class="pm-form-group">
-                    <label>College <span style="color:#ef4444">*</span></label>
-                    <select name="college" id="addCollege" class="pm-select" required onchange="generateCredentials()">
-                        <option value="" disabled selected>Select College</option>
-                        {% for college in colleges %}
-                        <option value="{{ college.id }}">{{ college.college_name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="pm-form-group">
-                    <label>Status</label>
-                    <select name="status" class="pm-select">
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
-                    </select>
-                </div>
-
-                <!-- Hidden inputs carry auto-generated credentials to backend -->
-                <input type="hidden" name="username" id="hiddenUsername">
-                <input type="hidden" name="password" id="hiddenPassword">
-            </form>
-            <div class="pm-modal__actions">
-                <button onclick="closeAllModals()" class="pm-btn pm-btn--ghost">Cancel</button>
-                <button type="submit" form="addPrincipalForm" class="pm-btn pm-btn--primary"><i
-                        class="fas fa-check"></i> Create Account</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Credentials Success Modal (shown after principal is created) -->
-    <div id="credSuccessModal" class="pm-modal-overlay">
-        <div class="pm-modal" style="max-width:480px; text-align:center;">
-            <div
-                style="width:64px;height:64px;border-radius:50%;background:#d1fae5;display:flex;align-items:center;justify-content:center;font-size:1.6rem;color:#10b981;margin:0 auto 1.25rem;">
-                <i class="fas fa-check-circle"></i>
-            </div>
-            <h3 class="pm-modal__title" style="margin-bottom:.5rem;">Principal Created!</h3>
-            <p style="font-size:.85rem;color:#4b5580;margin-bottom:1.5rem;">Account credentials have been generated.
-                Share these with the principal securely.</p>
-            <div class="pm-credentials-preview" style="text-align:left;margin-bottom:1.5rem;">
-                <div class="pm-cred-header"><i class="fas fa-magic"></i> Login Credentials</div>
-                <div class="pm-cred-grid">
-                    <div class="pm-cred-item">
-                        <span class="pm-cred-label">Name</span>
-                        <span class="pm-cred-value" id="successName"></span>
-                    </div>
-                    <div class="pm-cred-item">&nbsp;</div>
-                    <div class="pm-cred-item">
-                        <span class="pm-cred-label">Username</span>
-                        <span class="pm-cred-value" id="successUsername"></span>
-                    </div>
-                    <div class="pm-cred-item">
-                        <span class="pm-cred-label">Password</span>
-                        <span class="pm-cred-value" id="successPassword"></span>
-                    </div>
-                </div>
-                <p class="pm-cred-note"><i class="fas fa-exclamation-circle"></i> Save these credentials — they will not
-                    be shown again.</p>
-            </div>
-            <div class="pm-modal__actions" style="justify-content:center;">
-                <button onclick="closeAllModals()" class="pm-btn pm-btn--primary">Done</button>
-            </div>
-        </div>
-    </div>
 
     <!-- View Modal -->
     <div id="viewModal" class="pm-modal-overlay">
@@ -471,7 +381,6 @@
         window.addEventListener('popstate', () => location.reload());
 
         // Modal Controls
-        function openAddModal() { document.getElementById('addModal').classList.add('active'); }
         function openViewModal(name, email, mobile, college, username, status) {
             document.getElementById('viewName').innerText = name;
             document.getElementById('viewEmail').innerText = email;

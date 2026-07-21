@@ -109,6 +109,17 @@
                                 </select>
                             </div>
                         </div>
+                        <div class="ac-form-group">
+                            <label for="college_stream">College Stream</label>
+                            <div class="ac-input-wrap">
+                                <i class="fas fa-graduation-cap ac-input-icon"></i>
+                                <select id="college_stream" name="college_stream" class="ac-select">
+                                    <option value="engineering">Engineering</option>
+                                    <option value="arts_science">Arts &amp; Science</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                        </div>
 
                         <div class="ac-form-group">
                             <label for="status">Status</label>
@@ -224,6 +235,50 @@
                                 <button type="button" class="ac-remove-btn" onclick="resetLogoFile(event)">
                                     <i class="fas fa-sync-alt"></i> Replace
                                 </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 5: Principal Information -->
+                <div class="ac-form-section">
+                    <div class="ac-form-section__header">
+                        <div class="ac-sec-icon"><i class="fas fa-user-tie"></i></div>
+                        <div>
+                            <h3>Principal Information</h3>
+                            <p class="ac-sec-sub">Account details for the college principal</p>
+                        </div>
+                    </div>
+                    <div class="ac-form-grid">
+                        <div class="ac-form-group">
+                            <label for="principal_name">Principal Name <span class="req">*</span></label>
+                            <div class="ac-input-wrap">
+                                <i class="fas fa-user ac-input-icon"></i>
+                                <input type="text" id="principal_name" name="principal_name" placeholder="e.g. Dr. John Doe" required class="ac-input">
+                            </div>
+                        </div>
+                        <div class="ac-form-group">
+                            <label for="principal_email">Principal Email <span class="req">*</span></label>
+                            <div class="ac-input-wrap">
+                                <i class="fas fa-envelope ac-input-icon"></i>
+                                <input type="email" id="principal_email" name="principal_email" placeholder="e.g. principal@college.edu" required class="ac-input">
+                            </div>
+                        </div>
+                        <div class="ac-form-group">
+                            <label for="principal_mobile">Principal Mobile <span class="req">*</span></label>
+                            <div class="ac-input-wrap">
+                                <i class="fas fa-phone ac-input-icon"></i>
+                                <input type="tel" id="principal_mobile" name="principal_mobile" placeholder="e.g. +91 9876543210" required class="ac-input">
+                            </div>
+                        </div>
+                        <div class="ac-form-group">
+                            <label for="principal_status">Principal Status <span class="req">*</span></label>
+                            <div class="ac-input-wrap">
+                                <i class="fas fa-toggle-on ac-input-icon"></i>
+                                <select id="principal_status" name="principal_status" class="ac-select" required>
+                                    <option value="active" selected>Active</option>
+                                    <option value="inactive">Inactive</option>
+                                </select>
                             </div>
                         </div>
                     </div>

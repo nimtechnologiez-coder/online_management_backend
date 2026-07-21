@@ -273,6 +273,7 @@ def college_add(request):
         college_name = request.POST.get('college_name')
         university = request.POST.get('university')
         college_type = request.POST.get('college_type')
+        college_stream = request.POST.get('college_stream', 'other')
         status = request.POST.get('status', 'active')
         state = request.POST.get('state')
         district = request.POST.get('district')
@@ -281,13 +282,18 @@ def college_add(request):
         contact_phone = request.POST.get('college_phone')
         website = request.POST.get('website')
         college_logo = request.FILES.get('college_logo')
+        principal_name = request.POST.get('principal_name')
+        principal_email = request.POST.get('principal_email')
+        principal_mobile = request.POST.get('principal_mobile')
+        principal_status = request.POST.get('principal_status', 'active')
         
         if college_name:
-            College.objects.create(
+            college = College.objects.create(
                 college_code=college_code,
                 college_name=college_name,
                 university=university,
                 college_type=college_type,
+                college_stream=college_stream,
                 status=status,
                 state=state,
                 district=district,
@@ -297,6 +303,29 @@ def college_add(request):
                 website=website,
                 college_logo=college_logo
             )
+            
+            if principal_name and principal_email:
+                import string
+                import random
+                
+                # Generate username
+                base_college = college.college_name[:3].upper().replace(" ", "")
+                username = f"{base_college}_PR_{random.randint(100, 999)}"
+                
+                # Generate random password
+                chars = string.ascii_letters + string.digits + "!@#$%^&*"
+                password = ''.join(random.choices(chars, k=10))
+                
+                Principal.objects.create(
+                    college=college,
+                    principal_name=principal_name,
+                    principal_email=principal_email,
+                    principal_mobile=principal_mobile,
+                    status=principal_status,
+                    username=username,
+                    password=password
+                )
+
             return redirect('collegemanagement')
     return render(request, 'collegemanagement/add_college.html')
 
@@ -514,6 +543,11 @@ def student_management(request):
     from django.db.models import Q
     from django.http import JsonResponse
     from django.template.loader import render_to_string
+    from datetime import date
+
+    # Auto-expire students whose end_date has passed
+    today = date.today()
+    Student.objects.filter(end_date__lt=today, status='active').update(status='expired')
 
     students_list = Student.objects.all().order_by('-created_at')
 
@@ -589,6 +623,8 @@ def student_management(request):
 def student_add(request):
     if request.method == 'POST':
         import string, random
+        from datetime import date
+
         full_name = request.POST.get('full_name')
         email = request.POST.get('email')
         phone = request.POST.get('phone', '')
@@ -597,38 +633,69 @@ def student_add(request):
         student_id_val = request.POST.get('student_id')
         year = request.POST.get('year')
         status = request.POST.get('status', 'active')
-        end_date = request.POST.get('end_date')
+        join_date_str = request.POST.get('join_date')
 
         college = College.objects.filter(id=college_id).first()
         dept = Department.objects.filter(id=dept_id).first()
 
-        if full_name and email and college and dept and student_id_val and year:
-            # Auto-generate username from student_id
-            username = student_id_val.upper()
-            # Auto-generate secure random password
-            chars = string.ascii_letters + string.digits + "!@#$%^&*"
-            password = ''.join(random.choices(chars, k=10))
+        # Auto-calculate end_date based on college stream (no external package)
+        end_date = None
+        if join_date_str:
+            try:
+                join_date = date.fromisoformat(join_date_str)
+                stream = college.college_stream if college else 'other'
+                years = 3 if stream == 'arts_science' else 4
+                # Add years manually using date.replace
+                try:
+                    end_date = join_date.replace(year=join_date.year + years)
+                except ValueError:
+                    # Handle Feb 29 leap year edge case
+                    end_date = join_date.replace(year=join_date.year + years, day=28)
+            except ValueError:
+                end_date = None
 
-            Student.objects.create(
-                full_name=full_name,
-                email=email,
-                phone=phone,
-                college=college,
-                department=dept,
-                student_id=student_id_val,
-                year=year,
-                username=username,
-                password=password,
-                status=status,
-                end_date=end_date if end_date else None,
-            )
-            return redirect('student_management')
+        error = None
+
+        if full_name and email and college and dept and student_id_val and year:
+            # Check for duplicate student_id
+            if Student.objects.filter(student_id=student_id_val).exists():
+                error = f"Student ID '{student_id_val}' is already registered. Please use a different ID."
+            # Check for duplicate email
+            elif Student.objects.filter(email=email).exists():
+                error = f"Email '{email}' is already registered for another student."
+            else:
+                # Auto-generate unique username from student_id
+                base_username = student_id_val.upper()
+                username = base_username
+                # Append random suffix until unique
+                while Student.objects.filter(username=username).exists():
+                    username = f"{base_username}_{random.randint(1000, 9999)}"
+                # Auto-generate secure random password
+                chars = string.ascii_letters + string.digits + "!@#$%^&*"
+                password = ''.join(random.choices(chars, k=10))
+
+                Student.objects.create(
+                    full_name=full_name,
+                    email=email,
+                    phone=phone,
+                    college=college,
+                    department=dept,
+                    student_id=student_id_val,
+                    year=year,
+                    username=username,
+                    password=password,
+                    status=status,
+                    join_date=date.fromisoformat(join_date_str) if join_date_str else None,
+                    end_date=end_date,
+                )
+                return redirect('student_management')
 
     all_colleges = College.objects.all()
     all_departments = Department.objects.all()
     return render(request, 'studentmanagement/add_student.html', {
         'all_colleges': all_colleges,
         'all_departments': all_departments,
+        'error': error,
     })
 
 def video_management(request):

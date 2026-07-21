@@ -57,6 +57,18 @@
                 {% csrf_token %}
 
                 <!-- Section 1: Personal Information -->
+                {% if error %}
+                <div style="
+                    display:flex; align-items:flex-start; gap:0.75rem;
+                    background:#fef2f2; border:1.5px solid #fca5a5; border-radius:10px;
+                    padding:1rem 1.25rem; margin-bottom:1.5rem; color:#b91c1c;
+                    font-size:0.875rem; font-weight:500;
+                ">
+                    <i class="fas fa-circle-exclamation" style="font-size:1.1rem; margin-top:1px; flex-shrink:0;"></i>
+                    <span>{{ error }}</span>
+                </div>
+                {% endif %}
+
                 <div class="sm-form-section">
                     <div class="sm-form-section__header">
                         <i class="fas fa-user"></i>
@@ -144,11 +156,15 @@
                             </select>
                         </div>
                         <div class="sm-form-group">
-                            <label for="end_date">End Date</label>
-                            <input type="date" id="end_date" name="end_date" class="sm-input" style="padding: 0.6rem 0.85rem; border: 1px solid #e2e8f0; border-radius: 8px; font-family: 'Inter', sans-serif;">
+                            <label for="join_date">Join Date <span class="req">*</span></label>
+                            <input type="date" id="join_date" name="join_date" class="sm-input" required style="padding: 0.6rem 0.85rem; border: 1px solid #e2e8f0; border-radius: 8px; font-family: 'Inter', sans-serif;">
+                        </div>
+                        <div class="sm-form-group">
+                            <label for="end_date_display">End Date <small style="color:#6b7280; font-weight:400;">(auto-calculated)</small></label>
+                            <input type="text" id="end_date_display" readonly placeholder="Select College &amp; Join Date" style="padding: 0.6rem 0.85rem; border: 1px solid #e2e8f0; border-radius: 8px; font-family: 'Inter', sans-serif; background:#f8fafc; cursor:not-allowed; width:100%;">
                         </div>
                     </div>
-                    <p style="margin-top:0.75rem; font-size:0.82rem; color:#6b7280; background:#f0f4ff; border-radius:8px; padding:0.65rem 1rem;"><i class="fas fa-info-circle" style="color:#4f6ef7;"></i> Username and password are <strong>auto-generated</strong> from the Student ID and will be shown in the student list after saving.</p>
+                    <p style="margin-top:0.75rem; font-size:0.82rem; color:#6b7280; background:#f0f4ff; border-radius:8px; padding:0.65rem 1rem;"><i class="fas fa-info-circle" style="color:#4f6ef7;"></i> Username and password are <strong>auto-generated</strong> from the Student ID. The <strong>End Date</strong> is automatically set based on the college stream (4 years for Engineering, 3 years for Arts &amp; Science).</p>
                 </div>
 
                 <!-- Form Footer -->
@@ -168,7 +184,35 @@
         // Dynamic Department Filtering
         const collegeSelect = document.getElementById('college');
         const deptSelect = document.getElementById('department');
+        const joinDateInput = document.getElementById('join_date');
+        const endDateDisplay = document.getElementById('end_date_display');
         const allDeptOptions = Array.from(deptSelect.options).slice(1); // Skip placeholder
+
+        // Map college ID -> stream from Django context
+        const collegeStreams = {
+            {% for c in all_colleges %}
+            "{{ c.id }}": "{{ c.college_stream|default:'other' }}"{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        };
+
+        function calcEndDate() {
+            const colId = collegeSelect.value;
+            const joinVal = joinDateInput.value;
+            if (!colId || !joinVal) {
+                endDateDisplay.value = '';
+                endDateDisplay.placeholder = 'Select College & Join Date';
+                return;
+            }
+            const stream = collegeStreams[colId] || 'other';
+            const years = (stream === 'arts_science') ? 3 : 4;
+            const joinDate = new Date(joinVal);
+            joinDate.setFullYear(joinDate.getFullYear() + years);
+            const endStr = joinDate.toISOString().split('T')[0];
+            endDateDisplay.value = endStr;
+            endDateDisplay.placeholder = '';
+            const label = (stream === 'engineering') ? 'Engineering (4 yrs)' : (stream === 'arts_science') ? 'Arts & Science (3 yrs)' : `Other (4 yrs)`;
+            endDateDisplay.title = `Stream: ${label} → End: ${endStr}`;
+        }
 
         collegeSelect.addEventListener('change', () => {
             const selectedCollegeId = collegeSelect.value;
@@ -188,7 +232,10 @@
                 deptSelect.disabled = true;
                 deptSelect.innerHTML = '<option value="">Select College First</option>';
             }
+            calcEndDate();
         });
+
+        joinDateInput.addEventListener('change', calcEndDate);
     </script>
 </body>
 </html>
