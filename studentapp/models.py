@@ -5,7 +5,19 @@ from django.utils import timezone
 # College Model
 # ==========================================
 class College(models.Model):
+    college_code = models.CharField(max_length=50, blank=True, null=True)
     college_name = models.CharField(max_length=200)
+    university = models.CharField(max_length=200, blank=True, null=True)
+    college_type = models.CharField(max_length=50, blank=True, null=True)
+    status = models.CharField(max_length=20, default='active')
+    state = models.CharField(max_length=100, blank=True, null=True)
+    district = models.CharField(max_length=100, blank=True, null=True)
+    address = models.TextField(blank=True, null=True)
+    contact_email = models.EmailField(blank=True, null=True)
+    contact_phone = models.CharField(max_length=20, blank=True, null=True)
+    website = models.URLField(blank=True, null=True)
+    college_logo = models.ImageField(upload_to='college_logos/', blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
 
     def __str__(self):
         return self.college_name

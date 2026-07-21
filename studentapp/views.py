@@ -260,7 +260,7 @@ def admin_login(request):
 
 
 
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from .models import College
 
 def college_management(request):
@@ -269,11 +269,43 @@ def college_management(request):
 
 def college_add(request):
     if request.method == "POST":
+        college_code = request.POST.get('college_code')
         college_name = request.POST.get('college_name')
+        university = request.POST.get('university')
+        college_type = request.POST.get('college_type')
+        status = request.POST.get('status', 'active')
+        state = request.POST.get('state')
+        district = request.POST.get('district')
+        address = request.POST.get('address')
+        contact_email = request.POST.get('college_email')
+        contact_phone = request.POST.get('college_phone')
+        website = request.POST.get('website')
+        college_logo = request.FILES.get('college_logo')
+        
         if college_name:
-            College.objects.create(college_name=college_name)
+            College.objects.create(
+                college_code=college_code,
+                college_name=college_name,
+                university=university,
+                college_type=college_type,
+                status=status,
+                state=state,
+                district=district,
+                address=address,
+                contact_email=contact_email,
+                contact_phone=contact_phone,
+                website=website,
+                college_logo=college_logo
+            )
             return redirect('collegemanagement')
     return render(request, 'collegemanagement/add_college.html')
+
+def college_delete(request, id):
+    if request.method == "POST":
+        college = get_object_or_404(College, id=id)
+        college.delete()
+        return redirect('collegemanagement')
+    return redirect('collegemanagement')
 
 
 def department_management(request):
@@ -386,6 +418,11 @@ def principal_management(request):
         'selected_college': college_id,
         'selected_status': status,
         'new_credentials': request.session.pop('new_principal_credentials', None),
+        # Live stat counts
+        'total_principals': Principal.objects.count(),
+        'active_principals': Principal.objects.filter(status='active').count(),
+        'inactive_principals': Principal.objects.filter(status='inactive').count(),
+        'total_colleges': College.objects.count(),
     }
     
     if request.GET.get('partial') == '1':
@@ -685,21 +722,68 @@ def video_add(request):
 
 def video_analytics(request):
     from django.db.models import Sum, Count
-    
+    from django.utils import timezone
+    from datetime import timedelta
+
+    now = timezone.now()
+    today = now.date()
+
+    # ── Summary Stats ──────────────────────────────
     total_videos = Video.objects.count()
-    total_views = Video.objects.aggregate(Sum('views'))['views__sum'] or 0
-    
-    # Faking watch hours based on views for now (approx 15 mins per view)
-    watch_hours = (total_views * 15) // 60
-    
+    total_views = Video.objects.aggregate(total=Sum('views'))['total'] or 0
+
+    # Watch hours: sum of all VideoWatch records (approx 15 min per watch event)
+    total_watch_events = VideoWatch.objects.count()
+    watch_hours = (total_watch_events * 15) // 60
+
     active_students = VideoWatch.objects.values('student').distinct().count()
-    
-    # Static completion rate since we don't track progress % in DB
-    completion_rate = 68
-    
+
+    # Completion rate — 0 if no watch data, else 100% (simple binary watch model)
+    completion_rate = 0 if total_watch_events == 0 else 100
+
     most_watched = Video.objects.order_by('-views')[:5]
     recent_activity = VideoWatch.objects.select_related('student', 'video').order_by('-watched_at')[:5]
-    
+
+    # ── Weekly Trend (Last 7 Days) ─────────────────
+    week_labels = []
+    week_data = []
+    for i in range(6, -1, -1):
+        day = today - timedelta(days=i)
+        week_labels.append(day.strftime('%a'))
+        week_data.append(VideoWatch.objects.filter(watched_at__date=day).count())
+
+    # ── Daily Trend (Last 7 Days, same as weekly by day) ──
+    daily_labels = week_labels
+    daily_data = week_data
+
+    # ── Monthly Trend (Last 6 Months) ─────────────
+    monthly_labels = []
+    monthly_data = []
+    for i in range(5, -1, -1):
+        # Go back i months
+        month_date = (now.replace(day=1) - timedelta(days=i * 30)).replace(day=1)
+        count = VideoWatch.objects.filter(
+            watched_at__year=month_date.year,
+            watched_at__month=month_date.month
+        ).count()
+        monthly_labels.append(month_date.strftime('%b'))
+        monthly_data.append(count)
+
+    # ── Category Distribution ──────────────────────
+    categories = ['Programming', 'Mathematics', 'Physics', 'Soft Skills']
+    category_data = []
+    for cat in categories:
+        # Count VideoWatch events for videos in this category
+        count = VideoWatch.objects.filter(video__category=cat).count()
+        category_data.append(count)
+
+    # If no watch history at all, fall back to video count per category
+    if sum(category_data) == 0:
+        category_data = []
+        for cat in categories:
+            count = Video.objects.filter(category=cat).count()
+            category_data.append(count)
+
     context = {
         'total_videos': total_videos,
         'total_views': total_views,
@@ -708,8 +792,18 @@ def video_analytics(request):
         'completion_rate': completion_rate,
         'most_watched': most_watched,
         'recent_activity': recent_activity,
+        # Chart data (passed as JSON-safe Python lists)
+        'week_labels': week_labels,
+        'week_data': week_data,
+        'daily_labels': daily_labels,
+        'daily_data': daily_data,
+        'monthly_labels': monthly_labels,
+        'monthly_data': monthly_data,
+        'category_labels': categories,
+        'category_data': category_data,
     }
     return render(request, 'videoanalytics/video_analytics.html', context)
+
 
 def reports(request):
     return render(request, 'reportmanagement/report_management.html')

@@ -6,10 +6,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Add New Video | Admin Panel</title>
-    
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Font Awesome CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
@@ -26,96 +26,239 @@
     {% include 'includes/sidebar.html' %}
 
     <div class="vm-main">
-        <!-- Breadcrumb -->
-        <nav class="vm-breadcrumb" aria-label="Breadcrumb">
-            <a href="{% url 'dashboard' %}"><i class="fas fa-home"></i> Dashboard</a>
-            <span class="vm-breadcrumb__sep">/</span>
-            <a href="{% url 'video_management' %}">Video Management</a>
-            <span class="vm-breadcrumb__sep">/</span>
-            <span class="vm-breadcrumb__current">Add New Video</span>
-        </nav>
-
-        <div class="vm-page-header">
-            <div>
-                <h1 class="vm-page-title">Add New Video</h1>
-                <p class="vm-page-subtitle">Upload a new educational video to the student library.</p>
+        <!-- Header Hero Banner -->
+        <div class="va-hero-banner">
+            <div class="va-hero-content">
+                <nav class="vm-breadcrumb" aria-label="Breadcrumb">
+                    <a href="{% url 'dashboard' %}"><i class="fas fa-home"></i> Home</a>
+                    <span class="vm-breadcrumb__sep"><i class="fas fa-chevron-right"></i></span>
+                    <a href="{% url 'video_management' %}">Video Management</a>
+                    <span class="vm-breadcrumb__sep"><i class="fas fa-chevron-right"></i></span>
+                    <span class="vm-breadcrumb__current">Add New Video</span>
+                </nav>
+                <div class="va-hero-title-row">
+                    <div class="va-hero-icon">
+                        <i class="fas fa-cloud-arrow-up"></i>
+                    </div>
+                    <div>
+                        <h1 class="va-hero-title">Add New Video</h1>
+                        <p class="va-hero-subtitle">Upload educational content to your online video library and publish for students.</p>
+                    </div>
+                </div>
             </div>
+            <a href="{% url 'video_management' %}" class="vm-btn va-btn-back">
+                <i class="fas fa-arrow-left"></i> Back to Videos
+            </a>
         </div>
 
-        <!-- Form Card -->
-        <form method="POST" action="{% url 'video_add' %}" enctype="multipart/form-data" class="vm-card vm-form-card">
+        <!-- Main Form Card -->
+        <form method="POST" action="{% url 'video_add' %}" enctype="multipart/form-data" class="va-form-card" id="addVideoForm">
             {% csrf_token %}
-            <div class="vm-form-section">
-                <h3 class="vm-section-title"><i class="fas fa-file-video"></i> Basic Information</h3>
-                <div class="vm-form-grid">
-                    <div class="vm-form-group vm-form-group--full">
-                        <label>Video Title <span class="required">*</span></label>
-                        <input type="text" name="title" placeholder="Enter a catchy title for the video" required>
-                    </div>
-                    <div class="vm-form-group">
-                        <label>Category <span class="required">*</span></label>
-                        <select name="category" required>
-                            <option value="">Select Category</option>
-                            <option value="Programming">Programming</option>
-                            <option value="Mathematics">Mathematics</option>
-                            <option value="Physics">Physics</option>
-                            <option value="Soft Skills">Soft Skills</option>
-                        </select>
-                    </div>
-                    <div class="vm-form-group">
-                        <label>Duration (MM:SS) <span class="required">*</span></label>
-                        <input type="text" name="duration" placeholder="e.g. 12:30" required>
-                    </div>
-                    <div class="vm-form-group vm-form-group--full">
-                        <label>Video Description</label>
-                        <textarea name="description" rows="4" placeholder="Provide a detailed overview of what this video covers..."></textarea>
-                    </div>
-                </div>
-            </div>
 
-            <div class="vm-form-section">
-                <h3 class="vm-section-title"><i class="fas fa-cloud-arrow-up"></i> Media Upload</h3>
-                <div class="vm-form-grid">
-                    <div class="vm-form-group">
-                        <label>Video File <span class="required">*</span></label>
-                        <div class="vm-upload-box">
-                            <i class="fas fa-file-video"></i>
-                            <p>Drag & drop or <span>Browse</span></p>
-                            <input type="file" name="video_file" accept="video/*" required>
+            <div class="va-form-layout">
+                <!-- Left Column: Video Details -->
+                <div class="va-form-main">
+                    <div class="va-card-header">
+                        <i class="fas fa-info-circle va-header-icon"></i>
+                        <div>
+                            <h3 class="va-card-title">Video Information</h3>
+                            <p class="va-card-sub">Basic metadata and context for students</p>
                         </div>
                     </div>
-                    <div class="vm-form-group">
-                        <label>Thumbnail Image <span class="required">*</span></label>
-                        <div class="vm-upload-box">
-                            <i class="fas fa-image"></i>
-                            <p>Drag & drop or <span>Browse</span></p>
-                            <input type="file" name="thumbnail" accept="image/*" required>
+
+                    <div class="va-field-group">
+                        <label for="title" class="va-label">Video Title <span class="req">*</span></label>
+                        <div class="va-input-wrap">
+                            <i class="fas fa-heading va-input-icon"></i>
+                            <input type="text" id="title" name="title" placeholder="e.g. Advanced Python Programming & Data Structures" required class="va-input">
+                        </div>
+                    </div>
+
+                    <div class="va-field-grid-2">
+                        <div class="va-field-group">
+                            <label for="category" class="va-label">Category <span class="req">*</span></label>
+                            <div class="va-input-wrap">
+                                <i class="fas fa-folder-open va-input-icon"></i>
+                                <select id="category" name="category" required class="va-select">
+                                    <option value="" disabled selected>Select Category</option>
+                                    <option value="Programming">Programming</option>
+                                    <option value="Mathematics">Mathematics</option>
+                                    <option value="Physics">Physics</option>
+                                    <option value="Soft Skills">Soft Skills</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="va-field-group">
+                            <label for="duration" class="va-label">Duration (MM:SS) <span class="req">*</span></label>
+                            <div class="va-input-wrap">
+                                <i class="fas fa-clock va-input-icon"></i>
+                                <input type="text" id="duration" name="duration" placeholder="e.g. 15:45" required class="va-input" pattern="^[0-9]{1,3}:[0-5][0-9]$" title="Format: MM:SS (e.g. 12:30)">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="va-field-group">
+                        <label for="description" class="va-label">Description</label>
+                        <div class="va-input-wrap va-input-wrap--textarea">
+                            <textarea id="description" name="description" rows="4" placeholder="Provide a concise outline of key concepts covered in this video..." class="va-textarea"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Visibility Status Selection -->
+                    <div class="va-field-group">
+                        <label class="va-label">Publishing Status</label>
+                        <div class="va-status-options">
+                            <label class="va-status-card active" id="statusPublishedCard">
+                                <input type="radio" name="status" value="Published" checked onchange="updateStatusCard(this)">
+                                <div class="va-status-content">
+                                    <div class="va-status-badge va-status-badge--published">
+                                        <i class="fas fa-globe"></i> Published
+                                    </div>
+                                    <span class="va-status-desc">Visible to all enrolled students immediately</span>
+                                </div>
+                            </label>
+
+                            <label class="va-status-card" id="statusDraftCard">
+                                <input type="radio" name="status" value="Draft" onchange="updateStatusCard(this)">
+                                <div class="va-status-content">
+                                    <div class="va-status-badge va-status-badge--draft">
+                                        <i class="fas fa-eye-slash"></i> Draft
+                                    </div>
+                                    <span class="va-status-desc">Saved privately, hidden from student view</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Media Uploads -->
+                <div class="va-form-side">
+                    <div class="va-card-header">
+                        <i class="fas fa-photo-film va-header-icon"></i>
+                        <div>
+                            <h3 class="va-card-title">Media Uploads</h3>
+                            <p class="va-card-sub">Upload video file & custom cover image</p>
+                        </div>
+                    </div>
+
+                    <!-- Video File Dropzone -->
+                    <div class="va-field-group">
+                        <label class="va-label">Video File <span class="req">*</span></label>
+                        <div class="va-dropzone" id="videoDropzone">
+                            <input type="file" name="video_file" id="videoInput" accept="video/*" required onchange="handleVideoSelect(this)">
+                            <div class="va-dropzone-inner" id="videoDropzoneInner">
+                                <div class="va-drop-icon va-drop-icon--video">
+                                    <i class="fas fa-file-video"></i>
+                                </div>
+                                <h4 class="va-drop-title">Drop video file here</h4>
+                                <p class="va-drop-sub">MP4, MOV, WEBM (Max 500MB)</p>
+                                <span class="va-browse-btn"><i class="fas fa-folder-open"></i> Browse File</span>
+                            </div>
+                            <div class="va-file-preview hidden" id="videoPreview">
+                                <i class="fas fa-file-circle-check va-preview-icon"></i>
+                                <div class="va-preview-details">
+                                    <span class="va-file-name" id="videoFileName">video.mp4</span>
+                                    <span class="va-file-size" id="videoFileSize">0 MB</span>
+                                </div>
+                                <button type="button" class="va-remove-file" onclick="resetVideoFile(event)" title="Change file">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Thumbnail Image Dropzone -->
+                    <div class="va-field-group">
+                        <label class="va-label">Thumbnail Image <span class="req">*</span></label>
+                        <div class="va-dropzone" id="thumbDropzone">
+                            <input type="file" name="thumbnail" id="thumbInput" accept="image/*" required onchange="handleThumbSelect(this)">
+                            <div class="va-dropzone-inner" id="thumbDropzoneInner">
+                                <div class="va-drop-icon va-drop-icon--img">
+                                    <i class="fas fa-image"></i>
+                                </div>
+                                <h4 class="va-drop-title">Drop thumbnail here</h4>
+                                <p class="va-drop-sub">16:9 ratio recommended (JPG, PNG)</p>
+                                <span class="va-browse-btn"><i class="fas fa-image"></i> Choose Cover</span>
+                            </div>
+                            <div class="va-thumb-img-preview hidden" id="thumbPreview">
+                                <img id="thumbImgTag" src="" alt="Thumbnail preview">
+                                <div class="va-thumb-overlay">
+                                    <span class="va-file-name" id="thumbFileName">cover.jpg</span>
+                                    <button type="button" class="va-remove-file" onclick="resetThumbFile(event)" title="Change image">
+                                        <i class="fas fa-sync-alt"></i> Replace
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="vm-form-section">
-                <h3 class="vm-section-title"><i class="fas fa-sliders"></i> Settings</h3>
-                <div class="vm-form-grid">
-                    <div class="vm-form-group">
-                        <label>Visibility Status</label>
-                        <select name="status">
-                            <option value="Published">Published (Visible to Students)</option>
-                            <option value="Draft">Draft (Hidden)</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            <div class="vm-form-footer">
-                <a href="{% url 'video_management' %}" class="vm-btn vm-btn--ghost">Cancel</a>
-                <button type="submit" class="vm-btn vm-btn--primary">
-                    <i class="fas fa-save"></i> Save Video
+            <!-- Form Footer / Actions -->
+            <div class="va-form-footer">
+                <a href="{% url 'video_management' %}" class="vm-btn vm-btn--ghost">
+                    <i class="fas fa-xmark"></i> Cancel
+                </a>
+                <button type="submit" class="vm-btn vm-btn--primary va-submit-btn">
+                    <i class="fas fa-cloud-arrow-up"></i> Save & Publish Video
                 </button>
-            </div>
             </div>
         </form>
     </div>
+
+    <!-- JavaScript for Live File Previews & Interaction -->
+    <script>
+        function updateStatusCard(radio) {
+            document.querySelectorAll('.va-status-card').forEach(card => card.classList.remove('active'));
+            radio.closest('.va-status-card').classList.add('active');
+        }
+
+        function handleVideoSelect(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                document.getElementById('videoFileName').textContent = file.name;
+                const sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
+                document.getElementById('videoFileSize').textContent = sizeInMB + ' MB';
+                
+                document.getElementById('videoDropzoneInner').classList.add('hidden');
+                document.getElementById('videoPreview').classList.remove('hidden');
+                document.getElementById('videoDropzone').classList.add('has-file');
+            }
+        }
+
+        function resetVideoFile(e) {
+            e.stopPropagation();
+            const input = document.getElementById('videoInput');
+            input.value = '';
+            document.getElementById('videoDropzoneInner').classList.remove('hidden');
+            document.getElementById('videoPreview').classList.add('hidden');
+            document.getElementById('videoDropzone').classList.remove('has-file');
+        }
+
+        function handleThumbSelect(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                document.getElementById('thumbFileName').textContent = file.name;
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('thumbImgTag').src = e.target.result;
+                    document.getElementById('thumbDropzoneInner').classList.add('hidden');
+                    document.getElementById('thumbPreview').classList.remove('hidden');
+                    document.getElementById('thumbDropzone').classList.add('has-file');
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function resetThumbFile(e) {
+            e.stopPropagation();
+            const input = document.getElementById('thumbInput');
+            input.value = '';
+            document.getElementById('thumbDropzoneInner').classList.remove('hidden');
+            document.getElementById('thumbPreview').classList.add('hidden');
+            document.getElementById('thumbDropzone').classList.remove('has-file');
+        }
+    </script>
 </body>
 </html>

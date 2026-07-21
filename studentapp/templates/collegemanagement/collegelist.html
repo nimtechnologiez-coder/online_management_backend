@@ -302,8 +302,11 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-ghost" onclick="closeModal('deleteModal')">Cancel</button>
-                <button class="btn btn-danger" onclick="confirmDelete()">Delete</button>
+                <form id="deleteForm" method="POST" action="">
+                    {% csrf_token %}
+                    <button type="button" class="btn btn-ghost" onclick="closeModal('deleteModal')">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Delete Permanently</button>
+                </form>
             </div>
         </div>
     </div>
@@ -320,18 +323,18 @@
             {% for college in colleges %}
             {
                 id: {{ college.id|default:0 }},
-                code: 'N/A',
+                code: '{{ college.college_code|default:"-"|escapejs }}',
                 name: '{{ college.college_name|escapejs }}',
-                university: 'N/A',
-                email: 'N/A',
-                phone: 'N/A',
-                state: 'N/A',
-                district: 'N/A',
-                depts: 0,
-                students: 0,
-                status: 'active',
-                created: 'N/A',
-                logo: 'https://ui-avatars.com/api/?name={{ college.college_name|urlencode }}&background=2563eb&color=fff&size=80'
+                university: '{{ college.university|default:"-"|escapejs }}',
+                email: '{{ college.contact_email|default:"-"|escapejs }}',
+                phone: '{{ college.contact_phone|default:"-"|escapejs }}',
+                state: '{{ college.state|default:"-"|escapejs }}',
+                district: '{{ college.district|default:"-"|escapejs }}',
+                depts: {{ college.departments.count|default:0 }},
+                students: {{ college.students.count|default:0 }},
+                status: '{{ college.status|default:"active"|escapejs }}',
+                created: '{{ college.created_at|date:"M d, Y"|default:"-"|escapejs }}',
+                logo: '{% if college.college_logo %}{{ college.college_logo.url }}{% else %}https://ui-avatars.com/api/?name={{ college.college_name|urlencode }}&background=2563eb&color=fff&size=80{% endif %}'
             }{% if not forloop.last %},{% endif %}
             {% endfor %}
         ];
@@ -504,22 +507,8 @@
 
             deleteTargetId = id;
             document.getElementById('deleteName').textContent = c.name;
+            document.getElementById('deleteForm').action = `/colleges/delete/${id}/`;
             openModal('deleteModal');
-        }
-
-        function confirmDelete() {
-            if (deleteTargetId === null) return;
-
-            const c = collegeData.find(x => x.id === deleteTargetId);
-            collegeData = collegeData.filter(x => x.id !== deleteTargetId);
-
-            renderTable();
-            closeModal('deleteModal');
-            if (c) showToast(`${c.name} deleted.`);
-            deleteTargetId = null;
-
-            // TODO: replace with real backend call, e.g.
-            // fetch(`/colleges/${deleteTargetId}/delete/`, { method: 'POST' });
         }
 
         // -------------------------------------------------------------

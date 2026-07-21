@@ -60,7 +60,6 @@
                     <div class="va-stat-card__content">
                         <span class="va-stat-label">Total Videos</span>
                         <span class="va-stat-value">{{ total_videos }}</span>
-                        <span class="va-stat-trend va-trend-up"><i class="fas fa-arrow-up"></i> +12%</span>
                     </div>
                 </div>
                 <div class="va-stat-card va-stat-card--green">
@@ -68,7 +67,6 @@
                     <div class="va-stat-card__content">
                         <span class="va-stat-label">Total Views</span>
                         <span class="va-stat-value">{{ total_views }}</span>
-                        <span class="va-stat-trend va-trend-up"><i class="fas fa-arrow-up"></i> +8%</span>
                     </div>
                 </div>
                 <div class="va-stat-card va-stat-card--purple">
@@ -76,7 +74,6 @@
                     <div class="va-stat-card__content">
                         <span class="va-stat-label">Watch Hours</span>
                         <span class="va-stat-value">{{ watch_hours }}h</span>
-                        <span class="va-stat-trend va-trend-up"><i class="fas fa-arrow-up"></i> +15%</span>
                     </div>
                 </div>
                 <div class="va-stat-card va-stat-card--amber">
@@ -84,7 +81,6 @@
                     <div class="va-stat-card__content">
                         <span class="va-stat-label">Completion Rate</span>
                         <span class="va-stat-value">{{ completion_rate }}%</span>
-                        <span class="va-stat-trend va-trend-down"><i class="fas fa-arrow-down"></i> -2%</span>
                     </div>
                 </div>
                 <div class="va-stat-card va-stat-card--red">
@@ -92,7 +88,6 @@
                     <div class="va-stat-card__content">
                         <span class="va-stat-label">Active Students</span>
                         <span class="va-stat-value">{{ active_students }}</span>
-                        <span class="va-stat-trend va-trend-up"><i class="fas fa-arrow-up"></i> +5%</span>
                     </div>
                 </div>
             </div>
@@ -271,14 +266,23 @@
 
     <script>
         /* ── Views Trend Chart ─────────────────────────────── */
+        const weekLabels   = {{ week_labels|safe }};
+        const weekData     = {{ week_data|safe }};
+        const dailyLabels  = {{ daily_labels|safe }};
+        const dailyData    = {{ daily_data|safe }};
+        const monthLabels  = {{ monthly_labels|safe }};
+        const monthData    = {{ monthly_data|safe }};
+        const catLabels    = {{ category_labels|safe }};
+        const catData      = {{ category_data|safe }};
+
         const ctxTrend = document.getElementById('viewsTrendChart').getContext('2d');
         const trendChart = new Chart(ctxTrend, {
             type: 'line',
             data: {
-                labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6'],
+                labels: weekLabels,
                 datasets: [{
                     label: 'Total Views',
-                    data: [1200, 1900, 1500, 2500, 2200, 3000],
+                    data: weekData,
                     borderColor: '#4f46e5',
                     backgroundColor: 'rgba(79,70,229,0.08)',
                     fill: true,
@@ -295,20 +299,23 @@
                 plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' ' + ctx.parsed.y + ' views' } } },
                 scales: {
                     x: { grid: { display: false }, ticks: { font: { size: 11 }, color: '#8b93b8' } },
-                    y: { grid: { color: '#f0f2f8' }, ticks: { font: { size: 11 }, color: '#8b93b8' }, beginAtZero: true }
+                    y: { grid: { color: '#f0f2f8' }, ticks: { font: { size: 11 }, color: '#8b93b8' }, beginAtZero: true, ticks: { stepSize: 1 } }
                 }
             }
         });
 
         function updateTrendChart() {
             const v = document.getElementById('trendFilter').value;
-            const data = {
-                daily:   { labels: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], data: [150,230,180,320,290,120,400] },
-                weekly:  { labels: ['Week 1','Week 2','Week 3','Week 4','Week 5','Week 6'], data: [1200,1900,1500,2500,2200,3000] },
-                monthly: { labels: ['Jan','Feb','Mar','Apr','May','Jun'], data: [5000,7200,6800,9400,8100,10500] },
-            };
-            trendChart.data.labels = data[v].labels;
-            trendChart.data.datasets[0].data = data[v].data;
+            if (v === 'daily') {
+                trendChart.data.labels = dailyLabels;
+                trendChart.data.datasets[0].data = dailyData;
+            } else if (v === 'monthly') {
+                trendChart.data.labels = monthLabels;
+                trendChart.data.datasets[0].data = monthData;
+            } else {
+                trendChart.data.labels = weekLabels;
+                trendChart.data.datasets[0].data = weekData;
+            }
             trendChart.update('active');
         }
 
@@ -317,9 +324,9 @@
         new Chart(ctxDept, {
             type: 'doughnut',
             data: {
-                labels: ['Programming', 'Mathematics', 'Physics', 'Soft Skills'],
+                labels: catLabels,
                 datasets: [{
-                    data: [40, 25, 20, 15],
+                    data: catData,
                     backgroundColor: ['#4f46e5','#06b6d4','#8b5cf6','#f59e0b'],
                     borderWidth: 0,
                     hoverOffset: 6
@@ -332,15 +339,15 @@
             }
         });
 
-        /* ── Completion Bar Chart ───────────────────────────── */
+        /* ── Monthly Watch Bar Chart ────────────────────────── */
         const ctxComp = document.getElementById('completionChart').getContext('2d');
         new Chart(ctxComp, {
             type: 'bar',
             data: {
-                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May'],
+                labels: monthLabels,
                 datasets: [{
-                    label: 'Completion %',
-                    data: [65, 72, 68, 80, 75],
+                    label: 'Watch Events',
+                    data: monthData,
                     backgroundColor: 'rgba(139,92,246,0.85)',
                     borderRadius: 7,
                     borderSkipped: false,
@@ -351,10 +358,11 @@
                 plugins: { legend: { display: false } },
                 scales: {
                     x: { grid: { display: false }, ticks: { font: { size: 11 }, color: '#8b93b8' } },
-                    y: { grid: { color: '#f0f2f8' }, ticks: { font: { size: 11 }, color: '#8b93b8' }, min: 0, max: 100 }
+                    y: { grid: { color: '#f0f2f8' }, ticks: { font: { size: 11 }, color: '#8b93b8', stepSize: 1 }, beginAtZero: true }
                 }
             }
         });
+
 
         /* ── Video Table Search ─────────────────────────────── */
         function filterVideoTable() {

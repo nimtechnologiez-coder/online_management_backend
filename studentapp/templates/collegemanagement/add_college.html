@@ -9,15 +9,14 @@
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Font Awesome CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
     <!-- Sidebar CSS -->
     <link rel="stylesheet" href="{% static 'css/sidebar.css' %}" />
-
-    <!-- Separate Add College CSS (no Bootstrap / no Tailwind) -->
+    <!-- Separate Add College CSS -->
     <link rel="stylesheet" href="{% static 'css/add_college.css' %}">
 </head>
 
@@ -28,72 +27,98 @@
 
     <div class="ac-main">
 
-        <!-- ── Breadcrumb ───────────────────────────────────── -->
-        <nav class="ac-breadcrumb" aria-label="Breadcrumb">
-            <a href="{% url 'dashboard' %}"><i class="fas fa-home"></i> Dashboard</a>
-            <span class="ac-breadcrumb__sep">/</span>
-            <a href="{% url 'collegemanagement' %}">College Management</a>
-            <span class="ac-breadcrumb__sep">/</span>
-            <span class="ac-breadcrumb__current">Add College</span>
-        </nav>
-
-        <!-- ── Page Header ─────────────────────────────────── -->
-        <div class="ac-page-header">
-            <div>
-                <h1 class="ac-page-title">Add New College</h1>
-                <p class="ac-page-subtitle">Register a new college and set up its admin profile.</p>
+        <!-- ── Hero Banner ─────────────────────────────────── -->
+        <div class="ac-hero-banner">
+            <div class="ac-hero-content">
+                <nav class="ac-breadcrumb" aria-label="Breadcrumb">
+                    <a href="{% url 'dashboard' %}"><i class="fas fa-home"></i> Home</a>
+                    <span class="ac-breadcrumb__sep"><i class="fas fa-chevron-right"></i></span>
+                    <a href="{% url 'collegemanagement' %}">College Management</a>
+                    <span class="ac-breadcrumb__sep"><i class="fas fa-chevron-right"></i></span>
+                    <span class="ac-breadcrumb__current">Add College</span>
+                </nav>
+                <div class="ac-hero-title-row">
+                    <div class="ac-hero-icon">
+                        <i class="fas fa-building-columns"></i>
+                    </div>
+                    <div>
+                        <h1 class="ac-hero-title">Add New College</h1>
+                        <p class="ac-hero-subtitle">Register an educational institution into the centralized management portal.</p>
+                    </div>
+                </div>
             </div>
-            <a href="{% url 'collegemanagement' %}" class="ac-btn ac-btn--ghost">
-                <i class="fas fa-arrow-left"></i> Back to List
+            <a href="{% url 'collegemanagement' %}" class="ac-btn ac-btn--back">
+                <i class="fas fa-arrow-left"></i> Back to Colleges
             </a>
         </div>
 
         <!-- ── Form Card ──────────────────────────────────── -->
         <div class="ac-form-card">
-            <form action="{% url 'college_add' %}" method="POST" enctype="multipart/form-data">
+            <form action="{% url 'college_add' %}" method="POST" enctype="multipart/form-data" id="addCollegeForm">
                 {% csrf_token %}
 
                 <!-- Section 1: College Identity -->
                 <div class="ac-form-section">
                     <div class="ac-form-section__header">
-                        <i class="fas fa-id-card"></i>
-                        <h3>College Identity</h3>
+                        <div class="ac-sec-icon"><i class="fas fa-id-card"></i></div>
+                        <div>
+                            <h3>College Identity</h3>
+                            <p class="ac-sec-sub">Essential identification & affiliation details</p>
+                        </div>
                     </div>
                     <div class="ac-form-grid">
                         <div class="ac-form-group">
                             <label for="college_code">College Code <span class="req">*</span></label>
-                            <input type="text" id="college_code" name="college_code" placeholder="e.g. CLG-0245" required>
+                            <div class="ac-input-wrap">
+                                <i class="fas fa-hashtag ac-input-icon"></i>
+                                <input type="text" id="college_code" name="college_code" placeholder="e.g. CLG-0245" required class="ac-input">
+                            </div>
                         </div>
+
                         <div class="ac-form-group ac-col-span-2">
                             <label for="college_name">College Name <span class="req">*</span></label>
-                            <input type="text" id="college_name" name="college_name"
-                                placeholder="e.g. St. Xavier's College of Engineering" required>
+                            <div class="ac-input-wrap">
+                                <i class="fas fa-university ac-input-icon"></i>
+                                <input type="text" id="college_name" name="college_name" placeholder="e.g. St. Xavier's College of Engineering" required class="ac-input">
+                            </div>
                         </div>
+
                         <div class="ac-form-group">
-                            <label for="university">University <span class="req">*</span></label>
-                            <select id="university" name="university" class="ac-select" required>
-                                <option value="">Select University</option>
-                                <option value="Anna University">Anna University</option>
-                                <option value="Mumbai University">Mumbai University</option>
-                                <option value="Bangalore University">Bangalore University</option>
-                                <option value="Kerala University">Kerala University</option>
-                                <option value="Madras University">Madras University</option>
-                            </select>
+                            <label for="university">University Affiliation <span class="req">*</span></label>
+                            <div class="ac-input-wrap">
+                                <i class="fas fa-graduation-cap ac-input-icon"></i>
+                                <select id="university" name="university" class="ac-select" required>
+                                    <option value="" disabled selected>Select University</option>
+                                    <option value="Anna University">Anna University</option>
+                                    <option value="Mumbai University">Mumbai University</option>
+                                    <option value="Bangalore University">Bangalore University</option>
+                                    <option value="Kerala University">Kerala University</option>
+                                    <option value="Madras University">Madras University</option>
+                                </select>
+                            </div>
                         </div>
+
                         <div class="ac-form-group">
                             <label for="college_type">College Type</label>
-                            <select id="college_type" name="college_type" class="ac-select">
-                                <option value="private" selected>Private</option>
-                                <option value="government">Government</option>
-                                <option value="autonomous">Autonomous</option>
-                            </select>
+                            <div class="ac-input-wrap">
+                                <i class="fas fa-landmark ac-input-icon"></i>
+                                <select id="college_type" name="college_type" class="ac-select">
+                                    <option value="private" selected>Private</option>
+                                    <option value="government">Government</option>
+                                    <option value="autonomous">Autonomous</option>
+                                </select>
+                            </div>
                         </div>
+
                         <div class="ac-form-group">
                             <label for="status">Status</label>
-                            <select id="status" name="status" class="ac-select">
-                                <option value="active" selected>Active</option>
-                                <option value="inactive">Inactive</option>
-                            </select>
+                            <div class="ac-input-wrap">
+                                <i class="fas fa-toggle-on ac-input-icon"></i>
+                                <select id="status" name="status" class="ac-select">
+                                    <option value="active" selected>Active</option>
+                                    <option value="inactive">Inactive</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -101,73 +126,104 @@
                 <!-- Section 2: Location Details -->
                 <div class="ac-form-section">
                     <div class="ac-form-section__header">
-                        <i class="fas fa-map-marker-alt"></i>
-                        <h3>Location Details</h3>
+                        <div class="ac-sec-icon"><i class="fas fa-map-location-dot"></i></div>
+                        <div>
+                            <h3>Location Details</h3>
+                            <p class="ac-sec-sub">State, district, and campus location address</p>
+                        </div>
                     </div>
                     <div class="ac-form-grid">
                         <div class="ac-form-group">
                             <label for="state">State <span class="req">*</span></label>
-                            <select id="state" name="state" class="ac-select" required>
-                                <option value="">Select State</option>
-                                <option value="Tamil Nadu">Tamil Nadu</option>
-                                <option value="Maharashtra">Maharashtra</option>
-                                <option value="Karnataka">Karnataka</option>
-                                <option value="Kerala">Kerala</option>
-                            </select>
+                            <div class="ac-input-wrap">
+                                <i class="fas fa-map ac-input-icon"></i>
+                                <select id="state" name="state" class="ac-select" required>
+                                    <option value="" disabled selected>Select State</option>
+                                    <option value="Tamil Nadu">Tamil Nadu</option>
+                                    <option value="Maharashtra">Maharashtra</option>
+                                    <option value="Karnataka">Karnataka</option>
+                                    <option value="Kerala">Kerala</option>
+                                </select>
+                            </div>
                         </div>
+
                         <div class="ac-form-group">
                             <label for="district">District <span class="req">*</span></label>
-                            <select id="district" name="district" class="ac-select" required>
-                                <option value="">Select District</option>
-                                <option value="Chennai">Chennai</option>
-                                <option value="Coimbatore">Coimbatore</option>
-                                <option value="Mumbai">Mumbai</option>
-                                <option value="Bengaluru">Bengaluru</option>
-                                <option value="Thiruvananthapuram">Thiruvananthapuram</option>
-                            </select>
+                            <div class="ac-input-wrap">
+                                <i class="fas fa-location-crosshairs ac-input-icon"></i>
+                                <select id="district" name="district" class="ac-select" required>
+                                    <option value="" disabled selected>Select District</option>
+                                    <option value="Chennai">Chennai</option>
+                                    <option value="Coimbatore">Coimbatore</option>
+                                    <option value="Mumbai">Mumbai</option>
+                                    <option value="Bengaluru">Bengaluru</option>
+                                    <option value="Thiruvananthapuram">Thiruvananthapuram</option>
+                                </select>
+                            </div>
                         </div>
+
                         <div class="ac-form-group ac-col-span-2">
-                            <label for="address">Address</label>
-                            <textarea id="address" name="address" rows="3" class="ac-textarea"
-                                placeholder="Street, area, landmark"></textarea>
+                            <label for="address">Full Campus Address</label>
+                            <textarea id="address" name="address" rows="3" class="ac-textarea" placeholder="Street name, landmark, postal code..."></textarea>
                         </div>
                     </div>
                 </div>
 
-                <!-- Section 3: Contact -->
+                <!-- Section 3: Contact Details -->
                 <div class="ac-form-section">
                     <div class="ac-form-section__header">
-                        <i class="fas fa-phone"></i>
-                        <h3>Contact</h3>
+                        <div class="ac-sec-icon"><i class="fas fa-address-book"></i></div>
+                        <div>
+                            <h3>Official Contact</h3>
+                            <p class="ac-sec-sub">Email address & official phone line</p>
+                        </div>
                     </div>
                     <div class="ac-form-grid">
                         <div class="ac-form-group">
                             <label for="college_email">College Email</label>
-                            <input type="email" id="college_email" name="college_email" placeholder="info@college.edu">
+                            <div class="ac-input-wrap">
+                                <i class="fas fa-envelope ac-input-icon"></i>
+                                <input type="email" id="college_email" name="college_email" placeholder="e.g. info@college.edu" class="ac-input">
+                            </div>
                         </div>
+
                         <div class="ac-form-group">
-                            <label for="college_phone">College Phone Number</label>
-                            <input type="tel" id="college_phone" name="college_phone" placeholder="+91 04652 123456">
+                            <label for="college_phone">Phone Number</label>
+                            <div class="ac-input-wrap">
+                                <i class="fas fa-phone ac-input-icon"></i>
+                                <input type="tel" id="college_phone" name="college_phone" placeholder="e.g. +91 04652 123456" class="ac-input">
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Section 4: College Logo -->
+                <!-- Section 4: College Logo Upload -->
                 <div class="ac-form-section">
                     <div class="ac-form-section__header">
-                        <i class="fas fa-image"></i>
-                        <h3>College Logo</h3>
-                    </div>
-                    <div class="ac-form-grid">
-                        <div class="ac-form-group">
-                            <label for="logo">Upload Logo</label>
-                            <input type="file" id="logo" name="logo" class="ac-file-input" accept="image/png, image/jpeg">
+                        <div class="ac-sec-icon"><i class="fas fa-image"></i></div>
+                        <div>
+                            <h3>College Branding & Logo</h3>
+                            <p class="ac-sec-sub">Upload an emblem or official badge</p>
                         </div>
-                        <div class="ac-form-group">
-                            <label>Preview</label>
-                            <div class="ac-logo-preview" id="ac-logo-preview">
-                                <img id="ac-logo-preview-img" src="" alt="Logo preview">
-                                <span id="ac-logo-preview-placeholder">No file selected</span>
+                    </div>
+                    
+                    <div class="ac-dropzone" id="acLogoDropzone">
+                        <input type="file" id="logo" name="logo" class="ac-file-input" accept="image/png, image/jpeg, image/webp" onchange="handleLogoSelect(this)">
+                        <div class="ac-dropzone-inner" id="acLogoInner">
+                            <div class="ac-drop-icon">
+                                <i class="fas fa-cloud-arrow-up"></i>
+                            </div>
+                            <h4 class="ac-drop-title">Drop college emblem here</h4>
+                            <p class="ac-drop-sub">Supports PNG, JPG or WEBP (Max 5MB)</p>
+                            <span class="ac-browse-btn"><i class="fas fa-folder-open"></i> Browse Emblem</span>
+                        </div>
+                        <div class="ac-logo-preview-box hidden" id="acLogoPreviewBox">
+                            <img id="ac-logo-preview-img" src="" alt="Logo preview">
+                            <div class="ac-preview-info">
+                                <span class="ac-file-name" id="acLogoFileName">emblem.png</span>
+                                <button type="button" class="ac-remove-btn" onclick="resetLogoFile(event)">
+                                    <i class="fas fa-sync-alt"></i> Replace
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -175,13 +231,13 @@
 
                 <!-- Form Footer -->
                 <div class="ac-form-footer">
-                    <button type="button" onclick="window.history.back()" class="ac-btn ac-btn--ghost">Cancel</button>
-                    <button type="reset" class="ac-btn ac-btn--ghost">Reset</button>
+                    <a href="{% url 'collegemanagement' %}" class="ac-btn ac-btn--ghost">Cancel</a>
+                    <button type="reset" class="ac-btn ac-btn--ghost" onclick="resetLogoFile(event)">Reset</button>
                     <button type="submit" name="action" value="save_and_add_another" class="ac-btn ac-btn--secondary">
-                        Save &amp; Add Another
+                        <i class="fas fa-plus-circle"></i> Save &amp; Add Another
                     </button>
                     <button type="submit" name="action" value="save" class="ac-btn ac-btn--primary">
-                        <i class="fas fa-save"></i> Save College
+                        <i class="fas fa-check-circle"></i> Save & Register College
                     </button>
                 </div>
             </form>
@@ -191,25 +247,29 @@
 
     <!-- ── Logo Preview Logic ───────────────────── -->
     <script>
-        const logoInput = document.getElementById('logo');
-        const previewImg = document.getElementById('ac-logo-preview-img');
-        const previewPlaceholder = document.getElementById('ac-logo-preview-placeholder');
-
-        logoInput.addEventListener('change', () => {
-            const file = logoInput.files && logoInput.files[0];
-            if (!file) {
-                previewImg.style.display = 'none';
-                previewPlaceholder.style.display = 'block';
-                return;
+        function handleLogoSelect(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                document.getElementById('acLogoFileName').textContent = file.name;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    document.getElementById('ac-logo-preview-img').src = e.target.result;
+                    document.getElementById('acLogoInner').classList.add('hidden');
+                    document.getElementById('acLogoPreviewBox').classList.remove('hidden');
+                    document.getElementById('acLogoDropzone').classList.add('has-file');
+                };
+                reader.readAsDataURL(file);
             }
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                previewImg.src = e.target.result;
-                previewImg.style.display = 'block';
-                previewPlaceholder.style.display = 'none';
-            };
-            reader.readAsDataURL(file);
-        });
+        }
+
+        function resetLogoFile(e) {
+            if(e) e.stopPropagation();
+            const input = document.getElementById('logo');
+            input.value = '';
+            document.getElementById('acLogoInner').classList.remove('hidden');
+            document.getElementById('acLogoPreviewBox').classList.add('hidden');
+            document.getElementById('acLogoDropzone').classList.remove('has-file');
+        }
     </script>
 </body>
 </html>

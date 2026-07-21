@@ -10,6 +10,7 @@ urlpatterns = [
 
     path('colleges/', views.college_management, name='collegemanagement'),
     path('colleges/add/', views.college_add, name='college_add'),
+    path('colleges/delete/<int:id>/', views.college_delete, name='college_delete'),
 
     path('departments/', views.department_management, name='department_management'),
     path('departments/add/', views.department_add, name='department_add'),

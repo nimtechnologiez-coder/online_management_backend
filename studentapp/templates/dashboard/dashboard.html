@@ -228,7 +228,7 @@
                     <div class="stat-icon icon-blue"><i class="fas fa-university"></i></div>
                     <div class="stat-details">
                         <h3>Total Colleges</h3>
-                        <p class="stat-number">{{ total_colleges|default:"12" }}</p>
+                        <p class="stat-number">{{ total_colleges }}</p>
                     </div>
                 </div>
 
@@ -236,7 +236,7 @@
                     <div class="stat-icon icon-green"><i class="fas fa-user-check"></i></div>
                     <div class="stat-details">
                         <h3>Active Students</h3>
-                        <p class="stat-number">{{ active_students|default:"8,432" }}</p>
+                        <p class="stat-number">{{ active_students }}</p>
                     </div>
                 </div>
 
@@ -244,7 +244,7 @@
                     <div class="stat-icon icon-red"><i class="fas fa-eye"></i></div>
                     <div class="stat-details">
                         <h3>Today's Views</h3>
-                        <p class="stat-number">{{ today_views|default:"1,204" }}</p>
+                        <p class="stat-number">{{ today_views }}</p>
                     </div>
                 </div>
 
@@ -252,7 +252,7 @@
                     <div class="stat-icon icon-purple"><i class="fas fa-chart-line"></i></div>
                     <div class="stat-details">
                         <h3>Monthly Views</h3>
-                        <p class="stat-number">{{ this_month_views|default:"45,912" }}</p>
+                        <p class="stat-number">{{ this_month_views }}</p>
                     </div>
                 </div>
 
@@ -260,7 +260,7 @@
                     <div class="stat-icon icon-orange"><i class="fas fa-user-tie"></i></div>
                     <div class="stat-details">
                         <h3>Total HODs</h3>
-                        <p class="stat-number">{{ total_hods|default:"48" }}</p>
+                        <p class="stat-number">{{ total_hods }}</p>
                     </div>
                 </div>
 
@@ -268,7 +268,7 @@
                     <div class="stat-icon icon-teal"><i class="fas fa-video"></i></div>
                     <div class="stat-details">
                         <h3>Total Videos</h3>
-                        <p class="stat-number">{{ total_videos|default:"342" }}</p>
+                        <p class="stat-number">{{ total_videos }}</p>
                     </div>
                 </div>
 
@@ -276,7 +276,7 @@
                     <div class="stat-icon icon-pink"><i class="fas fa-user-graduate"></i></div>
                     <div class="stat-details">
                         <h3>Total Students</h3>
-                        <p class="stat-number">{{ total_students|default:"9,512" }}</p>
+                        <p class="stat-number">{{ total_students }}</p>
                     </div>
                 </div>
 
@@ -284,7 +284,7 @@
                     <div class="stat-icon icon-yellow"><i class="fas fa-user-plus"></i></div>
                     <div class="stat-details">
                         <h3>New Registrations</h3>
-                        <p class="stat-number">142</p>
+                        <p class="stat-number">{{ active_students }}</p>
                     </div>
                 </div>
 
@@ -292,15 +292,7 @@
                     <div class="stat-icon icon-indigo"><i class="fas fa-chalkboard-teacher"></i></div>
                     <div class="stat-details">
                         <h3>Total Principals</h3>
-                        <p class="stat-number">{{ total_principals|default:"12" }}</p>
-                    </div>
-                </div>
-
-                <div class="stat-card card-cyan">
-                    <div class="stat-icon icon-cyan"><i class="fas fa-server"></i></div>
-                    <div class="stat-details">
-                        <h3>System Status</h3>
-                        <p class="stat-number">99.9%</p>
+                        <p class="stat-number">{{ total_principals }}</p>
                     </div>
                 </div>
 
@@ -487,28 +479,28 @@
                                 <i class="fas fa-university sysov-icon" style="color:#4f46e5;background:#ede9fe;"></i>
                                 <div>
                                     <p class="sysov-label">Colleges</p>
-                                    <p class="sysov-val">{{ total_colleges|default:"0" }}</p>
+                                    <p class="sysov-val">{{ total_colleges }}</p>
                                 </div>
                             </div>
                             <div class="sysov-item">
                                 <i class="fas fa-user-graduate sysov-icon" style="color:#ec4899;background:#fce7f3;"></i>
                                 <div>
                                     <p class="sysov-label">Students</p>
-                                    <p class="sysov-val">{{ total_students|default:"0" }}</p>
+                                    <p class="sysov-val">{{ total_students }}</p>
                                 </div>
                             </div>
                             <div class="sysov-item">
                                 <i class="fas fa-video sysov-icon" style="color:#0d9488;background:#ccfbf1;"></i>
                                 <div>
                                     <p class="sysov-label">Videos</p>
-                                    <p class="sysov-val">{{ total_videos|default:"0" }}</p>
+                                    <p class="sysov-val">{{ total_videos }}</p>
                                 </div>
                             </div>
                             <div class="sysov-item">
                                 <i class="fas fa-chalkboard-teacher sysov-icon" style="color:#f97316;background:#ffedd5;"></i>
                                 <div>
                                     <p class="sysov-label">Principals</p>
-                                    <p class="sysov-val">{{ total_principals|default:"0" }}</p>
+                                    <p class="sysov-val">{{ total_principals }}</p>
                                 </div>
                             </div>
                         </div>
