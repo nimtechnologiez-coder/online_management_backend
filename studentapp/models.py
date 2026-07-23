@@ -293,3 +293,4 @@ class VideoWatch(models.Model):
 
     class Meta:
         ordering = ["-watched_at"]
+        unique_together = (("student", "video"),)

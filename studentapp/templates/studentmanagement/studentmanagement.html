@@ -313,14 +313,41 @@
             alert('Student updated successfully! (demo)');
             closeModal('editModal');
         }
+        let _deleteRow = null;
         function openDeleteModal(btn) {
-            const row = btn.closest('tr');
-            document.getElementById('deleteName').textContent = row.dataset.name;
+            _deleteRow = btn.closest('tr');
+            document.getElementById('deleteName').textContent = _deleteRow.dataset.name;
             document.getElementById('deleteModal').classList.add('active');
         }
         function confirmDelete() {
-            alert('Student deleted! (demo)');
-            closeModal('deleteModal');
+            if (!_deleteRow) return;
+            const studentId = _deleteRow.dataset.id;
+            const confirmBtn = document.querySelector('#deleteModal .sm-btn--danger');
+            confirmBtn.disabled = true;
+            confirmBtn.textContent = 'Deleting...';
+
+            fetch(`/students/delete/${studentId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    _deleteRow.remove();
+                    closeModal('deleteModal');
+                    _deleteRow = null;
+                } else {
+                    alert('Error: ' + (data.message || 'Could not delete student.'));
+                }
+            })
+            .catch(() => alert('Network error. Please try again.'))
+            .finally(() => {
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = 'Yes, Delete';
+            });
         }
 
         /* ─── AJAX Pagination ─────────────────────────────────────── */

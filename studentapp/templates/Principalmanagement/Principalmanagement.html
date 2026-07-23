@@ -242,14 +242,17 @@
     <!-- Delete Modal -->
     <div id="deleteModal" class="pm-modal-overlay">
         <div class="pm-modal">
-            <div class="pm-modal__icon"><i class="fas fa-exclamation-triangle"></i></div>
-            <h3 class="pm-modal__title">Delete Principal?</h3>
-            <p class="pm-modal__desc">Are you sure you want to delete <strong id="deleteName"></strong>? This action
-                cannot be undone.</p>
-            <div class="pm-modal__actions">
-                <button onclick="closeAllModals()" class="pm-btn pm-btn--ghost">Cancel</button>
-                <button class="pm-btn pm-btn--danger">Yes, Delete</button>
-            </div>
+            <form id="deleteForm" method="POST" action="">
+                {% csrf_token %}
+                <div class="pm-modal__icon"><i class="fas fa-exclamation-triangle"></i></div>
+                <h3 class="pm-modal__title">Delete Principal?</h3>
+                <p class="pm-modal__desc">Are you sure you want to delete <strong id="deleteName"></strong>? This action
+                    cannot be undone.</p>
+                <div class="pm-modal__actions">
+                    <button type="button" onclick="closeAllModals()" class="pm-btn pm-btn--ghost">Cancel</button>
+                    <button type="submit" class="pm-btn pm-btn--danger">Yes, Delete</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -404,7 +407,8 @@
             document.getElementById('editStatus').value = status;
             document.getElementById('editModal').classList.add('active');
         }
-        function openDeleteModal(name) {
+        function openDeleteModal(id, name) {
+            document.getElementById('deleteForm').action = "/principals/delete/" + id + "/";
             document.getElementById('deleteName').innerText = name;
             document.getElementById('deleteModal').classList.add('active');
         }

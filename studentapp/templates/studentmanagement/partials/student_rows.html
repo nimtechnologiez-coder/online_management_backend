@@ -1,5 +1,6 @@
 {% for student in students %}
-<tr data-name="{{ student.full_name|escapejs }}"
+<tr data-id="{{ student.id }}"
+    data-name="{{ student.full_name|escapejs }}"
     data-user="{{ student.username|escapejs }}"
     data-pass="{{ student.password|escapejs }}"
     data-college="{{ student.college.college_name|escapejs }}"

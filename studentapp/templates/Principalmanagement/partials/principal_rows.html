@@ -29,7 +29,7 @@
         <div class="pm-actions">
             <button class="pm-icon-btn pm-icon-btn--view" onclick="openViewModal('{{ principal.principal_name|escapejs }}', '{{ principal.principal_email|escapejs }}', '{{ principal.principal_mobile|escapejs|default:"N/A" }}', '{{ principal.college.college_name|escapejs }}', '{{ principal.username|escapejs|default:"N/A" }}', '{{ principal.get_status_display|default:principal.status|title }}')"><i class="fas fa-eye"></i></button>
             <button class="pm-icon-btn pm-icon-btn--edit" onclick="openEditModal({{ principal.id }}, '{{ principal.principal_name|escapejs }}', '{{ principal.principal_email|escapejs }}', '{{ principal.principal_mobile|escapejs }}', '{{ principal.college_id }}', '{{ principal.status }}')"><i class="fas fa-pen-to-square"></i></button>
-            <button class="pm-icon-btn pm-icon-btn--delete" onclick="openDeleteModal('{{ principal.principal_name|escapejs }}')"><i class="fas fa-trash-can"></i></button>
+            <button class="pm-icon-btn pm-icon-btn--delete" onclick="openDeleteModal({{ principal.id }}, '{{ principal.principal_name|escapejs }}')"><i class="fas fa-trash-can"></i></button>
         </div>
     </td>
 </tr>
