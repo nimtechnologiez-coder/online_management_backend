@@ -123,6 +123,7 @@
                             <th>Department</th>
                             <th>College</th>
                             <th>HOD</th>
+                            <th>Email</th>
                             <th>Phone</th>
                             <th>Username</th>
                             <th>Password</th>
@@ -170,6 +171,10 @@
                         <p class="dm-detail-value" id="viewHod"></p>
                     </div>
                     <div class="dm-detail-item">
+                        <p class="dm-detail-label"><i class="fas fa-envelope"></i> Email</p>
+                        <p class="dm-detail-value" id="viewEmail"></p>
+                    </div>
+                    <div class="dm-detail-item">
                         <p class="dm-detail-label"><i class="fas fa-users"></i> Students</p>
                         <p class="dm-detail-value" id="viewStudents"></p>
                     </div>
@@ -209,38 +214,33 @@
                     <input type="hidden" id="editId">
                     <div class="dm-form-row">
                         <div class="dm-form-group">
-                            <label for="editName">Department Name</label>
+                            <label for="editName">Department</label>
                             <input type="text" id="editName" required>
                         </div>
                         <div class="dm-form-group">
-                            <label for="editSub">Category</label>
-                            <input type="text" id="editSub" required>
-                        </div>
-                    </div>
-                    <div class="dm-form-row">
-                        <div class="dm-form-group">
-                            <label for="editCode">Code</label>
-                            <input type="text" id="editCode" required>
-                        </div>
-                        <div class="dm-form-group">
                             <label for="editCollege">College</label>
-                            <input type="text" id="editCollege" required>
+                            <select id="editCollege" class="sm-select" required>
+                                <option value="">Select College</option>
+                                {% for c in colleges %}
+                                <option value="{{ c.id }}">{{ c.college_name }}</option>
+                                {% endfor %}
+                            </select>
                         </div>
                     </div>
                     <div class="dm-form-row">
                         <div class="dm-form-group">
-                            <label for="editHod">Head of Department</label>
+                            <label for="editHod">HOD</label>
                             <input type="text" id="editHod" required>
                         </div>
                         <div class="dm-form-group">
-                            <label for="editStudents">Students</label>
-                            <input type="number" id="editStudents" min="0" required>
+                            <label for="editEmail">Email</label>
+                            <input type="email" id="editEmail" required>
                         </div>
                     </div>
                     <div class="dm-form-row">
                         <div class="dm-form-group">
-                            <label for="editUsername">Username</label>
-                            <input type="text" id="editUsername" required>
+                            <label for="editPhone">Phone</label>
+                            <input type="tel" id="editPhone">
                         </div>
                         <div class="dm-form-group">
                             <label for="editStatus">Status</label>
@@ -254,7 +254,7 @@
             </div>
             <div class="dm-modal__actions">
                 <button onclick="closeModal('editModal')" class="dm-btn dm-btn--ghost">Cancel</button>
-                <button onclick="saveEdit()" class="dm-btn dm-btn--primary">Save Changes</button>
+                <button onclick="saveEdit()" class="dm-btn dm-btn--primary" id="saveEditBtn">Save Changes</button>
             </div>
         </div>
     </div>
@@ -282,6 +282,23 @@
     <div class="dm-toast" id="toast"><i class="fas fa-check-circle"></i><span id="toastMsg"></span></div>
 
     <script>
+        // ── CSRF helper (for AJAX POST requests) ───────────────
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let cookie of cookies) {
+                    cookie = cookie.trim();
+                    if (cookie.startsWith(name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        const csrftoken = getCookie('csrftoken');
+
         // ── Data ──────────────────────────────────────────────
         let departmentData = [
             {% for d in departments %}
@@ -291,7 +308,9 @@
                 name: '{{ d.dept_name|escapejs }}',
                 sub: '{{ d.dept_short_name|escapejs }}',
                 college: '{{ d.college.college_name|escapejs }}',
+                collegeId: {{ d.college_id|default:0 }},
                 hod: '{{ d.hod_name|escapejs }}',
+                hodEmail: '{{ d.hod_email|escapejs }}',
                 hodPhone: '{{ d.hod_phone|escapejs }}',
                 hodInitials: '{{ d.hod_name|slice:":2"|upper|escapejs }}',
                 hodColor: 'indigo',
@@ -337,6 +356,7 @@
                             <span>${d.hod}</span>
                         </div>
                     </td>
+                    <td class="dm-td--muted">${d.hodEmail}</td>
                     <td>${d.hodPhone}</td>
                     <td><span class="dm-username">${d.username}</span></td>
                     <td><span class="dm-password">${d.password}</span></td>
@@ -433,6 +453,7 @@
             document.getElementById('viewCollege').textContent = d.college;
             document.getElementById('viewStatus').textContent = d.status === 'active' ? 'Active' : 'Inactive';
             document.getElementById('viewHod').textContent = d.hod;
+            document.getElementById('viewEmail').textContent = d.hodEmail;
             document.getElementById('viewStudents').textContent = d.students.toLocaleString();
             document.getElementById('viewUsername').textContent = d.username;
             document.getElementById('viewPassword').textContent = d.password;
@@ -448,12 +469,10 @@
 
             document.getElementById('editId').value = d.id;
             document.getElementById('editName').value = d.name;
-            document.getElementById('editSub').value = d.sub;
-            document.getElementById('editCode').value = d.code;
-            document.getElementById('editCollege').value = d.college;
+            document.getElementById('editCollege').value = d.collegeId;
             document.getElementById('editHod').value = d.hod;
-            document.getElementById('editStudents').value = d.students;
-            document.getElementById('editUsername').value = d.username;
+            document.getElementById('editEmail').value = d.hodEmail;
+            document.getElementById('editPhone').value = d.hodPhone;
             document.getElementById('editStatus').value = d.status;
 
             openModal('editModal');
@@ -467,22 +486,49 @@
             const d = departmentData.find(x => x.id === id);
             if (!d) return;
 
-            d.name = document.getElementById('editName').value.trim();
-            d.sub = document.getElementById('editSub').value.trim();
-            d.code = document.getElementById('editCode').value.trim();
-            d.college = document.getElementById('editCollege').value.trim();
-            d.hod = document.getElementById('editHod').value.trim();
-            d.hodInitials = d.hod.split(' ').filter(Boolean).map(w => w[0]).join('').slice(0, 2).toUpperCase();
-            d.students = parseInt(document.getElementById('editStudents').value, 10) || 0;
-            d.username = document.getElementById('editUsername').value.trim();
-            d.status = document.getElementById('editStatus').value;
+            const payload = new FormData();
+            payload.append('dept_name', document.getElementById('editName').value.trim());
+            payload.append('college', document.getElementById('editCollege').value);
+            payload.append('hod_name', document.getElementById('editHod').value.trim());
+            payload.append('hod_email', document.getElementById('editEmail').value.trim());
+            payload.append('hod_phone', document.getElementById('editPhone').value.trim());
+            payload.append('status', document.getElementById('editStatus').value);
 
-            renderTable();
-            closeModal('editModal');
-            showToast(`${d.name} updated successfully.`);
+            const saveBtn = document.getElementById('saveEditBtn');
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Saving…';
 
-            // TODO: replace with real backend call, e.g.
-            // fetch(`/departments/${id}/edit/`, { method: 'POST', body: new FormData(form) });
+            fetch(`/departments/${id}/update/`, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrftoken },
+                body: payload,
+            })
+            .then(res => res.json().then(data => ({ ok: res.ok, data })))
+            .then(({ ok, data }) => {
+                if (!ok || data.status !== 'success') {
+                    throw new Error(data.message || 'Update failed');
+                }
+
+                d.name = data.data.name;
+                d.college = data.data.college;
+                d.collegeId = data.data.collegeId;
+                d.hod = data.data.hod;
+                d.hodEmail = data.data.hodEmail;
+                d.hodPhone = data.data.hodPhone;
+                d.hodInitials = data.data.hodInitials;
+                d.status = data.data.status;
+
+                renderTable();
+                closeModal('editModal');
+                showToast(`${d.name} updated successfully.`);
+            })
+            .catch(err => {
+                showToast(err.message || 'Failed to update department.');
+            })
+            .finally(() => {
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Save Changes';
+            });
         }
 
         // ── Delete ────────────────────────────────────────────
@@ -498,16 +544,42 @@
         function confirmDelete() {
             if (deleteTargetId === null) return;
 
-            const d = departmentData.find(x => x.id === deleteTargetId);
-            departmentData = departmentData.filter(x => x.id !== deleteTargetId);
+            const id = deleteTargetId;
+            const d = departmentData.find(x => x.id === id);
+            const deleteBtn = document.querySelector('#deleteModal .dm-btn--danger');
 
-            renderTable();
-            closeModal('deleteModal');
-            if (d) showToast(`${d.name} deleted.`);
-            deleteTargetId = null;
+            if (deleteBtn) {
+                deleteBtn.disabled = true;
+                deleteBtn.textContent = 'Deleting…';
+            }
 
-            // TODO: replace with real backend call, e.g.
-            // fetch(`/departments/${deleteTargetId}/delete/`, { method: 'POST' });
+            fetch(`/departments/${id}/delete/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken,
+                }
+            })
+            .then(res => res.json().then(data => ({ ok: res.ok, data })))
+            .then(({ ok, data }) => {
+                if (!ok || data.status !== 'success') {
+                    throw new Error(data.message || 'Delete failed');
+                }
+
+                departmentData = departmentData.filter(x => x.id !== id);
+                renderTable();
+                closeModal('deleteModal');
+                if (d) showToast(`${d.name} deleted.`);
+            })
+            .catch(err => {
+                showToast(err.message || 'Failed to delete department.');
+            })
+            .finally(() => {
+                if (deleteBtn) {
+                    deleteBtn.disabled = false;
+                    deleteBtn.textContent = 'Yes, Delete';
+                }
+                deleteTargetId = null;
+            });
         }
 
         // ── Toast ─────────────────────────────────────────────

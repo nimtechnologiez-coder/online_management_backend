@@ -96,6 +96,14 @@
                                 <option value="other">Other</option>
                             </select>
                         </div>
+                        <div class="sm-form-group">
+                            <label for="date_of_birth">Date of Birth <span class="req">*</span></label>
+                            <input type="date" id="date_of_birth" name="date_of_birth" class="sm-input" required style="padding: 0.6rem 0.85rem; border: 1px solid #e2e8f0; border-radius: 8px; font-family: 'Inter', sans-serif; width:100%;">
+                        </div>
+                        <div class="sm-form-group">
+                            <label for="age_display">Age <small style="color:#6b7280; font-weight:400;">(auto-calculated)</small></label>
+                            <input type="text" id="age_display" readonly placeholder="Select Date of Birth" style="padding: 0.6rem 0.85rem; border: 1px solid #e2e8f0; border-radius: 8px; font-family: 'Inter', sans-serif; background:#f8fafc; cursor:not-allowed; width:100%;">
+                        </div>
                     </div>
                 </div>
 
@@ -106,10 +114,7 @@
                         <h3>Academic Details</h3>
                     </div>
                     <div class="sm-form-grid">
-                        <div class="sm-form-group">
-                            <label for="student_id">Student ID <span class="req">*</span></label>
-                            <input type="text" id="student_id" name="student_id" placeholder="STU000000" required>
-                        </div>
+                       
                         <div class="sm-form-group">
                             <label for="college">College <span class="req">*</span></label>
                             <select id="college" name="college" class="sm-select" required>
@@ -186,6 +191,8 @@
         const deptSelect = document.getElementById('department');
         const joinDateInput = document.getElementById('join_date');
         const endDateDisplay = document.getElementById('end_date_display');
+        const dobInput = document.getElementById('date_of_birth');
+        const ageDisplay = document.getElementById('age_display');
         const allDeptOptions = Array.from(deptSelect.options).slice(1); // Skip placeholder
 
         // Map college ID -> stream from Django context
@@ -214,6 +221,29 @@
             endDateDisplay.title = `Stream: ${label} → End: ${endStr}`;
         }
 
+        function calcAge() {
+            const dobVal = dobInput.value;
+            if (!dobVal) {
+                ageDisplay.value = '';
+                ageDisplay.placeholder = 'Select Date of Birth';
+                return;
+            }
+            const dob = new Date(dobVal);
+            const today = new Date();
+            let age = today.getFullYear() - dob.getFullYear();
+            const monthDiff = today.getMonth() - dob.getMonth();
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+                age--;
+            }
+            if (age < 0 || isNaN(age)) {
+                ageDisplay.value = '';
+                ageDisplay.placeholder = 'Invalid date';
+                return;
+            }
+            ageDisplay.value = `${age} years`;
+            ageDisplay.placeholder = '';
+        }
+
         collegeSelect.addEventListener('change', () => {
             const selectedCollegeId = collegeSelect.value;
             
@@ -236,6 +266,7 @@
         });
 
         joinDateInput.addEventListener('change', calcEndDate);
+        dobInput.addEventListener('change', calcAge);
     </script>
 </body>
 </html>

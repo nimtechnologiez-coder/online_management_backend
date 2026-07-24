@@ -72,14 +72,6 @@
                         </div>
                     </div>
                     <div class="ac-form-grid">
-                        <div class="ac-form-group">
-                            <label for="college_code">College Code <span class="req">*</span></label>
-                            <div class="ac-input-wrap">
-                                <i class="fas fa-hashtag ac-input-icon"></i>
-                                <input type="text" id="college_code" name="college_code" placeholder="e.g. CLG-0245" required class="ac-input">
-                            </div>
-                        </div>
-
                         <div class="ac-form-group ac-col-span-2">
                             <label for="college_name">College Name <span class="req">*</span></label>
                             <div class="ac-input-wrap">
@@ -149,31 +141,27 @@
                         </div>
                     </div>
                     <div class="ac-form-grid">
+                        <!-- State: options rendered from College.STATE_CHOICES (DB/model), not hardcoded -->
                         <div class="ac-form-group">
                             <label for="state">State <span class="req">*</span></label>
                             <div class="ac-input-wrap">
                                 <i class="fas fa-map ac-input-icon"></i>
                                 <select id="state" name="state" class="ac-select" required>
-                                    <option value="" disabled selected>Select State</option>
-                                    <option value="Tamil Nadu">Tamil Nadu</option>
-                                    <option value="Maharashtra">Maharashtra</option>
-                                    <option value="Karnataka">Karnataka</option>
-                                    <option value="Kerala">Kerala</option>
+                                    <option value="" disabled {% if not selected_state %}selected{% endif %}>Select State</option>
+                                    {% for value, label in states %}
+                                        <option value="{{ value }}" {% if value == selected_state or value == "Tamil Nadu" and not selected_state %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
                                 </select>
                             </div>
                         </div>
 
+                        <!-- District: populated dynamically via JS based on selected State -->
                         <div class="ac-form-group">
                             <label for="district">District <span class="req">*</span></label>
                             <div class="ac-input-wrap">
                                 <i class="fas fa-location-crosshairs ac-input-icon"></i>
-                                <select id="district" name="district" class="ac-select" required>
-                                    <option value="" disabled selected>Select District</option>
-                                    <option value="Chennai">Chennai</option>
-                                    <option value="Coimbatore">Coimbatore</option>
-                                    <option value="Mumbai">Mumbai</option>
-                                    <option value="Bengaluru">Bengaluru</option>
-                                    <option value="Thiruvananthapuram">Thiruvananthapuram</option>
+                                <select id="district" name="district" class="ac-select" required data-selected="{{ selected_district|default:'' }}">
+                                    <option value="">Select District</option>
                                 </select>
                             </div>
                         </div>
@@ -213,39 +201,7 @@
                     </div>
                 </div>
 
-                <!-- Section 4: College Logo Upload -->
-                <div class="ac-form-section">
-                    <div class="ac-form-section__header">
-                        <div class="ac-sec-icon"><i class="fas fa-image"></i></div>
-                        <div>
-                            <h3>College Branding & Logo</h3>
-                            <p class="ac-sec-sub">Upload an emblem or official badge</p>
-                        </div>
-                    </div>
-                    
-                    <div class="ac-dropzone" id="acLogoDropzone">
-                        <input type="file" id="logo" name="logo" class="ac-file-input" accept="image/png, image/jpeg, image/webp" onchange="handleLogoSelect(this)">
-                        <div class="ac-dropzone-inner" id="acLogoInner">
-                            <div class="ac-drop-icon">
-                                <i class="fas fa-cloud-arrow-up"></i>
-                            </div>
-                            <h4 class="ac-drop-title">Drop college emblem here</h4>
-                            <p class="ac-drop-sub">Supports PNG, JPG or WEBP (Max 5MB)</p>
-                            <span class="ac-browse-btn"><i class="fas fa-folder-open"></i> Browse Emblem</span>
-                        </div>
-                        <div class="ac-logo-preview-box hidden" id="acLogoPreviewBox">
-                            <img id="ac-logo-preview-img" src="" alt="Logo preview">
-                            <div class="ac-preview-info">
-                                <span class="ac-file-name" id="acLogoFileName">emblem.png</span>
-                                <button type="button" class="ac-remove-btn" onclick="resetLogoFile(event)">
-                                    <i class="fas fa-sync-alt"></i> Replace
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Section 5: Principal Information -->
+                <!-- Section 4: Principal Information -->
                 <div class="ac-form-section">
                     <div class="ac-form-section__header">
                         <div class="ac-sec-icon"><i class="fas fa-user-tie"></i></div>
@@ -292,7 +248,7 @@
                 <!-- Form Footer -->
                 <div class="ac-form-footer">
                     <a href="{% url 'collegemanagement' %}" class="ac-btn ac-btn--ghost">Cancel</a>
-                    <button type="reset" class="ac-btn ac-btn--ghost" onclick="resetLogoFile(event)">Reset</button>
+                    <button type="reset" class="ac-btn ac-btn--ghost">Reset</button>
                     <button type="submit" name="action" value="save_and_add_another" class="ac-btn ac-btn--secondary">
                         <i class="fas fa-plus-circle"></i> Save &amp; Add Another
                     </button>
@@ -305,31 +261,39 @@
 
     </div>
 
-    <!-- ── Logo Preview Logic ───────────────────── -->
+    <!-- ── District dropdown driven from DB via state_districts_json ── -->
     <script>
-        function handleLogoSelect(input) {
-            if (input.files && input.files[0]) {
-                const file = input.files[0];
-                document.getElementById('acLogoFileName').textContent = file.name;
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    document.getElementById('ac-logo-preview-img').src = e.target.result;
-                    document.getElementById('acLogoInner').classList.add('hidden');
-                    document.getElementById('acLogoPreviewBox').classList.remove('hidden');
-                    document.getElementById('acLogoDropzone').classList.add('has-file');
-                };
-                reader.readAsDataURL(file);
-            }
+        // Comes from the view: json.dumps(College.STATE_DISTRICTS)
+        const stateDistricts = {{ state_districts_json|safe }};
+
+        const stateSelect = document.getElementById('state');
+        const districtSelect = document.getElementById('district');
+
+        function populateDistricts(selectedState, preselectDistrict) {
+            districtSelect.innerHTML = '<option value="">Select District</option>';
+            const districts = stateDistricts[selectedState] || [];
+            districts.forEach(function (d) {
+                const opt = document.createElement('option');
+                opt.value = d;
+                opt.textContent = d;
+                if (preselectDistrict && d === preselectDistrict) {
+                    opt.selected = true;
+                }
+                districtSelect.appendChild(opt);
+            });
         }
 
-        function resetLogoFile(e) {
-            if(e) e.stopPropagation();
-            const input = document.getElementById('logo');
-            input.value = '';
-            document.getElementById('acLogoInner').classList.remove('hidden');
-            document.getElementById('acLogoPreviewBox').classList.add('hidden');
-            document.getElementById('acLogoDropzone').classList.remove('has-file');
-        }
+        stateSelect.addEventListener('change', function () {
+            populateDistricts(this.value, null);
+        });
+
+        // On page load, fill districts for whatever state is already selected
+        document.addEventListener('DOMContentLoaded', function () {
+            if (stateSelect.value) {
+                populateDistricts(stateSelect.value, districtSelect.dataset.selected || null);
+            }
+        });
     </script>
+
 </body>
 </html>

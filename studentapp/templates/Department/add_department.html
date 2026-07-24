@@ -53,6 +53,11 @@
 
         <!-- ── Form Card ──────────────────────────────────── -->
         <div class="sm-form-card">
+            {% if error %}
+            <div style="background-color: #fee2e2; border: 1px solid #f87171; color: #991b1b; padding: 14px 18px; border-radius: 10px; margin-bottom: 24px; font-weight: 500;">
+                <i class="fas fa-exclamation-circle" style="margin-right: 10px;"></i>{{ error }}
+            </div>
+            {% endif %}
             <form action="{% url 'department_add' %}" method="POST">
                 {% csrf_token %}
 
@@ -68,29 +73,17 @@
                             <select id="college" name="college" class="sm-select" required>
                                 <option value="">Select College</option>
                                 {% for college in colleges %}
-                                <option value="{{ college.id }}">{{ college.college_name }}</option>
+                                <option value="{{ college.id }}" {% if form.college_id|default:'' == college.id|stringformat:"s" %}selected{% endif %}>{{ college.college_name }}</option>
                                 {% endfor %}
                             </select>
                         </div>
                         <div class="sm-form-group">
-                            <label for="dept_code">Department Code <span class="req">*</span></label>
-                            <input type="text" id="dept_code" name="dept_code" placeholder="e.g. CSE" required>
-                        </div>
-                        <div class="sm-form-group">
                             <label for="dept_name">Department Name <span class="req">*</span></label>
-                            <input type="text" id="dept_name" name="dept_name" placeholder="e.g. Computer Science and Engineering" required>
-                        </div>
-                        <div class="sm-form-group">
-                            <label for="dept_short_name">Short Name</label>
-                            <input type="text" id="dept_short_name" name="dept_short_name" placeholder="e.g. CSE-Dept">
+                            <input type="text" id="dept_name" name="dept_name" value="{{ form.dept_name|default:'' }}" placeholder="e.g. Computer Science and Engineering" required>
                         </div>
                         <div class="sm-form-group">
                             <label for="principal">Principal <span class="req">*</span></label>
                             <input type="text" id="principal" name="principal" placeholder="No Principal Assigned" readonly style="background-color: #f1f5f9; cursor: not-allowed;">
-                        </div>
-                        <div class="sm-form-group">
-                            <label for="description">Description</label>
-                            <input type="text" id="description" name="description" placeholder="Optional department notes">
                         </div>
                     </div>
                 </div>
@@ -104,21 +97,21 @@
                     <div class="sm-form-grid">
                         <div class="sm-form-group">
                             <label for="hod_name">HOD Full Name <span class="req">*</span></label>
-                            <input type="text" id="hod_name" name="hod_name" placeholder="e.g. Dr. Ramesh Kumar" required>
+                            <input type="text" id="hod_name" name="hod_name" value="{{ form.hod_name|default:'' }}" placeholder="e.g. Dr. Ramesh Kumar" required>
                         </div>
                         <div class="sm-form-group">
                             <label for="hod_email">HOD Email <span class="req">*</span></label>
-                            <input type="email" id="hod_email" name="hod_email" placeholder="hod.cse@abc.edu" required>
+                            <input type="email" id="hod_email" name="hod_email" value="{{ form.hod_email|default:'' }}" placeholder="hod.cse@abc.edu" required>
                         </div>
                         <div class="sm-form-group">
                             <label for="hod_phone">HOD Phone Number</label>
-                            <input type="tel" id="hod_phone" name="hod_phone" placeholder="+91 00000 00000">
+                            <input type="tel" id="hod_phone" name="hod_phone" value="{{ form.hod_phone|default:'' }}" placeholder="+91 00000 00000">
                         </div>
                         <div class="sm-form-group">
                             <label for="status">Department Status</label>
                             <select id="status" name="status" class="sm-select">
-                                <option value="active">Active</option>
-                                <option value="inactive">Inactive</option>
+                                <option value="active" {% if form.status|default:'active' == 'active' %}selected{% endif %}>Active</option>
+                                <option value="inactive" {% if form.status == 'inactive' %}selected{% endif %}>Inactive</option>
                             </select>
                         </div>
                     </div>
@@ -141,10 +134,6 @@
     <script>
         const collegeInput = document.getElementById('college');
         const principalInput = document.getElementById('principal');
-        const deptCodeInput = document.getElementById('dept_code');
-        const usernameInput = document.getElementById('username');
-        const passwordInput = document.getElementById('password');
-        const refreshPassBtn = document.getElementById('refreshPass');
 
         // Map college ID to principal name
         const collegePrincipals = {
@@ -157,29 +146,6 @@
         collegeInput.addEventListener('change', () => {
             const val = collegeInput.value;
             principalInput.value = collegePrincipals[val] || 'No Principal Assigned';
-        });
-
-        // Auto-populate Username based on Dept Code
-        deptCodeInput.addEventListener('input', () => {
-            usernameInput.value = deptCodeInput.value.toLowerCase().replace(/\s+/g, '_');
-        });
-
-        function generatePassword() {
-            const length = 10;
-            const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
-            let retVal = "";
-            for (let i = 0; i < length; ++i) {
-                retVal += charset.charAt(Math.floor(Math.random() * charset.length));
-            }
-            return retVal;
-        }
-
-        window.onload = () => {
-            passwordInput.value = generatePassword();
-        };
-
-        refreshPassBtn.addEventListener('click', () => {
-            passwordInput.value = generatePassword();
         });
     </script>
 </body>

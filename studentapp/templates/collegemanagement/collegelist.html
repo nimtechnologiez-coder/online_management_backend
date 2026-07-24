@@ -120,7 +120,6 @@
                             <tr>
                                 <th>S.No</th>
                                 <th>Logo</th>
-                                <th>Code</th>
                                 <th>College Name</th>
                                 <th>University</th>
                                 <th>Email</th>
@@ -169,7 +168,6 @@
                     <img id="viewLogo" src="" alt="" />
                     <div>
                         <div class="name" id="viewName"></div>
-                        <div class="code" id="viewCode"></div>
                     </div>
                 </div>
                 <div class="detail-grid">
@@ -231,15 +229,9 @@
                         <label for="editName">College Name</label>
                         <input type="text" id="editName" required />
                     </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="editCode">Code</label>
-                            <input type="text" id="editCode" required />
-                        </div>
-                        <div class="form-group">
-                            <label for="editUniversity">University</label>
-                            <input type="text" id="editUniversity" required />
-                        </div>
+                    <div class="form-group">
+                        <label for="editUniversity">University</label>
+                        <input type="text" id="editUniversity" required />
                     </div>
                     <div class="form-row">
                         <div class="form-group">
@@ -317,13 +309,12 @@
     <!-- ===================== SCRIPT ===================== -->
     <script>
         // -------------------------------------------------------------
-        // Dummy college data (replace with data rendered from backend)
+        // College data rendered from backend (Code field removed)
         // -------------------------------------------------------------
         let collegeData = [
             {% for college in colleges %}
             {
                 id: {{ college.id|default:0 }},
-                code: '{{ college.college_code|default:"-"|escapejs }}',
                 name: '{{ college.college_name|escapejs }}',
                 university: '{{ college.university|default:"-"|escapejs }}',
                 email: '{{ college.contact_email|default:"-"|escapejs }}',
@@ -358,7 +349,6 @@
                 tr.innerHTML = `
                     <td>${index + 1}</td>
                     <td><img class="college-logo" src="${c.logo}" alt="${c.name} logo" /></td>
-                    <td class="cell-code">${c.code}</td>
                     <td class="cell-strong">${c.name}</td>
                     <td>${c.university}</td>
                     <td>${c.email}</td>
@@ -435,7 +425,6 @@
 
             document.getElementById('viewLogo').src = c.logo;
             document.getElementById('viewName').textContent = c.name;
-            document.getElementById('viewCode').textContent = c.code;
             document.getElementById('viewUniversity').textContent = c.university;
             document.getElementById('viewStatus').textContent = c.status === 'active' ? 'Active' : 'Inactive';
             document.getElementById('viewEmail').textContent = c.email;
@@ -458,7 +447,6 @@
 
             document.getElementById('editId').value = c.id;
             document.getElementById('editName').value = c.name;
-            document.getElementById('editCode').value = c.code;
             document.getElementById('editUniversity').value = c.university;
             document.getElementById('editEmail').value = c.email;
             document.getElementById('editPhone').value = c.phone;
@@ -480,7 +468,6 @@
             if (!c) return;
 
             c.name = document.getElementById('editName').value.trim();
-            c.code = document.getElementById('editCode').value.trim();
             c.university = document.getElementById('editUniversity').value.trim();
             c.email = document.getElementById('editEmail').value.trim();
             c.phone = document.getElementById('editPhone').value.trim();
@@ -553,12 +540,11 @@
         // -------------------------------------------------------------
         function exportToExcel() {
             // Create a custom worksheet data array containing all colleges, avoiding HTML DOM parsing
-            const rows = [['S.No', 'Code', 'College Name', 'University', 'Email', 'Phone', 'State', 'District', 'Departments', 'Students', 'Status', 'Created']];
-            
+            const rows = [['S.No', 'College Name', 'University', 'Email', 'Phone', 'State', 'District', 'Departments', 'Students', 'Status', 'Created']];
+
             collegeData.forEach((c, i) => {
                 rows.push([
                     i + 1,
-                    c.code,
                     c.name,
                     c.university,
                     c.email,
@@ -576,7 +562,7 @@
             const ws = XLSX.utils.aoa_to_sheet(rows);
             XLSX.utils.book_append_sheet(wb, ws, "Colleges List");
             XLSX.writeFile(wb, "college_management_list.xlsx");
-            
+
             showToast('Exported to Excel successfully!');
         }
 

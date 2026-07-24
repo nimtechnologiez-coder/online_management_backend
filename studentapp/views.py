@@ -1,10 +1,15 @@
 import json
 from datetime import timedelta
-
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 from django.shortcuts import render
 from django.utils import timezone
 from django.db.models import Count, Q
 from django.db.models.functions import TruncMonth
+from datetime import date
+import random
+import string
 
 from .models import (
     College,
@@ -267,7 +272,18 @@ def college_management(request):
     colleges = College.objects.all()
     return render(request, 'collegemanagement/collegelist.html', {'colleges': colleges})
 
+
 def college_add(request):
+    # Data driven from the DB (model) for the state / district dropdowns.
+    # `states` -> used for the <select name="state"> options
+    # `state_districts_json` -> JS object {state: [districts...]} used to
+    #                           dynamically populate the district dropdown
+    #                           based on the state the user picks.
+    base_context = {
+        'states': College.STATE_CHOICES,
+        'state_districts_json': json.dumps(College.STATE_DISTRICTS),
+    }
+
     if request.method == "POST":
         college_code = request.POST.get('college_code')
         college_name = request.POST.get('college_name')
@@ -286,11 +302,12 @@ def college_add(request):
         principal_email = request.POST.get('principal_email')
         principal_mobile = request.POST.get('principal_mobile')
         principal_status = request.POST.get('principal_status', 'active')
-        
+
         if college_name:
             if principal_email and Principal.objects.filter(principal_email=principal_email).exists():
                 return render(request, 'collegemanagement/add_college.html', {
-                    'error': f'A Principal with email "{principal_email}" already exists. Please use a different email.'
+                    **base_context,
+                    'error': f'A Principal with email "{principal_email}" already exists. Please use a different email.',
                 })
 
             college = College.objects.create(
@@ -308,21 +325,21 @@ def college_add(request):
                 website=website,
                 college_logo=college_logo
             )
-            
+
             if principal_name and principal_email:
                 import string
                 import random
-                
+
                 # Generate unique username
                 base_college = college.college_name[:3].upper().replace(" ", "")
                 username = f"{base_college}_PR_{random.randint(100, 999)}"
                 while Principal.objects.filter(username=username).exists():
                     username = f"{base_college}_PR_{random.randint(100, 999)}"
-                
+
                 # Generate random password
                 chars = string.ascii_letters + string.digits + "!@#$%^&*"
                 password = ''.join(random.choices(chars, k=10))
-                
+
                 Principal.objects.create(
                     college=college,
                     principal_name=principal_name,
@@ -334,7 +351,9 @@ def college_add(request):
                 )
 
             return redirect('collegemanagement')
-    return render(request, 'collegemanagement/add_college.html')
+
+    return render(request, 'collegemanagement/add_college.html', base_context)
+
 
 def college_delete(request, id):
     if request.method == "POST":
@@ -348,74 +367,222 @@ def department_management(request):
     departments = Department.objects.all()
     return render(request, 'department/department_list.html', {'departments': departments})
 
+import string
+import random
+import re
+
+from django.shortcuts import render, redirect
+from .models import College, Principal, Department, Student, Video, VideoWatch
+
+
+def generate_dept_code(dept_name):
+    """
+    Build a short, unique department code from the department name.
+    e.g. "Computer Science and Engineering" -> "CSE"
+    Falls back to first 3 letters if only one word is given,
+    and appends a numeric suffix on collision.
+    """
+    words = re.findall(r'[A-Za-z]+', dept_name)
+    if len(words) >= 2:
+        code = ''.join(w[0] for w in words).upper()
+    else:
+        code = dept_name[:3].upper()
+
+    code = code or "DEPT"
+    base_code = code
+    counter = 1
+    while Department.objects.filter(dept_code=code).exists():
+        counter += 1
+        code = f"{base_code}{counter}"
+    return code
+
+def department_management(request):
+    departments = Department.objects.all()
+    colleges = College.objects.all()
+    return render(request, 'department/department_list.html', {
+        'departments': departments,
+        'colleges': colleges,
+    })
+
+
 def department_add(request):
+    error = None
+    form_data = {
+        'college_id': '',
+        'dept_name': '',
+        'hod_name': '',
+        'hod_email': '',
+        'hod_phone': '',
+        'status': 'active',
+    }
+
     if request.method == "POST":
         college_id = request.POST.get('college')
-        dept_code = request.POST.get('dept_code')
-        dept_name = request.POST.get('dept_name')
-        dept_short_name = request.POST.get('dept_short_name')
-        description = request.POST.get('description')
-        hod_name = request.POST.get('hod_name')
-        hod_email = request.POST.get('hod_email')
-        hod_phone = request.POST.get('hod_phone')
-        status = request.POST.get('status')
+        dept_name = request.POST.get('dept_name', '').strip()
+        hod_name = request.POST.get('hod_name', '').strip()
+        hod_email = request.POST.get('hod_email', '').strip()
+        hod_phone = request.POST.get('hod_phone', '').strip()
+        status = request.POST.get('status', 'active') or 'active'
+
+        form_data.update({
+            'college_id': college_id,
+            'dept_name': dept_name,
+            'hod_name': hod_name,
+            'hod_email': hod_email,
+            'hod_phone': hod_phone,
+            'status': status,
+        })
 
         college = College.objects.filter(id=college_id).first() if college_id else None
 
-        if college and dept_code and dept_name and hod_email:
-            import string
-            import random
-            
-            # Generate username
-            base_college = college.college_name[:3].upper().replace(" ", "")
-            username = f"{base_college}_{dept_code.upper()}_HOD"
-            
-            # Generate random password
-            chars = string.ascii_letters + string.digits + "!@#$%^&*"
-            password = ''.join(random.choices(chars, k=10))
+        if college and dept_name and hod_name and hod_email:
+            if Department.objects.filter(hod_email=hod_email).exists():
+                error = f"HOD email '{hod_email}' is already in use by another department."
+            else:
+                dept_code = generate_dept_code(dept_name)
 
-            Department.objects.create(
-                college=college,
-                dept_code=dept_code,
-                dept_name=dept_name,
-                dept_short_name=dept_short_name,
-                description=description,
-                hod_name=hod_name,
-                hod_email=hod_email,
-                hod_phone=hod_phone,
-                status=status,
-                username=username,
-                password=password
-            )
-            return redirect('department_management')
+                # Generate username
+                base_college = college.college_name[:3].upper().replace(" ", "")
+                username = f"{base_college}_{dept_code}_HOD"
+
+                # Generate random password
+                chars = string.ascii_letters + string.digits + "!@#$%^&*"
+                password = ''.join(random.choices(chars, k=10))
+
+                try:
+                    Department.objects.create(
+                        college=college,
+                        dept_code=dept_code,
+                        dept_name=dept_name,
+                        hod_name=hod_name,
+                        hod_email=hod_email,
+                        hod_phone=hod_phone,
+                        status=status,
+                        username=username,
+                        password=password
+                    )
+                    return redirect('department_management')
+                except IntegrityError:
+                    error = "Could not create department — one of the values conflicts with an existing record."
+        else:
+            error = "Please fill all required fields."
 
     colleges = College.objects.all()
-    return render(request, 'department/add_department.html', {'colleges': colleges})
+    return render(request, 'department/add_department.html', {
+        'colleges': colleges,
+        'error': error,
+        'form': form_data,
+    })
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.db import IntegrityError
+
 
 def department_edit(request, id):
-    department = Department.objects.filter(id=id).first()
-    if request.method == "POST" and department:
-        department.college_id = request.POST.get('college')
-        department.dept_code = request.POST.get('dept_code')
-        department.dept_name = request.POST.get('dept_name')
-        department.dept_short_name = request.POST.get('dept_short_name')
-        department.description = request.POST.get('description')
-        department.hod_name = request.POST.get('hod_name')
-        department.hod_email = request.POST.get('hod_email')
-        department.hod_phone = request.POST.get('hod_phone')
-        department.status = request.POST.get('status')
-        department.username = request.POST.get('username')
-        
-        password = request.POST.get('password')
-        if password:
-            department.password = password
-            
-        department.save()
-        return redirect('department_management')
-        
-    colleges = College.objects.all()
-    return render(request, 'department/edit_department.html', {'department': department, 'colleges': colleges})
+    department = get_object_or_404(Department, id=id)
+    error = None
 
+    if request.method == "POST":
+        college_id = request.POST.get('college', '').strip()
+        dept_code = request.POST.get('dept_code', '').strip()
+        dept_name = request.POST.get('dept_name', '').strip()
+        dept_short_name = request.POST.get('dept_short_name', '').strip()
+        description = request.POST.get('description', '').strip()
+        hod_name = request.POST.get('hod_name', '').strip()
+        hod_email = request.POST.get('hod_email', '').strip()
+        hod_phone = request.POST.get('hod_phone', '').strip()
+        status = request.POST.get('status', '').strip()
+        username = request.POST.get('username', '').strip()
+        password = request.POST.get('password', '').strip()
+
+        college = College.objects.filter(id=college_id).first() if college_id else None
+
+        # Basic required-field validation
+        if not (college and dept_code and dept_name and hod_name and hod_email and username):
+            error = "Please fill all required fields."
+        elif Department.objects.filter(dept_code=dept_code).exclude(id=department.id).exists():
+            error = f"Department code '{dept_code}' is already in use by another department."
+        elif Department.objects.filter(hod_email=hod_email).exclude(id=department.id).exists():
+            error = f"Email '{hod_email}' is already in use by another department's HOD."
+        elif Department.objects.filter(username=username).exclude(id=department.id).exists():
+            error = f"Username '{username}' is already in use."
+        else:
+            department.college = college
+            department.dept_code = dept_code
+            department.dept_name = dept_name
+            department.dept_short_name = dept_short_name
+            department.description = description
+            department.hod_name = hod_name
+            department.hod_email = hod_email
+            department.hod_phone = hod_phone
+            department.status = status
+            department.username = username
+            if password:
+                department.password = password
+
+            try:
+                department.save()
+                return redirect('department_management')
+            except IntegrityError:
+                error = "Could not save changes — one of the values conflicts with an existing record."
+
+    colleges = College.objects.all()
+    return render(request, 'department/edit_department.html', {
+        'department': department,
+        'colleges': colleges,
+        'error': error,
+    })
+
+
+
+
+
+@require_POST
+def department_update(request, id):
+    department = Department.objects.filter(id=id).first()
+    if not department:
+        return JsonResponse({'status': 'error', 'message': 'Department not found'}, status=404)
+
+    dept_name = request.POST.get('dept_name', '').strip()
+    college_id = request.POST.get('college', '').strip()
+    hod_name = request.POST.get('hod_name', '').strip()
+    hod_email = request.POST.get('hod_email', '').strip()
+    hod_phone = request.POST.get('hod_phone', '').strip()
+    status = request.POST.get('status', '').strip()
+
+    if not dept_name or not college_id or not hod_name or not hod_email or not status:
+        return JsonResponse({'status': 'error', 'message': 'Please fill all required fields.'}, status=400)
+
+    college = College.objects.filter(id=college_id).first()
+    if not college:
+        return JsonResponse({'status': 'error', 'message': 'Invalid college selected.'}, status=400)
+
+    if Department.objects.filter(hod_email=hod_email).exclude(id=department.id).exists():
+        return JsonResponse({'status': 'error', 'message': f"Email '{hod_email}' is already used by another department."}, status=400)
+
+    department.dept_name = dept_name
+    department.college = college
+    department.hod_name = hod_name
+    department.hod_email = hod_email
+    department.hod_phone = hod_phone
+    department.status = status
+    department.save()
+
+    return JsonResponse({
+        'status': 'success',
+        'message': 'Department updated successfully',
+        'data': {
+            'id': department.id,
+            'name': department.dept_name,
+            'college': department.college.college_name,
+            'collegeId': department.college.id,
+            'hod': department.hod_name,
+            'hodEmail': department.hod_email,
+            'hodPhone': department.hod_phone,
+            'hodInitials': (department.hod_name[:2].upper() if department.hod_name else ''),
+            'status': department.status,
+        }
+    })
 def hod_management(request):
     return render(request, 'dashboard/hod_management.html')
 
@@ -425,26 +592,26 @@ from django.db.models import Q
 
 def principal_management(request):
     principals_list = Principal.objects.all().order_by('-created_at')
-    
+
     q = request.GET.get('q', '')
     college_id = request.GET.get('college', '')
     status = request.GET.get('status', '')
-    
+
     if q:
         principals_list = principals_list.filter(
-            Q(principal_name__icontains=q) | 
+            Q(principal_name__icontains=q) |
             Q(principal_email__icontains=q)
         )
     if college_id:
         principals_list = principals_list.filter(college_id=college_id)
     if status:
         principals_list = principals_list.filter(status=status)
-        
+
     paginator = Paginator(principals_list, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     all_colleges = College.objects.all()
-    
+
     context = {
         'page_obj': page_obj,
         'principals': page_obj.object_list,
@@ -460,19 +627,19 @@ def principal_management(request):
         'inactive_principals': Principal.objects.filter(status='inactive').count(),
         'total_colleges': College.objects.count(),
     }
-    
+
     if request.GET.get('partial') == '1':
         from django.http import JsonResponse
         from django.template.loader import render_to_string
         rows_html = render_to_string('Principalmanagement/partials/principal_rows.html', context, request=request)
-        
+
         try:
             start_idx = page_obj.start_index()
             end_idx = page_obj.end_index()
         except:
             start_idx = 0
             end_idx = 0
-            
+
         return JsonResponse({
             'rows_html': rows_html,
             'start_index': start_idx,
@@ -485,7 +652,7 @@ def principal_management(request):
             'previous_page': page_obj.previous_page_number() if page_obj.has_previous() else None,
             'next_page': page_obj.next_page_number() if page_obj.has_next() else None,
         })
-    
+
     return render(request, 'Principalmanagement/Principalmanagement.html', context)
 
 def principal_add(request):
@@ -521,6 +688,20 @@ def principal_add(request):
         return redirect('principal_management')
     return redirect('principal_management')
 
+
+from django.views.decorators.http import require_POST
+
+@require_POST
+def department_delete(request, id):
+    department = Department.objects.filter(id=id).first()
+    if not department:
+        return JsonResponse({'status': 'error', 'message': 'Department not found'}, status=404)
+
+    department.delete()
+    return JsonResponse({'status': 'success', 'message': 'Department deleted successfully'})
+
+
+
 def principal_edit(request, id):
     if request.method == "POST":
         principal = Principal.objects.filter(id=id).first()
@@ -530,7 +711,7 @@ def principal_edit(request, id):
             email = request.POST.get('email')
             mobile = request.POST.get('principal_mobile')
             status = request.POST.get('status')
-            
+
             if college_id:
                 principal.college_id = college_id
             if full_name:
@@ -541,7 +722,7 @@ def principal_edit(request, id):
                 principal.principal_mobile = mobile
             if status:
                 principal.status = status
-                
+
             principal.save()
     return redirect('principal_management')
 
@@ -610,7 +791,7 @@ def student_management(request):
     # AJAX partial request – return JSON for smooth pagination
     if request.GET.get('partial') == '1':
         rows_html = render_to_string('studentmanagement/partials/student_rows.html', context, request=request)
-        
+
         # Handle empty pages safely
         try:
             start_idx = page_obj.start_index()
@@ -618,7 +799,7 @@ def student_management(request):
         except:
             start_idx = 0
             end_idx = 0
-            
+
         return JsonResponse({
             'rows_html': rows_html,
             'start_index': start_idx,
@@ -634,84 +815,143 @@ def student_management(request):
 
     return render(request, 'studentmanagement/studentmanagement.html', context)
 
+
 def student_add(request):
     error = None
-    if request.method == 'POST':
-        import string, random
-        from datetime import date
 
-        full_name = request.POST.get('full_name')
-        email = request.POST.get('email')
-        phone = request.POST.get('phone', '')
-        college_id = request.POST.get('college')
-        dept_id = request.POST.get('department')
-        student_id_val = request.POST.get('student_id')
-        year = request.POST.get('year')
-        status = request.POST.get('status', 'active')
-        join_date_str = request.POST.get('join_date')
+    if request.method == "POST":
+
+        full_name = request.POST.get("full_name", "").strip()
+        email = request.POST.get("email", "").strip()
+        phone = request.POST.get("phone", "").strip()
+        date_of_birth = request.POST.get("date_of_birth")
+
+        college_id = request.POST.get("college")
+        dept_id = request.POST.get("department")
+
+        year = request.POST.get("year")
+        status = request.POST.get("status", "active")
+        join_date_str = request.POST.get("join_date")
 
         college = College.objects.filter(id=college_id).first()
         dept = Department.objects.filter(id=dept_id).first()
 
-        # Auto-calculate end_date based on college stream (no external package)
+        # Calculate End Date
         end_date = None
         if join_date_str:
             try:
                 join_date = date.fromisoformat(join_date_str)
-                stream = college.college_stream if college else 'other'
-                years = 3 if stream == 'arts_science' else 4
-                # Add years manually using date.replace
+                stream = college.college_stream if college else "other"
+                years = 3 if stream == "arts_science" else 4
+
                 try:
                     end_date = join_date.replace(year=join_date.year + years)
                 except ValueError:
-                    # Handle Feb 29 leap year edge case
-                    end_date = join_date.replace(year=join_date.year + years, day=28)
+                    end_date = join_date.replace(
+                        year=join_date.year + years,
+                        day=28
+                    )
             except ValueError:
                 end_date = None
 
-        error = None
+        # Validation
+        if not full_name:
+            error = "Student Name is required."
 
-        if full_name and email and college and dept and student_id_val and year:
-            # Check for duplicate student_id
-            if Student.objects.filter(student_id=student_id_val).exists():
-                error = f"Student ID '{student_id_val}' is already registered. Please use a different ID."
-            # Check for duplicate email
-            elif Student.objects.filter(email=email).exists():
-                error = f"Email '{email}' is already registered for another student."
+        elif not email:
+            error = "Email is required."
+
+        elif not college:
+            error = "Please select a College."
+
+        elif not dept:
+            error = "Please select a Department."
+
+        elif not year:
+            error = "Please select Year."
+
+        elif Student.objects.filter(email=email).exists():
+            error = f"Email '{email}' already exists."
+
+        else:
+
+            # Username = First 6 letters of name + 3 digits from DOB
+            name_part = "".join(filter(str.isalpha, full_name.upper()))
+
+            if len(name_part) >= 6:
+                name_part = name_part[:6]
             else:
-                # Auto-generate unique username from student_id
-                base_username = student_id_val.upper()
-                username = base_username
-                # Append random suffix until unique
-                while Student.objects.filter(username=username).exists():
-                    username = f"{base_username}_{random.randint(1000, 9999)}"
-                # Auto-generate secure random password
-                chars = string.ascii_letters + string.digits + "!@#$%^&*"
-                password = ''.join(random.choices(chars, k=10))
+                name_part = name_part.ljust(6, "X")
 
+            if date_of_birth:
+                dob = date.fromisoformat(date_of_birth)
+                number_part = dob.strftime("%d%m")[:3]
+            else:
+                number_part = "000"
+
+            username = name_part + number_part
+
+            # Make username unique
+            original_username = username
+            count = 1
+
+            while Student.objects.filter(username=username).exists():
+                username = f"{original_username}{count}"
+                count += 1
+
+            # Random Password
+            password = "".join(
+                random.choices(
+                    string.ascii_letters +
+                    string.digits +
+                    "!@#$%^&*",
+                    k=10
+                )
+            )
+
+            try:
                 Student.objects.create(
                     full_name=full_name,
                     email=email,
                     phone=phone,
+                    date_of_birth=date.fromisoformat(date_of_birth)
+                    if date_of_birth else None,
+
                     college=college,
                     department=dept,
-                    student_id=student_id_val,
+
                     year=year,
+
                     username=username,
                     password=password,
-                    status=status,
-                    join_date=date.fromisoformat(join_date_str) if join_date_str else None,
+
+                    join_date=date.fromisoformat(join_date_str)
+                    if join_date_str else None,
+
                     end_date=end_date,
+
+                    status=status,
                 )
-                return redirect('student_management')
+
+                return redirect("student_management")
+
+            except Exception as e:
+                error = str(e)
+                print("Student Save Error:", e)
 
     all_colleges = College.objects.all()
     all_departments = Department.objects.all()
-    return render(request, 'studentmanagement/add_student.html', {
-        'all_colleges': all_colleges,
-        'all_departments': all_departments,
-        'error': error,
-    })
+
+    return render(
+        request,
+        "studentmanagement/add_student.html",
+        {
+            "all_colleges": all_colleges,
+            "all_departments": all_departments,
+            "error": error,
+        },
+    )
+
 
 def student_delete(request, student_id):
     from django.views.decorators.csrf import csrf_exempt
@@ -727,29 +967,136 @@ def student_delete(request, student_id):
     student.delete()
     return JsonResponse({'status': 'success', 'message': 'Student deleted successfully'})
 
+from datetime import date
 
+def student_update(request, student_id):
+    student = get_object_or_404(Student, id=student_id)
+
+    if request.method == "POST":
+
+        full_name = request.POST.get("full_name", "").strip()
+        email = request.POST.get("email", "").strip()
+        phone = request.POST.get("phone", "").strip()
+        date_of_birth = request.POST.get("date_of_birth")
+
+        college = get_object_or_404(
+            College,
+            id=request.POST.get("college")
+        )
+
+        department = get_object_or_404(
+            Department,
+            id=request.POST.get("department")
+        )
+
+        year = request.POST.get("year")
+        status = request.POST.get("status")
+
+        join_date_str = request.POST.get("join_date")
+
+        # Calculate End Date
+        end_date = None
+
+        if join_date_str:
+            join_date = date.fromisoformat(join_date_str)
+
+            years = 3 if college.college_stream == "arts_science" else 4
+
+            try:
+                end_date = join_date.replace(
+                    year=join_date.year + years
+                )
+            except ValueError:
+                end_date = join_date.replace(
+                    year=join_date.year + years,
+                    day=28
+                )
+
+        # Duplicate email check
+        if Student.objects.exclude(id=student.id).filter(email=email).exists():
+            return JsonResponse({
+                "status": "error",
+                "message": "Email already exists."
+            })
+
+        # Username
+        name_part = "".join(
+            filter(str.isalpha, full_name.upper())
+        )
+
+        if len(name_part) >= 6:
+            name_part = name_part[:6]
+        else:
+            name_part = name_part.ljust(6, "X")
+
+        if date_of_birth:
+            dob = date.fromisoformat(date_of_birth)
+            number_part = dob.strftime("%d%m")[:3]
+        else:
+            number_part = "000"
+
+        username = name_part + number_part
+
+        count = 1
+        original = username
+
+        while Student.objects.exclude(id=student.id).filter(username=username).exists():
+            username = f"{original}{count}"
+            count += 1
+
+        # Update
+        student.full_name = full_name
+        student.email = email
+        student.phone = phone
+        student.date_of_birth = (
+            date.fromisoformat(date_of_birth)
+            if date_of_birth else None
+        )
+
+        student.college = college
+        student.department = department
+        student.year = year
+        student.username = username
+        student.status = status
+        student.join_date = (
+            date.fromisoformat(join_date_str)
+            if join_date_str else None
+        )
+        student.end_date = end_date
+
+        student.save()
+
+        return JsonResponse({
+            "status": "success",
+            "message": "Student updated successfully."
+        })
+
+    return JsonResponse({
+        "status": "error",
+        "message": "Invalid request."
+    })
 
 def video_management(request):
     from django.core.paginator import Paginator
     from django.db.models import Q
-    
+
     videos_list = Video.objects.all().order_by('-uploaded_at')
-    
+
     q = request.GET.get('q', '')
     category = request.GET.get('category', '')
     status = request.GET.get('status', '')
-    
+
     if q:
         videos_list = videos_list.filter(Q(title__icontains=q) | Q(description__icontains=q))
     if category:
         videos_list = videos_list.filter(category=category)
     if status:
         videos_list = videos_list.filter(status__iexact=status)
-        
+
     paginator = Paginator(videos_list, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
+
     context = {
         'page_obj': page_obj,
         'videos': page_obj.object_list,
@@ -762,19 +1109,19 @@ def video_management(request):
         # Dummy value for views for now until an aggregate is added
         'total_views': "0",
     }
-    
+
     if request.GET.get('partial') == '1':
         from django.http import JsonResponse
         from django.template.loader import render_to_string
         rows_html = render_to_string('videomanagement/partials/video_rows.html', context, request=request)
-        
+
         try:
             start_idx = page_obj.start_index()
             end_idx = page_obj.end_index()
         except:
             start_idx = 0
             end_idx = 0
-            
+
         return JsonResponse({
             'rows_html': rows_html,
             'start_index': start_idx,
@@ -787,7 +1134,7 @@ def video_management(request):
             'previous_page': page_obj.previous_page_number() if page_obj.has_previous() else None,
             'next_page': page_obj.next_page_number() if page_obj.has_next() else None,
         })
-        
+
     return render(request, "videomanagement/video_management.html", context)
 
 
@@ -800,7 +1147,7 @@ def video_add(request):
         status = request.POST.get('status', 'Published')
         video_file = request.FILES.get('video_file')
         thumbnail = request.FILES.get('thumbnail')
-        
+
         if title and category and duration and video_file and thumbnail:
             Video.objects.create(
                 title=title,
@@ -812,7 +1159,7 @@ def video_add(request):
                 thumbnail=thumbnail
             )
             return redirect('video_management')
-            
+
     return render(request, "videomanagement/video_add.html")
 
 
@@ -1211,9 +1558,9 @@ def api_principal_profile(request):
         principal = get_authenticated_principal(request)
         if not principal:
             return JsonResponse({"status": "error", "message": "No authenticated principal found"}, status=401)
-        
+
         college = principal.college
-        
+
         return JsonResponse({
             "status": "success",
             "data": {
@@ -1231,29 +1578,37 @@ def api_principal_profile(request):
     except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)}, status=500)
 
+
+
 def api_principal_departments(request):
     try:
         principal = get_authenticated_principal(request)
-        if not principal or not principal.college:
-            return JsonResponse({"status": "error", "message": "Unauthorized or no college associated"}, status=401)
 
-        departments = Department.objects.all()
+        if not principal or not principal.college:
+            return JsonResponse({
+                "status": "error",
+                "message": "Unauthorized"
+            }, status=401)
+
+        departments = Department.objects.filter(
+            college=principal.college,
+            status="active"
+        ).order_by("dept_name")
 
         dept_colors = ["blue", "indigo", "teal", "emerald", "amber", "purple", "rose"]
         data = []
 
         for idx, dept in enumerate(departments):
-            student_count = Student.objects.filter(college=principal.college, department=dept).count()
-            video_count = Video.objects.count()
+            student_count = dept.students.count()
 
             data.append({
                 "id": dept.id,
                 "name": dept.dept_name,
                 "code": dept.dept_code,
-                "hod": dept.hod_name if dept.hod_name else f"HOD {dept.dept_code}",
-                "email": dept.hod_email if dept.hod_email else f"hod.{dept.dept_code.lower()}@college.edu",
+                "hod": dept.hod_name,
+                "email": dept.hod_email,
                 "students": student_count,
-                "videos": video_count,
+                "videos": Video.objects.count(),  # Update if videos are linked to departments
                 "completionRate": 75 if student_count > 0 else 0,
                 "performance": "High" if student_count > 10 else ("Average" if student_count > 0 else "Low"),
                 "trend": "+5%",
@@ -1262,14 +1617,18 @@ def api_principal_departments(request):
 
         return JsonResponse({
             "status": "success",
-            "college": principal.college.college_name if principal.college else "College",
+            "college": principal.college.college_name,
             "total": len(data),
             "data": data
         })
+
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return JsonResponse({"status": "error", "message": str(e)}, status=500)
+        return JsonResponse({
+            "status": "error",
+            "message": str(e)
+        }, status=500)
+
+
 
 def api_principal_videos(request):
     try:

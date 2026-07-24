@@ -14,6 +14,8 @@ urlpatterns = [
     path('departments/', views.department_management, name='department_management'),
     path('departments/add/', views.department_add, name='department_add'),
     path('departments/edit/<int:id>/', views.department_edit, name='department_edit'),
+    path('departments/<int:id>/delete/', views.department_delete, name='department_delete'),
+    path('departments/<int:id>/update/', views.department_update, name='department_update'),
 
     path('hods/', views.hod_management, name='hod_management'),
 
@@ -41,14 +43,17 @@ urlpatterns = [
     path('settings/', views.system_settings, name='system_settings'),
     path('profile/', views.profile, name='profile'),
     path('logout/', views.user_logout, name='logout'),
-	path('search/', views.global_search, name='global_search'),
-	path('api/principal/dashboard/', views.api_principal_dashboard, name='api_principal_dashboard'),
+    path('search/', views.global_search, name='global_search'),
+
+    path('api/principal/dashboard/', views.api_principal_dashboard, name='api_principal_dashboard'),
     path('api/principal/students/', views.api_principal_students, name='api_principal_students'),
     path('api/principal/students/<int:student_id>/delete/', views.api_principal_student_delete, name='api_principal_student_delete'),
     path('api/principal/profile/', views.api_principal_profile, name='api_principal_profile'),
     path('api/principal/departments/', views.api_principal_departments, name='api_principal_departments'),
     path('api/principal/videos/', views.api_principal_videos, name='api_principal_videos'),
     path('api/principal/attendance_reports/', views.api_principal_attendance_reports, name='api_principal_attendance_reports'),
+    path("api/principal/login/", views.principal_login, name="principal_login"),
+
     path('api/student/login/', views.student_login, name='student_login'),
     path('api/student/login', views.student_login),
     path('api/student/dashboard/', views.api_student_dashboard, name='api_student_dashboard'),
@@ -65,5 +70,9 @@ urlpatterns = [
     path('api/student/watch-history/<int:history_id>/delete', views.api_student_delete_watch_history),
     path('api/student/progress/', views.api_student_progress, name='api_student_progress'),
     path('api/student/progress', views.api_student_progress),
-    path("api/principal/login/", views.principal_login, name="principal_login"),
+    path(
+    "students/update/<int:student_id>/",
+    views.student_update,
+    name="student_update",
+)
 ]
