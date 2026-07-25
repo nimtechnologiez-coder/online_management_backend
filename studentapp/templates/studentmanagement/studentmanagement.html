@@ -19,6 +19,7 @@
     <link rel="stylesheet" href="{% static 'css/sidebar.css' %}" />
     <link rel="stylesheet" href="{% static 'css/department.css' %}">
     <link rel="stylesheet" href="{% static 'css/studentmanagement.css' %}">
+
 </head>
 
 <body class="sm-page">
@@ -86,7 +87,7 @@
             <div class="sm-toolbar__filters">
                 <div class="sm-search">
                     <i class="fas fa-search sm-search__icon"></i>
-                    <input type="text" name="q" value="{{ q }}" placeholder="Search by name, username…" class="sm-search__input" onkeydown="if(event.key==='Enter'){this.form.submit();}"> 
+                    <input type="text" name="q" value="{{ q }}" placeholder="Search by name, username…" class="sm-search__input" onkeydown="if(event.key==='Enter'){this.form.submit();}">
                 </div>
                 <select name="college" class="sm-select" onchange="this.form.submit()">
                     <option value="">All Colleges</option>
@@ -138,7 +139,46 @@
                         </tr>
                     </thead>
                     <tbody id="tableBody">
-                        {% include 'studentmanagement/partials/student_rows.html' %}
+                        <!-- ── Rows inlined directly (student_rows.html merged in) ────────── -->
+                        {% for s in students %}
+                        <tr
+                            data-id="{{ s.id }}"
+                            data-name="{{ s.full_name }}"
+                            data-email="{{ s.email }}"
+                            data-user="{{ s.username }}"
+                            data-pass="{{ s.password }}"
+                            data-college="{{ s.college.college_name }}"
+                            data-college-id="{{ s.college_id }}"
+                            data-dept="{{ s.department.dept_name }}"
+                            data-dept-id="{{ s.department_id }}"
+                            data-year="{{ s.year }}"
+                            data-join="{{ s.join_date|date:'Y-m-d' }}"
+                            data-end="{{ s.end_date|date:'Y-m-d' }}"
+                            data-status="{{ s.status }}"
+                        >
+                            <td>{{ forloop.counter0|add:page_obj.start_index }}</td>
+                            <td>{{ s.full_name }}</td>
+                            <td>{{ s.username }}</td>
+                            <td>{{ s.password }}</td>
+                            <td>{{ s.college.college_name }}</td>
+                            <td>{{ s.department.dept_name }}</td>
+                            <td>{{ s.year }}</td>
+                            <td>{{ s.join_date|date:'M d, Y' }}</td>
+                            <td>{{ s.end_date|date:'M d, Y' }}</td>
+                            <td>
+                                <span class="sm-badge sm-badge--{{ s.status|lower }}">{{ s.get_status_display|default:s.status }}</span>
+                            </td>
+                            <td class="sm-table-actions">
+                                <button class="sm-icon-btn" title="View" onclick="openViewModal(this)"><i class="fas fa-eye"></i></button>
+                                <button class="sm-icon-btn" title="Edit" onclick="openEditModal(this)"><i class="fas fa-pen"></i></button>
+                                <button class="sm-icon-btn sm-icon-btn--danger" title="Delete" onclick="openDeleteModal(this)"><i class="fas fa-trash"></i></button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="11" class="sm-table-empty">No students found.</td>
+                        </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>
@@ -163,6 +203,11 @@
                 "nextPage": {% if page_obj.has_next %}{{ page_obj.next_page_number }}{% else %}null{% endif %}
             }
             </script>
+
+            <!-- Departments grouped by college id, computed server-side in the view.
+                 The Edit modal reads this directly instead of matching IDs across
+                 DOM option attributes, which is what was causing the empty dropdown. -->
+            <script id="deptsByCollegeData" type="application/json">{{ departments_by_college_json|safe }}</script>
         </div>
     </div>
 
@@ -194,39 +239,61 @@
     </div>
 
     <!-- ── EDIT MODAL ────────────────────────────────────── -->
+    <!-- Editable fields: Full Name, Department, Join Date, Status.
+         Read-only fields: Username, Password, College, Year. -->
     <div id="editModal" class="sm-modal-overlay">
         <div class="sm-modal sm-modal--large">
             <div class="sm-modal__header">
                 <h3 class="sm-modal__title"><i class="fas fa-user-pen"></i> Edit Student</h3>
                 <button class="sm-modal__close" onclick="closeModal('editModal')">&times;</button>
             </div>
-            <form class="sm-modal__body sm-form-grid">
+            <form class="sm-modal__body sm-form-grid" id="editForm" onsubmit="return false;">
+                <input type="hidden" id="editId">
+
+                <!-- EDITABLE -->
                 <div class="sm-form-group">
                     <label>Full Name</label>
                     <input type="text" id="editName">
                 </div>
+
+                <!-- READ-ONLY -->
                 <div class="sm-form-group">
-                    <label>Username</label>
-                    <input type="text" id="editUser">
+                    <label>Username <small>(read-only)</small></label>
+                    <input type="text" id="editUser" readonly disabled class="sm-input--readonly">
                 </div>
+
+                <!-- READ-ONLY -->
                 <div class="sm-form-group">
-                    <label>Password</label>
-                    <input type="text" id="editPass">
+                    <label>Password <small>(read-only)</small></label>
+                    <input type="text" id="editPass" readonly disabled class="sm-input--readonly">
                 </div>
+
+                <!-- READ-ONLY -->
+                <!-- Visible field just shows the college name as text (matches the View modal).
+                     The real <select> below is hidden and only used internally to look up
+                     the college's stream for the End Date calculation. -->
                 <div class="sm-form-group">
-                    <label>College</label>
-                    <input type="text" id="editCollege">
+                    <label>College <small>(read-only)</small></label>
+                    <input type="text" id="editCollegeDisplay" readonly disabled class="sm-input--readonly">
+                    <select id="editCollege" style="display:none;" tabindex="-1" aria-hidden="true">
+                        <option value="">Select College</option>
+                        {% for c in all_colleges %}
+                        <option value="{{ c.id }}" data-stream="{{ c.college_stream }}">{{ c.college_name }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
+
+                <!-- EDITABLE -->
                 <div class="sm-form-group">
                     <label>Department</label>
                     <select id="editDept" class="sm-select">
-                        <option value="CSE">CSE</option>
-                        <option value="ECE">ECE</option>
-                        <option value="IT">IT</option>
-                        <option value="MECH">MECH</option>
-                        <option value="CIVIL">CIVIL</option>
+                        <option value="">Select Department</option>
+                        {% for d in all_departments %}
+                        <option value="{{ d.id }}" data-college="{{ d.college_id }}">{{ d.dept_name }}</option>
+                        {% endfor %}
                     </select>
                 </div>
+
                 <div class="sm-form-group">
                     <label>Year</label>
                     <select id="editYear" class="sm-select">
@@ -236,25 +303,30 @@
                         <option value="IV">IV</option>
                     </select>
                 </div>
+
                 <div class="sm-form-group">
                     <label>Join Date</label>
-                    <input type="date" id="editJoin">
+                    <input type="date" id="editJoin" onchange="recalculateEndDate()">
                 </div>
+
+                <!-- READ-ONLY (auto-calculated) -->
                 <div class="sm-form-group">
-                    <label>End Date</label>
-                    <input type="date" id="editEnd">
+                    <label>End Date <small>(auto-calculated)</small></label>
+                    <input type="date" id="editEnd" readonly disabled class="sm-input--readonly">
                 </div>
+
+                <!-- EDITABLE -->
                 <div class="sm-form-group">
                     <label>Status</label>
                     <select id="editStatus" class="sm-select">
-                        <option value="Active">Active</option>
-                        <option value="Inactive">Inactive</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
                     </select>
                 </div>
             </form>
             <div class="sm-modal__actions">
                 <button onclick="closeModal('editModal')" class="sm-btn sm-btn--ghost">Cancel</button>
-                <button onclick="confirmEdit()" class="sm-btn sm-btn--primary">Save Changes</button>
+                <button onclick="confirmEdit()" class="sm-btn sm-btn--primary" id="saveEditBtn">Save Changes</button>
             </div>
         </div>
     </div>
@@ -278,6 +350,8 @@
     </div>
 
     <script>
+        const CSRF_TOKEN = '{{ csrf_token }}';
+
         /* ─── Modal helpers ───────────────────────────────────────── */
         function closeModal(id) {
             document.getElementById(id).classList.remove('active');
@@ -296,23 +370,157 @@
             document.getElementById('viewStatus').textContent  = row.dataset.status;
             document.getElementById('viewModal').classList.add('active');
         }
+
+        /* ─── Department filtering (College → Department) ───────────── */
+        // Departments grouped by college id, computed server-side in the Django
+        // view (departments_by_college_json). This is the source of truth — no
+        // more matching IDs across DOM option attributes.
+        const DEPTS_BY_COLLEGE = JSON.parse(
+            document.getElementById('deptsByCollegeData').textContent || '{}'
+        );
+
+        function populateDeptOptions(collegeId, selectedDeptId) {
+            const deptSelect = document.getElementById('editDept');
+            const depts = DEPTS_BY_COLLEGE[String(collegeId)] || [];
+
+            if (depts.length === 0) {
+                // This means the database genuinely has no Department rows whose
+                // college_id matches this student's college_id — a data issue,
+                // not a template/JS bug. Check for a duplicate College record.
+                deptSelect.innerHTML = '<option value="">No departments found for this college</option>';
+                console.warn(
+                    'No departments found for college id', collegeId,
+                    '— check for a duplicate College row, or that Department.college_id is set correctly.'
+                );
+                return;
+            }
+
+            deptSelect.innerHTML = '<option value="">Select Department</option>';
+            depts.forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d.id;
+                opt.textContent = d.name;
+                if (selectedDeptId && String(selectedDeptId) === String(d.id)) {
+                    opt.selected = true;
+                }
+                deptSelect.appendChild(opt);
+            });
+        }
+
+        /* College is now read-only, so this is no longer wired to an onchange
+           handler on the select — kept here only in case openEditModal needs
+           to (re)build the department list for the student's fixed college. */
+        function onEditCollegeChange() {
+            const collegeId = document.getElementById('editCollege').value;
+            populateDeptOptions(collegeId, null);
+            recalculateEndDate();
+        }
+
+        /* ─── End Date auto-calculation (mirrors backend logic) ─────── */
+        function recalculateEndDate() {
+            const collegeSelect = document.getElementById('editCollege');
+            const joinVal = document.getElementById('editJoin').value;
+            const endInput = document.getElementById('editEnd');
+
+            if (!joinVal || !collegeSelect.value) {
+                endInput.value = '';
+                return;
+            }
+
+            const selectedOption = collegeSelect.options[collegeSelect.selectedIndex];
+            const stream = selectedOption ? selectedOption.dataset.stream : '';
+            const years = stream === 'arts_science' ? 3 : 4;
+
+            const [y, m, d] = joinVal.split('-').map(Number);
+            let endYear = y + years;
+            let endMonth = m;
+            let endDay = d;
+
+            // Handle Feb 29 → fall back to day 28, mirroring the backend try/except
+            const daysInEndMonth = new Date(endYear, endMonth, 0).getDate();
+            if (endDay > daysInEndMonth) {
+                endDay = 28;
+            }
+
+            const mm = String(endMonth).padStart(2, '0');
+            const dd = String(endDay).padStart(2, '0');
+            endInput.value = `${endYear}-${mm}-${dd}`;
+        }
+
+        /* ─── Edit modal open/save ────────────────────────────────── */
         function openEditModal(btn) {
             const row = btn.closest('tr');
-            document.getElementById('editName').value    = row.dataset.name;
-            document.getElementById('editUser').value    = row.dataset.user;
-            document.getElementById('editPass').value    = row.dataset.pass;
-            document.getElementById('editCollege').value = row.dataset.college;
-            document.getElementById('editDept').value    = row.dataset.dept;
-            document.getElementById('editYear').value    = row.dataset.year;
-            document.getElementById('editJoin').value    = row.dataset.join;
-            document.getElementById('editEnd').value     = row.dataset.end;
-            document.getElementById('editStatus').value  = row.dataset.status;
+
+            document.getElementById('editId').value    = row.dataset.id;
+            document.getElementById('editName').value  = row.dataset.name;
+            document.getElementById('editUser').value  = row.dataset.user;
+            document.getElementById('editPass').value  = row.dataset.pass;
+            document.getElementById('editYear').value  = row.dataset.year;
+            document.getElementById('editJoin').value  = row.dataset.join;
+            document.getElementById('editStatus').value = (row.dataset.status || '').toLowerCase();
+
+            // College is read-only. Show the plain name (same source as the View
+            // modal, so it always displays correctly even if collegeId is missing).
+            document.getElementById('editCollegeDisplay').value = row.dataset.college || '';
+
+            if (!row.dataset.collegeId) {
+                console.warn(
+                    'Row is missing data-college-id — Department dropdown cannot be ' +
+                    'filtered to this student\'s college.'
+                );
+            }
+
+            // Hidden select still needs the id set so recalculateEndDate() can look
+            // up the college's stream. Falls back gracefully if it doesn't match.
+            document.getElementById('editCollege').value = row.dataset.collegeId || '';
+
+            // Filter Department options down to only this student's college,
+            // and pre-select their current department.
+            populateDeptOptions(row.dataset.collegeId, row.dataset.deptId);
+
+            // End date: recalc from join date + college stream, then show
+            recalculateEndDate();
+
             document.getElementById('editModal').classList.add('active');
         }
+
         function confirmEdit() {
-            alert('Student updated successfully! (demo)');
-            closeModal('editModal');
+            const studentId = document.getElementById('editId').value;
+            if (!studentId) return;
+
+            const saveBtn = document.getElementById('saveEditBtn');
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Saving...';
+
+            // Editable fields sent: Full Name, Department, Year, Join Date, Status.
+            const formData = new FormData();
+            formData.append('full_name', document.getElementById('editName').value);
+            formData.append('department', document.getElementById('editDept').value);
+            formData.append('year', document.getElementById('editYear').value);
+            formData.append('join_date', document.getElementById('editJoin').value);
+            formData.append('status', document.getElementById('editStatus').value);
+
+            fetch(`/students/update/${studentId}/`, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': CSRF_TOKEN },
+                body: formData
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    closeModal('editModal');
+                    goToPage(pageState.currentPage); // refresh current page rows
+                } else {
+                    alert('Error: ' + (data.message || 'Could not update student.'));
+                }
+            })
+            .catch(() => alert('Network error. Please try again.'))
+            .finally(() => {
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Save Changes';
+            });
         }
+
         let _deleteRow = null;
         function openDeleteModal(btn) {
             _deleteRow = btn.closest('tr');
@@ -329,7 +537,7 @@
             fetch(`/students/delete/${studentId}/`, {
                 method: 'POST',
                 headers: {
-                    'X-CSRFToken': '{{ csrf_token }}',
+                    'X-CSRFToken': CSRF_TOKEN,
                     'Content-Type': 'application/json'
                 }
             })
@@ -375,10 +583,10 @@
 
             let html = '';
 
-            // ◀ Previous
+            // Prev
             html += hasPrevious
-                ? `<button class="sm-page-btn" onclick="goToPage(${previousPage})" title="Previous"><i class="fas fa-chevron-left"></i></button>`
-                : `<button class="sm-page-btn" disabled title="Previous"><i class="fas fa-chevron-left"></i></button>`;
+                ? `<button class="sm-page-nav" onclick="goToPage(${previousPage})">Prev</button>`
+                : `<button class="sm-page-nav" disabled>Prev</button>`;
 
             // Page numbers with smart ellipsis
             const pages = getPageRange(currentPage, numPages);
@@ -390,10 +598,10 @@
                 }
             });
 
-            // ▶ Next
+            // Next
             html += hasNext
-                ? `<button class="sm-page-btn" onclick="goToPage(${nextPage})" title="Next"><i class="fas fa-chevron-right"></i></button>`
-                : `<button class="sm-page-btn" disabled title="Next"><i class="fas fa-chevron-right"></i></button>`;
+                ? `<button class="sm-page-nav" onclick="goToPage(${nextPage})">Next</button>`
+                : `<button class="sm-page-nav" disabled>Next</button>`;
 
             pagCont.innerHTML = html;
         }

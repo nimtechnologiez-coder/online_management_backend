@@ -3,6 +3,8 @@
     data-name="{{ student.full_name|escapejs }}"
     data-user="{{ student.username|escapejs }}"
     data-pass="{{ student.password|escapejs }}"
+    data-college-id="{{ student.college_id }}"
+    data-dept-id="{{ student.department_id }}"
     data-college="{{ student.college.college_name|escapejs }}"
     data-dept="{{ student.department.dept_name|escapejs }}"
     data-year="{{ student.year }}"

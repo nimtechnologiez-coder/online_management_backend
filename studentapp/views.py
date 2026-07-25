@@ -1,37 +1,45 @@
+import calendar
 import json
-from datetime import timedelta
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST
-from django.shortcuts import render
-from django.utils import timezone
-from django.db.models import Count, Q
-from django.db.models.functions import TruncMonth
-from datetime import date
 import random
 import string
+from datetime import date, timedelta
+
+from django.core.paginator import Paginator
+from django.db.models import Count, Q, Sum
+from django.db.models.functions import TruncMonth
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 
 from .models import (
     College,
-    Principal,
     Department,
+    Principal,
     Student,
     Video,
     VideoWatch,
 )
 
-
 def dashboard(request):
+
     today = timezone.now().date()
     now = timezone.now()
-    search = request.GET.get("q", "").strip()
-    # ==========================================
+
+    # ------------------------------------------
+    # Chart Filter
+    # ------------------------------------------
+
+    period = request.GET.get("period", "week")
+
+    # ------------------------------------------
     # Dashboard Statistics
-    # ==========================================
+    # ------------------------------------------
 
     total_colleges = College.objects.count()
     total_principals = Principal.objects.count()
-    total_hods = Department.objects.count()
+    total_departments = Department.objects.count()
     total_students = Student.objects.count()
     total_videos = Video.objects.count()
 
@@ -39,142 +47,283 @@ def dashboard(request):
         status="active"
     ).count()
 
-    # Today's Views
-    today_views = VideoWatch.objects.filter(
-        watched_at__date=today
-    ).count()
+    # ------------------------------------------
+    # Today's Student Engagement
+    # ------------------------------------------
 
-    # Monthly Views
-    this_month_views = VideoWatch.objects.filter(
-        watched_at__year=now.year,
-        watched_at__month=now.month
-    ).count()
+    today_active_students = (
+        VideoWatch.objects.filter(
+            watched_at__date=today
+        )
+        .values("student")
+        .distinct()
+        .count()
+    )
 
+    today_percentage = (
+        round(
+            (today_active_students / total_students) * 100,
+            2,
+        )
+        if total_students
+        else 0
+    )
+
+    # ------------------------------------------
+    # Current Month Student Engagement
+    # ------------------------------------------
+
+    month_active_students = (
+        VideoWatch.objects.filter(
+            watched_at__year=now.year,
+            watched_at__month=now.month,
+        )
+        .values("student")
+        .distinct()
+        .count()
+    )
+
+    month_percentage = (
+        round(
+            (month_active_students / total_students) * 100,
+            2,
+        )
+        if total_students
+        else 0
+    )
+
+    # ------------------------------------------
     # Recent Videos
+    # ------------------------------------------
+
     recent_videos = Video.objects.order_by(
         "-uploaded_at"
     )[:5]
 
-    # ==========================================
-    # Most Watched Videos (Current Month)
-    # ==========================================
+    # ------------------------------------------
+    # Top Videos
+    # ------------------------------------------
 
     top_videos = (
         Video.objects.annotate(
-            month_views=Count(
+            total_views=Count(
                 "watch_history",
                 filter=Q(
                     watch_history__watched_at__year=now.year,
                     watch_history__watched_at__month=now.month,
-                )
+                ),
             )
         )
-        .order_by("-month_views")[:5]
+        .order_by("-total_views")[:5]
     )
-
-    # ==========================================
-    # Top Performing Colleges
-    # Monthly Target = 10000 Views
-    # ==========================================
-
-    MONTHLY_TARGET = 10000
-
-    top_colleges = (
-        College.objects.annotate(
-            monthly_views=Count(
-                "students__watch_history",
-                filter=Q(
-                    students__watch_history__watched_at__year=now.year,
-                    students__watch_history__watched_at__month=now.month,
-                )
-            )
-        )
-        .order_by("-monthly_views")[:5]
-    )
-
-    # Progress based on Target
-    for college in top_colleges:
-        college.progress = min(
-            round(
-                (college.monthly_views / MONTHLY_TARGET) * 100
-            ),
-            100
-        )
-
-    # ==========================================
-    # Weekly Chart (Last 7 Days)
-    # ==========================================
-
-    week_labels = []
-    week_data = []
-
-    for i in range(6, -1, -1):
-
-        day = today - timedelta(days=i)
-
-        week_labels.append(
-            day.strftime("%a")
-        )
-
-        week_data.append(
-            VideoWatch.objects.filter(
-                watched_at__date=day
-            ).count()
-        )
-
-    # ==========================================
-    # Monthly Chart
-    # ==========================================
-
-    monthly = (
-        VideoWatch.objects
-        .annotate(
-            month=TruncMonth("watched_at")
-        )
-        .values("month")
-        .annotate(
-            total=Count("id")
-        )
-        .order_by("month")
-    )
-
-    month_labels = []
-    month_data = []
-
-    for item in monthly:
-
-        month_labels.append(
-            item["month"].strftime("%b")
-        )
-
-        month_data.append(
-            item["total"]
-        )
         # ==========================================
-    # College-wise Chart
+    # Top Colleges
     # ==========================================
 
-    colleges = (
-        College.objects.annotate(
-            total_views=Count("students__watch_history")
+    top_colleges = []
+
+    for college in College.objects.all():
+
+        college_students = Student.objects.filter(
+            college=college
+        ).count()
+
+        active_students = (
+            VideoWatch.objects.filter(
+                watched_at__year=now.year,
+                watched_at__month=now.month,
+                student__college=college
+            )
+            .values("student")
+            .distinct()
+            .count()
         )
-    )
+
+        percentage = (
+            round(
+                (active_students / college_students) * 100,
+                2
+            )
+            if college_students
+            else 0
+        )
+
+        top_colleges.append({
+            "college": college,
+            "students": college_students,
+            "active_students": active_students,
+            "percentage": percentage,
+        })
+
+    top_colleges = sorted(
+        top_colleges,
+        key=lambda x: (
+            x["percentage"],
+            x["active_students"]
+        ),
+        reverse=True
+    )[:5]
+
+    # ==========================================
+    # Dynamic Chart Data
+    # ==========================================
+
+    chart_labels = []
+    chart_data = []
+
+    # ---------- This Week ----------
+    if period == "week":
+
+        for i in range(3, -1, -1):
+
+            end_date = today - timedelta(days=i * 7)
+            start_date = end_date - timedelta(days=6)
+
+            active = (
+                VideoWatch.objects.filter(
+                    watched_at__date__range=(
+                        start_date,
+                        end_date
+                    )
+                )
+                .values("student")
+                .distinct()
+                .count()
+            )
+
+            percentage = (
+                round(
+                    (active / total_students) * 100,
+                    2
+                )
+                if total_students
+                else 0
+            )
+
+            chart_labels.append(f"Week {4-i}")
+            chart_data.append(percentage)
+
+    # ---------- Last 3 Months ----------
+    elif period == "3months":
+
+        for i in range(2, -1, -1):
+
+            month = now.month - i
+            year = now.year
+
+            while month <= 0:
+                month += 12
+                year -= 1
+
+            active = (
+                VideoWatch.objects.filter(
+                    watched_at__year=year,
+                    watched_at__month=month
+                )
+                .values("student")
+                .distinct()
+                .count()
+            )
+
+            percentage = (
+                round(
+                    (active / total_students) * 100,
+                    2
+                )
+                if total_students
+                else 0
+            )
+
+            chart_labels.append(
+                calendar.month_abbr[month]
+            )
+
+            chart_data.append(
+                percentage
+            )
+
+    # ---------- Last 6 Months ----------
+    else:
+
+        for i in range(5, -1, -1):
+
+            month = now.month - i
+            year = now.year
+
+            while month <= 0:
+                month += 12
+                year -= 1
+
+            active = (
+                VideoWatch.objects.filter(
+                    watched_at__year=year,
+                    watched_at__month=month
+                )
+                .values("student")
+                .distinct()
+                .count()
+            )
+
+            percentage = (
+                round(
+                    (active / total_students) * 100,
+                    2
+                )
+                if total_students
+                else 0
+            )
+
+            chart_labels.append(
+                calendar.month_abbr[month]
+            )
+
+            chart_data.append(
+                percentage
+            )
+            # ==========================================
+    # College Distribution
+    # ==========================================
 
     college_labels = []
     college_data = []
 
-    for college in colleges:
+    total_active_students = (
+        VideoWatch.objects
+        .values("student")
+        .distinct()
+        .count()
+    )
+
+    for college in College.objects.all():
+
+        active_students = (
+            VideoWatch.objects.filter(
+                student__college=college
+            )
+            .values("student")
+            .distinct()
+            .count()
+        )
+
+        percentage = (
+            round(
+                (active_students / total_active_students) * 100,
+                2
+            )
+            if total_active_students
+            else 0
+        )
 
         college_labels.append(
             college.college_name
         )
 
         college_data.append(
-            college.total_views
+            percentage
         )
 
     # ==========================================
-    # Monthly Activities (Last 6 Months)
+    # Monthly Activities
     # ==========================================
 
     monthly_activities = (
@@ -184,7 +333,6 @@ def dashboard(request):
         )
         .values("month")
         .annotate(
-            total_views=Count("id"),
             active_students=Count(
                 "student",
                 distinct=True
@@ -193,6 +341,7 @@ def dashboard(request):
                 "video",
                 distinct=True
             ),
+            total_views=Count("id")
         )
         .order_by("-month")[:6]
     )
@@ -206,13 +355,16 @@ def dashboard(request):
         # Dashboard Cards
         "total_colleges": total_colleges,
         "total_principals": total_principals,
-        "total_hods": total_hods,
+        "total_departments": total_departments,
         "total_students": total_students,
         "total_videos": total_videos,
 
-        "today_views": today_views,
-        "this_month_views": this_month_views,
         "active_students": active_students,
+        "today_active_students": today_active_students,
+        "month_active_students": month_active_students,
+
+        "today_percentage": today_percentage,
+        "month_percentage": month_percentage,
 
         # Lists
         "recent_videos": recent_videos,
@@ -220,38 +372,22 @@ def dashboard(request):
         "top_colleges": top_colleges,
         "monthly_activities": monthly_activities,
 
-        # Monthly Target
-        "monthly_target": MONTHLY_TARGET,
+        # Dynamic Chart
+        "chart_labels": json.dumps(chart_labels),
+        "chart_data": json.dumps(chart_data),
 
-        # Weekly Chart
-        "week_labels": json.dumps(
-            week_labels
-        ),
-        "week_data": json.dumps(
-            week_data
-        ),
+        # College Distribution
+        "college_labels": json.dumps(college_labels),
+        "college_data": json.dumps(college_data),
 
-        # Monthly Chart
-        "month_labels": json.dumps(
-            month_labels
-        ),
-        "month_data": json.dumps(
-            month_data
-        ),
-
-        # College Chart
-        "college_labels": json.dumps(
-            college_labels
-        ),
-        "college_data": json.dumps(
-            college_data
-        ),
+        # Selected Dropdown Value
+        "selected_period": period,
 
         "now": now,
     }
 
     # ==========================================
-    # Render Dashboard
+    # Render
     # ==========================================
 
     return render(
@@ -260,6 +396,8 @@ def dashboard(request):
         context,
     )
 
+
+
 def admin_login(request):
     return render(request, "login/login.html")
 
@@ -267,18 +405,26 @@ def admin_login(request):
 
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import College
+from django.core.paginator import Paginator
 
 def college_management(request):
-    colleges = College.objects.all()
-    return render(request, 'collegemanagement/collegelist.html', {'colleges': colleges})
+    college_list = College.objects.all().order_by("-id")
+
+    paginator = Paginator(college_list, 10)   # 10 records per page
+
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
+    page_range = list(paginator.get_elided_page_range(page_obj.number))
+
+    return render(request, "collegemanagement/collegelist.html", {
+        "page_obj": page_obj,
+        "colleges": page_obj.object_list,
+        "page_range": page_range,
+    })
 
 
 def college_add(request):
-    # Data driven from the DB (model) for the state / district dropdowns.
-    # `states` -> used for the <select name="state"> options
-    # `state_districts_json` -> JS object {state: [districts...]} used to
-    #                           dynamically populate the district dropdown
-    #                           based on the state the user picks.
     base_context = {
         'states': College.STATE_CHOICES,
         'state_districts_json': json.dumps(College.STATE_DISTRICTS),
@@ -355,6 +501,28 @@ def college_add(request):
     return render(request, 'collegemanagement/add_college.html', base_context)
 
 
+def college_edit(request, id):
+    if request.method != "POST":
+        return JsonResponse({'status': 'error', 'message': 'Method not allowed.'}, status=405)
+
+    college = get_object_or_404(College, id=id)
+    college.college_code = request.POST.get('college_code', college.college_code)
+    college.college_name = request.POST.get('college_name', college.college_name)
+    college.university = request.POST.get('university', college.university)
+    college.college_type = request.POST.get('college_type', college.college_type)
+    college.college_stream = request.POST.get('college_stream', college.college_stream or 'other')
+    college.status = request.POST.get('status', college.status)
+    college.state = request.POST.get('state', college.state)
+    college.district = request.POST.get('district', college.district)
+    college.address = request.POST.get('address', college.address)
+    college.contact_email = request.POST.get('contact_email', college.contact_email)
+    college.contact_phone = request.POST.get('contact_phone', college.contact_phone)
+    college.website = request.POST.get('website', college.website)
+    college.save()
+
+    return JsonResponse({'status': 'success', 'message': 'College updated successfully.'})
+
+
 def college_delete(request, id):
     if request.method == "POST":
         college = get_object_or_404(College, id=id)
@@ -362,15 +530,107 @@ def college_delete(request, id):
         return redirect('collegemanagement')
     return redirect('collegemanagement')
 
+# ----------------------------------------------------------------------------------------------------------------------------------------------------------
+#                                     department_management
+# ----------------------------------------------------------------------------------------------------------------------------------------------------------
 
 def department_management(request):
-    departments = Department.objects.all()
-    return render(request, 'department/department_list.html', {'departments': departments})
+    # Base QuerySet
+    department_list = (
+        Department.objects
+        .select_related("college")
+        .order_by("-id")
+    )
+
+    # -----------------------------
+    # Filters
+    # -----------------------------
+    search_query = request.GET.get("q", "").strip()
+    college_filter = request.GET.get("college", "").strip()
+    status_filter = request.GET.get("status", "").strip()
+
+    if search_query:
+        department_list = department_list.filter(
+            Q(dept_name__icontains=search_query) |
+            Q(dept_code__icontains=search_query) |
+            Q(hod_name__icontains=search_query) |
+            Q(username__icontains=search_query)
+        )
+
+    if college_filter:
+        department_list = department_list.filter(
+            college__college_name__iexact=college_filter
+        )
+
+    if status_filter:
+        department_list = department_list.filter(
+            status__iexact=status_filter
+        )
+
+    # -----------------------------
+    # Statistics (Overall)
+    # -----------------------------
+    total_count = Department.objects.count()
+
+    active_count = Department.objects.filter(
+        status__iexact="active"
+    ).count()
+
+    inactive_count = Department.objects.filter(
+        status__iexact="inactive"
+    ).count()
+
+    college_count = Department.objects.values(
+        "college"
+    ).distinct().count()
+
+    # -----------------------------
+    # Pagination
+    # -----------------------------
+    paginator = Paginator(department_list, 10)
+
+    page_number = request.GET.get("page", 1)
+
+    try:
+        departments = paginator.page(page_number)
+    except Exception:
+        departments = paginator.page(1)
+
+    # -----------------------------
+    # Context
+    # -----------------------------
+    context = {
+        "departments": departments,
+        "colleges": College.objects.order_by("college_name"),
+
+        "search_query": search_query,
+        "college_filter": college_filter,
+        "status_filter": status_filter,
+
+        "total_count": total_count,
+        "active_count": active_count,
+        "inactive_count": inactive_count,
+        "college_count": college_count,
+
+        "elided_page_range": paginator.get_elided_page_range(
+            number=departments.number,
+            on_each_side=1,
+            on_ends=1,
+        ),
+    }
+
+    return render(
+        request,
+        "department/department_list.html",
+        context,
+    )
+
+
+
 
 import string
 import random
 import re
-
 from django.shortcuts import render, redirect
 from .models import College, Principal, Department, Student, Video, VideoWatch
 
@@ -395,15 +655,6 @@ def generate_dept_code(dept_name):
         counter += 1
         code = f"{base_code}{counter}"
     return code
-
-def department_management(request):
-    departments = Department.objects.all()
-    colleges = College.objects.all()
-    return render(request, 'department/department_list.html', {
-        'departments': departments,
-        'colleges': colleges,
-    })
-
 
 def department_add(request):
     error = None
@@ -532,7 +783,6 @@ def department_edit(request, id):
         'colleges': colleges,
         'error': error,
     })
-
 
 
 
@@ -733,8 +983,10 @@ def principal_delete(request, id):
             principal.delete()
     return redirect('principal_management')
 
+
+
 def student_management(request):
-    import string, random
+    import string, random, json
     from django.db.models import Q
     from django.http import JsonResponse
     from django.template.loader import render_to_string
@@ -744,7 +996,10 @@ def student_management(request):
     today = date.today()
     Student.objects.filter(end_date__lt=today, status='active').update(status='expired')
 
-    students_list = Student.objects.all().order_by('-created_at')
+    # select_related avoids N+1 queries and guarantees college_id / department_id
+    # (and their names) are populated for every row rendered in student_rows.html —
+    # this is what lets the Edit modal filter Department options by college.
+    students_list = Student.objects.select_related('college', 'department').order_by('-created_at')
 
     q = request.GET.get('q', '')
     college_id = request.GET.get('college', '')
@@ -772,11 +1027,21 @@ def student_management(request):
     all_colleges = College.objects.all()
     all_departments = Department.objects.all()
 
+    # ── Departments grouped by college, computed in Python (guaranteed correct) ──
+    # The Edit modal's Department dropdown reads THIS instead of trying to match
+    # data-college-id against option[data-college] in the DOM, which is fragile.
+    departments_by_college = {}
+    for d in all_departments:
+        departments_by_college.setdefault(str(d.college_id), []).append(
+            {'id': d.id, 'name': d.dept_name}
+        )
+
     context = {
         'page_obj': page_obj,
         'students': page_obj.object_list,
         'all_colleges': all_colleges,
         'all_departments': all_departments,
+        'departments_by_college_json': json.dumps(departments_by_college),
         'q': q,
         'selected_college': college_id,
         'selected_dept': dept_id,
@@ -785,7 +1050,7 @@ def student_management(request):
         'total_students': Student.objects.count(),
         'active_students': Student.objects.filter(status='active').count(),
         'inactive_students': Student.objects.filter(status='inactive').count(),
-        'college_count': Student.objects.values('college').distinct().count(),
+        'college_count': College.objects.count(),
     }
 
     # AJAX partial request – return JSON for smooth pagination
@@ -796,7 +1061,7 @@ def student_management(request):
         try:
             start_idx = page_obj.start_index()
             end_idx = page_obj.end_index()
-        except:
+        except Exception:
             start_idx = 0
             end_idx = 0
 
@@ -969,32 +1234,58 @@ def student_delete(request, student_id):
 
 from datetime import date
 
+from datetime import date
+from django.shortcuts import get_object_or_404
+from django.http import JsonResponse
+
+from datetime import date
+from django.shortcuts import get_object_or_404
+from django.http import JsonResponse
+
+
 def student_update(request, student_id):
+    """
+    Only these fields are editable from the UI:
+        - full_name
+        - department
+        - year
+        - join_date
+        - status
+
+    Everything else (username, password, college) is read-only
+    and is preserved as-is from the existing record.
+    """
     student = get_object_or_404(Student, id=student_id)
 
-    if request.method == "POST":
+    if request.method != "POST":
+        return JsonResponse({
+            "status": "error",
+            "message": "Invalid request."
+        })
 
+    try:
         full_name = request.POST.get("full_name", "").strip()
-        email = request.POST.get("email", "").strip()
-        phone = request.POST.get("phone", "").strip()
-        date_of_birth = request.POST.get("date_of_birth")
+        status = request.POST.get("status")
+        year = request.POST.get("year", student.year).strip()
+        join_date_str = request.POST.get("join_date")
 
-        college = get_object_or_404(
-            College,
-            id=request.POST.get("college")
-        )
+        # College, Username, Password are read-only — never touched here.
+        college = student.college
 
+        # Only Department + Year can be changed
         department = get_object_or_404(
             Department,
             id=request.POST.get("department")
         )
 
-        year = request.POST.get("year")
-        status = request.POST.get("status")
+        if not full_name:
+            return JsonResponse({
+                "status": "error",
+                "message": "Full Name is required."
+            })
 
-        join_date_str = request.POST.get("join_date")
-
-        # Calculate End Date
+        # Calculate End Date from the (unchanged) College stream + new Join Date
+        join_date = None
         end_date = None
 
         if join_date_str:
@@ -1003,66 +1294,20 @@ def student_update(request, student_id):
             years = 3 if college.college_stream == "arts_science" else 4
 
             try:
-                end_date = join_date.replace(
-                    year=join_date.year + years
-                )
+                end_date = join_date.replace(year=join_date.year + years)
             except ValueError:
-                end_date = join_date.replace(
-                    year=join_date.year + years,
-                    day=28
-                )
+                end_date = join_date.replace(year=join_date.year + years, day=28)
 
-        # Duplicate email check
-        if Student.objects.exclude(id=student.id).filter(email=email).exists():
-            return JsonResponse({
-                "status": "error",
-                "message": "Email already exists."
-            })
-
-        # Username
-        name_part = "".join(
-            filter(str.isalpha, full_name.upper())
-        )
-
-        if len(name_part) >= 6:
-            name_part = name_part[:6]
-        else:
-            name_part = name_part.ljust(6, "X")
-
-        if date_of_birth:
-            dob = date.fromisoformat(date_of_birth)
-            number_part = dob.strftime("%d%m")[:3]
-        else:
-            number_part = "000"
-
-        username = name_part + number_part
-
-        count = 1
-        original = username
-
-        while Student.objects.exclude(id=student.id).filter(username=username).exists():
-            username = f"{original}{count}"
-            count += 1
-
-        # Update
+        # Update only the allowed fields
         student.full_name = full_name
-        student.email = email
-        student.phone = phone
-        student.date_of_birth = (
-            date.fromisoformat(date_of_birth)
-            if date_of_birth else None
-        )
-
-        student.college = college
         student.department = department
         student.year = year
-        student.username = username
-        student.status = status
-        student.join_date = (
-            date.fromisoformat(join_date_str)
-            if join_date_str else None
-        )
+        student.join_date = join_date
         student.end_date = end_date
+        student.status = status
+
+        # College, username, password stay exactly as they were
+        student.college = college
 
         student.save()
 
@@ -1071,10 +1316,11 @@ def student_update(request, student_id):
             "message": "Student updated successfully."
         })
 
-    return JsonResponse({
-        "status": "error",
-        "message": "Invalid request."
-    })
+    except Exception as e:
+        return JsonResponse({
+            "status": "error",
+            "message": str(e)
+        })
 
 def video_management(request):
     from django.core.paginator import Paginator
@@ -1319,40 +1565,7 @@ def reports(request):
 #                                      API
 # ------------------------------------------------------------------------------------------------------------------------------------------------------
 
-from django.http import JsonResponse
-from django.utils import timezone
-from .models import Student, Video, VideoWatch, Department
-from django.db.models import Count, Sum
-from datetime import timedelta
-from django.http import JsonResponse
-from django.utils import timezone
-from django.db.models import Count
-from datetime import timedelta
-from .models import Student, Video, VideoWatch, Principal
 
-
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from .models import Principal
-import json
-
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.utils import timezone
-from django.db.models import Count
-from datetime import timedelta
-import json
-
-from .models import Principal, Student, Video, VideoWatch
-
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.utils import timezone
-from django.db.models import Count
-from datetime import timedelta
-import json
-
-from .models import Principal, Student, Video, VideoWatch
 
 
 @csrf_exempt

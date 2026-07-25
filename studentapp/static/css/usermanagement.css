@@ -258,19 +258,78 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-top: 1px solid var(--um-border);
+    border-top: 1px solid #E5E7EB;
+    background: #ffffff;
     font-size: 0.875rem;
 }
-.um-pagination { display: flex; gap: 0.25rem; }
-.um-page-btn {
-    width: 32px;
-    height: 32px;
-    border: 1px solid var(--um-border);
-    background: white;
-    border-radius: 0.375rem;
-    cursor: pointer;
+.um-table-footer__info {
+    flex: 1 1 auto;
+    min-width: 220px;
+    font-size: 0.9rem;
+    color: #374151;
+    font-weight: 500;
 }
-.um-page-btn--active { background: var(--um-primary); color: white; border-color: var(--um-primary); }
+.um-table-footer__info strong {
+    color: #111827;
+    font-weight: 700;
+}
+.um-pagination {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+.um-page-btn,
+.um-page-nav {
+    min-width: 44px;
+    height: 44px;
+    border: 1px solid #E5E7EB;
+    background: #ffffff;
+    border-radius: 14px;
+    cursor: pointer;
+    color: #374151;
+    font-size: 0.92rem;
+    font-weight: 600;
+    padding: 0 1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 180ms ease, border-color 180ms ease, color 180ms ease, transform 150ms ease, box-shadow 180ms ease;
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.06);
+}
+.um-page-btn:hover:not(:disabled),
+.um-page-nav:hover:not(:disabled) {
+    background: #f8fafc;
+    border-color: #d6d6e5;
+    color: #111827;
+    transform: translateY(-1px);
+}
+.um-page-btn:disabled,
+.um-page-nav:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    background: #f9fafb;
+    border-color: #E5E7EB;
+    color: #9ca3af;
+    box-shadow: none;
+    transform: none;
+}
+.um-page-btn--active {
+    background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%);
+    color: #ffffff;
+    border-color: transparent;
+    box-shadow: 0 16px 28px rgba(79, 70, 229, 0.18);
+}
+.um-page-ellipsis {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 44px;
+    color: #94a3b8;
+    font-size: 0.92rem;
+    padding: 0 0.5rem;
+}
 
 /* ── MODALS ────────────────────────────────────────────────── */
 .um-modal-overlay {

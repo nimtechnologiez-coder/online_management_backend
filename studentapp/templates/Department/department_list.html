@@ -23,6 +23,99 @@
 
     <!-- Department list stylesheet (includes modal + toast styles) -->
     <link rel="stylesheet" href="{% static 'css/department_list.css' %}">
+
+    <!-- Pagination styles (scoped, matches the Prev/1/Next pill style) -->
+    <style>
+        .dm-table-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .dm-pagination {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            min-width: 220px;
+        }
+
+        .dm-pagination__pages {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin: 0 4px;
+        }
+
+        .dm-page-nav,
+        .dm-page-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 44px;
+            height: 44px;
+            padding: 0 16px;
+            border-radius: 14px;
+            border: 1px solid #E5E7EB;
+            background: #ffffff;
+            color: #374151;
+            font-size: 0.92rem;
+            font-weight: 600;
+            text-decoration: none;
+            line-height: 1;
+            user-select: none;
+            transition: background 180ms ease, border-color 180ms ease, color 180ms ease, transform 150ms ease, box-shadow 180ms ease;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+        }
+
+        .dm-page-nav:hover:not(.dm-page-nav--disabled),
+        .dm-page-btn:hover:not(.dm-page-btn--active) {
+            background: #f8fafc;
+            border-color: #dbe2ef;
+            color: #111827;
+            transform: translateY(-1px);
+        }
+
+        .dm-page-nav:active:not(.dm-page-nav--disabled),
+        .dm-page-btn:active:not(.dm-page-btn--active) {
+            transform: translateY(0);
+        }
+
+        .dm-page-nav--disabled {
+            opacity: .55;
+            pointer-events: none;
+            cursor: not-allowed;
+            background: #f9fafb;
+            border-color: #e5e7eb;
+            color: #9ca3af;
+            box-shadow: none;
+        }
+
+        .dm-page-btn--active {
+            background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%);
+            color: #ffffff;
+            border-color: #4F46E5;
+            box-shadow: 0 18px 36px rgba(79, 70, 229, 0.18);
+            cursor: default;
+            pointer-events: none;
+        }
+
+        .dm-page-ellipsis {
+            padding: 0 8px;
+            color: #94a3b8;
+            font-size: 0.92rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 32px;
+            height: 44px;
+            user-select: none;
+            letter-spacing: 0.02em;
+        }
+    </style>
 </head>
 
 <body class="dm-page">
@@ -50,13 +143,13 @@
             </a>
         </div>
 
-        <!-- ── Stats Cards ─────────────────────────────────── -->
+        <!-- ── Stats Cards (computed server-side over full dataset) ── -->
         <div class="dm-stats">
             <div class="dm-stat dm-stat--blue">
                 <div class="dm-stat__icon"><i class="fas fa-building"></i></div>
                 <div class="dm-stat__body">
                     <span class="dm-stat__label">Total Departments</span>
-                    <span class="dm-stat__value" id="statTotal">4</span>
+                    <span class="dm-stat__value" id="statTotal">{{ total_count }}</span>
                 </div>
                 <div class="dm-stat__bg-icon"><i class="fas fa-building"></i></div>
             </div>
@@ -64,7 +157,7 @@
                 <div class="dm-stat__icon"><i class="fas fa-circle-check"></i></div>
                 <div class="dm-stat__body">
                     <span class="dm-stat__label">Active</span>
-                    <span class="dm-stat__value" id="statActive">3</span>
+                    <span class="dm-stat__value" id="statActive">{{ active_count }}</span>
                 </div>
                 <div class="dm-stat__bg-icon"><i class="fas fa-circle-check"></i></div>
             </div>
@@ -72,7 +165,7 @@
                 <div class="dm-stat__icon"><i class="fas fa-circle-xmark"></i></div>
                 <div class="dm-stat__body">
                     <span class="dm-stat__label">Inactive</span>
-                    <span class="dm-stat__value" id="statInactive">1</span>
+                    <span class="dm-stat__value" id="statInactive">{{ inactive_count }}</span>
                 </div>
                 <div class="dm-stat__bg-icon"><i class="fas fa-circle-xmark"></i></div>
             </div>
@@ -80,38 +173,39 @@
                 <div class="dm-stat__icon"><i class="fas fa-university"></i></div>
                 <div class="dm-stat__body">
                     <span class="dm-stat__label">Colleges</span>
-                    <span class="dm-stat__value" id="statColleges">3</span>
+                    <span class="dm-stat__value" id="statColleges">{{ college_count }}</span>
                 </div>
                 <div class="dm-stat__bg-icon"><i class="fas fa-university"></i></div>
             </div>
         </div>
 
-        <!-- ── Toolbar ─────────────────────────────────────── -->
-        <div class="dm-toolbar">
+        <!-- ── Toolbar (submits GET request to the server) ──── -->
+        <form method="get" id="filterForm" class="dm-toolbar">
             <div class="dm-toolbar__filters">
                 <div class="dm-search">
                     <i class="fas fa-search dm-search__icon"></i>
-                    <input type="text" id="searchInput" placeholder="Search by name, code, HOD…" class="dm-search__input">
+                    <input type="text" name="q" id="searchInput" placeholder="Search by name, code, HOD…"
+                           class="dm-search__input" value="{{ search_query }}">
                 </div>
 
-                <select id="collegeFilter" class="dm-select">
+                <select name="college" id="collegeFilter" class="dm-select">
                     <option value="">All Colleges</option>
-                    <option value="Tech Engineering College">Tech Engineering College</option>
-                    <option value="Global Institute of Commerce">Global Institute of Commerce</option>
-                    <option value="Royal Arts College">Royal Arts College</option>
+                    {% for c in colleges %}
+                    <option value="{{ c.college_name }}" {% if college_filter == c.college_name %}selected{% endif %}>{{ c.college_name }}</option>
+                    {% endfor %}
                 </select>
 
-                <select id="statusFilter" class="dm-select dm-select--sm">
+                <select name="status" id="statusFilter" class="dm-select dm-select--sm">
                     <option value="">All Status</option>
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
+                    <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+                    <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive</option>
                 </select>
             </div>
 
-            <button class="dm-btn dm-btn--ghost" id="resetBtn" title="Reset filters">
+            <button type="button" class="dm-btn dm-btn--ghost" id="resetBtn" title="Reset filters">
                 <i class="fas fa-rotate-left"></i> Reset
             </button>
-        </div>
+        </form>
 
         <!-- ── Table Card ──────────────────────────────────── -->
         <div class="dm-card">
@@ -133,14 +227,87 @@
                         </tr>
                     </thead>
                     <tbody id="tableBody">
-                        <!-- Rows rendered by JS from departmentData -->
+                        {% for d in departments %}
+                        <tr data-id="{{ d.id }}">
+                            <td class="dm-td--no">{{ forloop.counter }}</td>
+                            <td>
+                                <div class="dm-dept">
+                                    <div class="dm-dept-badge dm-dept-badge--blue">{{ d.dept_code }}</div>
+                                    <div>
+                                        <div class="dm-dept__name">{{ d.dept_name }}</div>
+                                        <div class="dm-dept__sub">{{ d.dept_short_name }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="dm-td--muted">{{ d.college.college_name }}</td>
+                            <td>
+                                <div class="dm-hod">
+                                    <div class="dm-avatar dm-avatar--indigo">{{ d.hod_name|slice:":2"|upper }}</div>
+                                    <span>{{ d.hod_name }}</span>
+                                </div>
+                            </td>
+                            <td class="dm-td--muted">{{ d.hod_email }}</td>
+                            <td>{{ d.hod_phone }}</td>
+                            <td><span class="dm-username">{{ d.username }}</span></td>
+                            <td><span class="dm-password">{{ d.password }}</span></td>
+                            <td>
+                                {% if d.status == 'active' %}
+                                <span class="dm-badge dm-badge--active">Active</span>
+                                {% else %}
+                                <span class="dm-badge dm-badge--inactive">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td class="dm-td--muted">{{ d.created_at|date:"d M Y" }}</td>
+                            <td>
+                                <div class="dm-actions">
+                                    <button class="dm-icon-btn dm-icon-btn--view" title="View" onclick="openView({{ d.id }})"><i class="fas fa-eye"></i></button>
+                                    <button class="dm-icon-btn dm-icon-btn--edit" title="Edit" onclick="openEdit({{ d.id }})"><i class="fas fa-pen-to-square"></i></button>
+                                    <button class="dm-icon-btn dm-icon-btn--delete" title="Delete" onclick="openDelete({{ d.id }})"><i class="fas fa-trash-can"></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="11" class="dm-td--muted" style="text-align:center; padding: 32px 0;">
+                                No departments found.
+                            </td>
+                        </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>
 
             <!-- Table Footer -->
             <div class="dm-table-footer">
-                <span class="dm-table-footer__info">Showing <strong id="showingCount">1–4</strong> of <strong id="totalCount">4</strong> departments</span>
+                <span class="dm-table-footer__info">
+                    Showing <strong id="showingCount">{{ departments.start_index }}–{{ departments.end_index }}</strong>
+                    of <strong id="totalCount">{{ departments.paginator.count }}</strong> departments
+                </span>
+
+                <div class="dm-pagination" id="pagination">
+                    {% if departments.has_previous %}
+                    <a class="dm-page-nav" href="?q={{ search_query|urlencode }}&college={{ college_filter|urlencode }}&status={{ status_filter|urlencode }}&page={{ departments.previous_page_number }}">Prev</a>
+                    {% else %}
+                    <span class="dm-page-nav dm-page-nav--disabled">Prev</span>
+                    {% endif %}
+
+                    <div class="dm-pagination__pages">
+                        {% for p in elided_page_range %}
+                            {% if p == departments.paginator.ELLIPSIS %}
+                                <span class="dm-page-ellipsis">…</span>
+                            {% else %}
+                                <a class="dm-page-btn{% if p == departments.number %} dm-page-btn--active{% endif %}"
+                                   href="?q={{ search_query|urlencode }}&college={{ college_filter|urlencode }}&status={{ status_filter|urlencode }}&page={{ p }}">{{ p }}</a>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+
+                    {% if departments.has_next %}
+                    <a class="dm-page-nav" href="?q={{ search_query|urlencode }}&college={{ college_filter|urlencode }}&status={{ status_filter|urlencode }}&page={{ departments.next_page_number }}">Next</a>
+                    {% else %}
+                    <span class="dm-page-nav dm-page-nav--disabled">Next</span>
+                    {% endif %}
+                </div>
             </div>
         </div>
 
@@ -299,7 +466,7 @@
         }
         const csrftoken = getCookie('csrftoken');
 
-        // ── Data ──────────────────────────────────────────────
+        // ── Data (current page only — server handles paging) ──
         let departmentData = [
             {% for d in departments %}
             {
@@ -313,8 +480,6 @@
                 hodEmail: '{{ d.hod_email|escapejs }}',
                 hodPhone: '{{ d.hod_phone|escapejs }}',
                 hodInitials: '{{ d.hod_name|slice:":2"|upper|escapejs }}',
-                hodColor: 'indigo',
-                badgeColor: 'blue',
                 username: '{{ d.username|escapejs }}',
                 password: '{{ d.password|escapejs }}',
                 students: 0,
@@ -326,106 +491,23 @@
 
         let deleteTargetId = null;
 
-        // ── Render table ──────────────────────────────────────
-        function renderTable() {
-            const tbody = document.getElementById('tableBody');
-            tbody.innerHTML = '';
-
-            departmentData.forEach((d, index) => {
-                const tr = document.createElement('tr');
-                tr.dataset.id = d.id;
-
-                const badgeClass = d.status === 'active' ? 'dm-badge--active' : 'dm-badge--inactive';
-                const badgeLabel = d.status === 'active' ? 'Active' : 'Inactive';
-
-                tr.innerHTML = `
-                    <td class="dm-td--no">${index + 1}</td>
-                    <td>
-                        <div class="dm-dept">
-                            <div class="dm-dept-badge dm-dept-badge--${d.badgeColor}">${d.code}</div>
-                            <div>
-                                <div class="dm-dept__name">${d.name}</div>
-                                <div class="dm-dept__sub">${d.sub}</div>
-                            </div>
-                        </div>
-                    </td>
-                    <td class="dm-td--muted">${d.college}</td>
-                    <td>
-                        <div class="dm-hod">
-                            <div class="dm-avatar dm-avatar--${d.hodColor}">${d.hodInitials}</div>
-                            <span>${d.hod}</span>
-                        </div>
-                    </td>
-                    <td class="dm-td--muted">${d.hodEmail}</td>
-                    <td>${d.hodPhone}</td>
-                    <td><span class="dm-username">${d.username}</span></td>
-                    <td><span class="dm-password">${d.password}</span></td>
-                    <td><span class="dm-badge ${badgeClass}">${badgeLabel}</span></td>
-                    <td class="dm-td--muted">${d.created}</td>
-                    <td>
-                        <div class="dm-actions">
-                            <button class="dm-icon-btn dm-icon-btn--view" title="View" onclick="openView(${d.id})"><i class="fas fa-eye"></i></button>
-                            <button class="dm-icon-btn dm-icon-btn--edit" title="Edit" onclick="openEdit(${d.id})"><i class="fas fa-pen-to-square"></i></button>
-                            <button class="dm-icon-btn dm-icon-btn--delete" title="Delete" onclick="openDelete(${d.id})"><i class="fas fa-trash-can"></i></button>
-                        </div>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-
-            updateStats();
-            filterTable();
-        }
-
-        // ── Stats ─────────────────────────────────────────────
-        function updateStats() {
-            const total = departmentData.length;
-            const active = departmentData.filter(d => d.status === 'active').length;
-            const inactive = total - active;
-            const colleges = new Set(departmentData.map(d => d.college)).size;
-
-            document.getElementById('statTotal').textContent = total;
-            document.getElementById('statActive').textContent = active;
-            document.getElementById('statInactive').textContent = inactive;
-            document.getElementById('statColleges').textContent = colleges;
-            document.getElementById('totalCount').textContent = total;
-            document.getElementById('showingCount').textContent = total > 0 ? `1–${total}` : '0';
-        }
-
-        // ── Filter / Search ───────────────────────────────────
+        // ── Filter form: auto-submit on change (debounced search) ──
         const searchInput   = document.getElementById('searchInput');
         const collegeFilter = document.getElementById('collegeFilter');
         const statusFilter  = document.getElementById('statusFilter');
         const resetBtn      = document.getElementById('resetBtn');
+        const filterForm    = document.getElementById('filterForm');
 
-        function filterTable() {
-            const q   = searchInput.value.toLowerCase();
-            const col = collegeFilter.value.toLowerCase();
-            const st  = statusFilter.value.toLowerCase();
-
-            document.querySelectorAll('#tableBody tr').forEach(row => {
-                const id = parseInt(row.dataset.id, 10);
-                const d = departmentData.find(x => x.id === id);
-                if (!d) return;
-
-                const text = row.textContent.toLowerCase();
-                const ok = text.includes(q)
-                    && (!col || d.college.toLowerCase() === col)
-                    && (!st  || d.status === st);
-
-                row.style.display = ok ? '' : 'none';
-            });
-        }
-
-        searchInput.addEventListener('input', filterTable);
-        collegeFilter.addEventListener('change', filterTable);
-        statusFilter.addEventListener('change', filterTable);
+        let searchDebounce = null;
+        searchInput.addEventListener('input', () => {
+            clearTimeout(searchDebounce);
+            searchDebounce = setTimeout(() => filterForm.submit(), 500);
+        });
+        collegeFilter.addEventListener('change', () => filterForm.submit());
+        statusFilter.addEventListener('change', () => filterForm.submit());
 
         resetBtn.addEventListener('click', () => {
-            searchInput.value = '';
-            collegeFilter.selectedIndex = 0;
-            statusFilter.selectedIndex = 0;
-            filterTable();
+            window.location.href = window.location.pathname;
         });
 
         // ── Modal helpers ─────────────────────────────────────
@@ -447,7 +529,7 @@
             if (!d) return;
 
             document.getElementById('viewBadge').textContent = d.code;
-            document.getElementById('viewBadge').className = `dm-dept-badge dm-dept-badge--${d.badgeColor}`;
+            document.getElementById('viewBadge').className = 'dm-dept-badge dm-dept-badge--blue';
             document.getElementById('viewName').textContent = d.name;
             document.getElementById('viewSub').textContent = d.sub;
             document.getElementById('viewCollege').textContent = d.college;
@@ -508,24 +590,12 @@
                 if (!ok || data.status !== 'success') {
                     throw new Error(data.message || 'Update failed');
                 }
-
-                d.name = data.data.name;
-                d.college = data.data.college;
-                d.collegeId = data.data.collegeId;
-                d.hod = data.data.hod;
-                d.hodEmail = data.data.hodEmail;
-                d.hodPhone = data.data.hodPhone;
-                d.hodInitials = data.data.hodInitials;
-                d.status = data.data.status;
-
-                renderTable();
-                closeModal('editModal');
-                showToast(`${d.name} updated successfully.`);
+                // Reload so server-side pagination / stats / filters stay accurate.
+                sessionStorage.setItem('dm_toast', `${data.data.name} updated successfully.`);
+                window.location.reload();
             })
             .catch(err => {
                 showToast(err.message || 'Failed to update department.');
-            })
-            .finally(() => {
                 saveBtn.disabled = false;
                 saveBtn.textContent = 'Save Changes';
             });
@@ -564,16 +634,12 @@
                 if (!ok || data.status !== 'success') {
                     throw new Error(data.message || 'Delete failed');
                 }
-
-                departmentData = departmentData.filter(x => x.id !== id);
-                renderTable();
-                closeModal('deleteModal');
-                if (d) showToast(`${d.name} deleted.`);
+                // Reload so server-side pagination / stats / filters stay accurate.
+                sessionStorage.setItem('dm_toast', `${d ? d.name : 'Department'} deleted.`);
+                window.location.reload();
             })
             .catch(err => {
                 showToast(err.message || 'Failed to delete department.');
-            })
-            .finally(() => {
                 if (deleteBtn) {
                     deleteBtn.disabled = false;
                     deleteBtn.textContent = 'Yes, Delete';
@@ -592,8 +658,14 @@
             toastTimer = setTimeout(() => toast.classList.remove('show'), 2600);
         }
 
-        // ── Init ──────────────────────────────────────────────
-        renderTable();
+        // ── Init: show any toast queued before a reload ────────
+        document.addEventListener('DOMContentLoaded', () => {
+            const msg = sessionStorage.getItem('dm_toast');
+            if (msg) {
+                showToast(msg);
+                sessionStorage.removeItem('dm_toast');
+            }
+        });
     </script>
 </body>
 </html>

@@ -138,7 +138,7 @@
                 <div class="vm-pagination" id="paginationContainer">
                     <!-- Rendered by JS -->
                 </div>
-            </div>
+                
 
             <!-- Hidden data for JS bootstrap -->
             <script id="pageData" type="application/json">
@@ -282,8 +282,8 @@
 
             let html = '';
             html += hasPrevious
-                ? `<button class="vm-page-btn" onclick="goToPage(${previousPage})" title="Previous"><i class="fas fa-chevron-left"></i></button>`
-                : `<button class="vm-page-btn" disabled title="Previous"><i class="fas fa-chevron-left"></i></button>`;
+                ? `<button class="vm-page-nav" onclick="goToPage(${previousPage})">Prev</button>`
+                : `<button class="vm-page-nav" disabled>Prev</button>`;
 
             const pages = getPageRange(currentPage, numPages);
             pages.forEach(p => {
@@ -295,8 +295,8 @@
             });
 
             html += hasNext
-                ? `<button class="vm-page-btn" onclick="goToPage(${nextPage})" title="Next"><i class="fas fa-chevron-right"></i></button>`
-                : `<button class="vm-page-btn" disabled title="Next"><i class="fas fa-chevron-right"></i></button>`;
+                ? `<button class="vm-page-nav" onclick="goToPage(${nextPage})">Next</button>`
+                : `<button class="vm-page-nav" disabled>Next</button>`;
 
             pagCont.innerHTML = html;
         }

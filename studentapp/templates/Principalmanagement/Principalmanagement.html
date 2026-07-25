@@ -71,7 +71,7 @@
         </div>
 
         <!-- Toolbar -->
-        <form class="pm-toolbar" method="GET" action="{% url 'principal_management' %}">
+        <form class="pm-toolbar" method="GET" action="{% url 'principal_management' %}" id="filterForm">
             <div class="pm-toolbar__left">
                 <div class="pm-search">
                     <i class="fas fa-search pm-search__icon"></i>
@@ -79,14 +79,14 @@
                         class="pm-search__input" onkeydown="if(event.key === 'Enter'){this.form.submit();}">
                 </div>
                 <div class="pm-toolbar__filters">
-                    <select name="college" class="pm-select" onchange="this.form.submit()">
+                    <select name="college" class="pm-select" onchange="resetPageAndSubmit(this)">
                         <option value="">All Colleges</option>
                         {% for c in all_colleges %}
                         <option value="{{ c.id }}" {% if selected_college == c.id|stringformat:"s" %}selected{% endif %}>
                             {{ c.college_name }}</option>
                         {% endfor %}
                     </select>
-                    <select name="status" class="pm-select pm-select--sm" onchange="this.form.submit()">
+                    <select name="status" class="pm-select pm-select--sm" onchange="resetPageAndSubmit(this)">
                         <option value="">All Status</option>
                         <option value="active" {% if selected_status == 'active' %}selected{% endif %}>Active</option>
                         <option value="inactive" {% if selected_status == 'inactive' %}selected{% endif %}>Inactive
@@ -124,12 +124,15 @@
                 </table>
             </div>
 
+            <!-- ── Modern Table Footer / Pagination ──────────────── -->
             <div class="pm-table-footer">
                 <span class="pm-table-footer__info" id="pageInfo">
-                    Showing <strong id="infoStart">{{ page_obj.start_index }}</strong>–<strong id="infoEnd">{{ page_obj.end_index }}</strong> of <strong id="infoTotal">{{ page_obj.paginator.count }}</strong> principals
+                    Showing <strong id="infoStart">{{ page_obj.start_index }}</strong>–<strong id="infoEnd">{{ page_obj.end_index }}</strong>
+                    of <strong id="infoTotal">{{ page_obj.paginator.count }}</strong> principals
                 </span>
+
                 <div class="pm-pagination" id="paginationContainer">
-                    <!-- Rendered by JS -->
+                    <!-- Rendered by JS on load / after each AJAX page change -->
                 </div>
             </div>
 
@@ -257,7 +260,7 @@
     </div>
 
     <script>
-        // Password Toggle Logic
+        // ── Password Toggle Logic ───────────────────────────────
         function togglePassword(btn) {
             const span = btn.previousElementSibling;
             if (span.textContent === "••••••••") {
@@ -269,17 +272,31 @@
             }
         }
 
-        /* ─── AJAX Pagination ─────────────────────────────────────── */
-        const tbody = document.getElementById('tableBody');
-        const pagCont = document.getElementById('paginationContainer');
+        // ── Filter form: reset to page 1 whenever a filter changes ──
+        function resetPageAndSubmit(el) {
+            const form = el.form;
+            const pageInput = form.querySelector('input[name="page"]');
+            if (pageInput) pageInput.remove(); // drop stale page param
+            form.submit();
+        }
+
+        /* ═══════════════════════════════════════════════════════
+           MODERN AJAX PAGINATION
+           Renders: « First  ‹ Prev  1 … 4 5 6 … 12  Next ›  Last »
+           Expects the view to respond with JSON when the request
+           includes ?partial=1 with header X-Requested-With: XMLHttpRequest
+        ═══════════════════════════════════════════════════════ */
+        const tbody     = document.getElementById('tableBody');
+        const pagCont   = document.getElementById('paginationContainer');
         const infoStart = document.getElementById('infoStart');
-        const infoEnd = document.getElementById('infoEnd');
+        const infoEnd   = document.getElementById('infoEnd');
         const infoTotal = document.getElementById('infoTotal');
 
         // Bootstrap from server-rendered JSON island
         let pageState = JSON.parse(document.getElementById('pageData').textContent);
+        let isLoading = false;
 
-        // Build the URL preserving current filters
+        // Build a shareable/back-button-friendly URL preserving current filters
         function buildUrl(page) {
             const params = new URLSearchParams(window.location.search);
             params.set('page', page);
@@ -287,31 +304,7 @@
             return '?' + params.toString();
         }
 
-        function renderPagination(state) {
-            const { currentPage, numPages, hasPrevious, hasNext, previousPage, nextPage } = state;
-            if (numPages <= 1) { pagCont.innerHTML = ''; return; }
-
-            let html = '';
-            html += hasPrevious
-                ? `<button class="pm-page-btn" onclick="goToPage(${previousPage})" title="Previous"><i class="fas fa-chevron-left"></i></button>`
-                : `<button class="pm-page-btn" disabled title="Previous"><i class="fas fa-chevron-left"></i></button>`;
-
-            const pages = getPageRange(currentPage, numPages);
-            pages.forEach(p => {
-                if (p === '...') {
-                    html += `<span class="pm-page-ellipsis">…</span>`;
-                } else {
-                    html += `<button class="pm-page-btn${p === currentPage ? ' pm-page-btn--active' : ''}" onclick="goToPage(${p})">${p}</button>`;
-                }
-            });
-
-            html += hasNext
-                ? `<button class="pm-page-btn" onclick="goToPage(${nextPage})" title="Next"><i class="fas fa-chevron-right"></i></button>`
-                : `<button class="pm-page-btn" disabled title="Next"><i class="fas fa-chevron-right"></i></button>`;
-
-            pagCont.innerHTML = html;
-        }
-
+        // Compute page numbers with ellipsis: 1 … 4 5 6 … 12
         function getPageRange(current, total) {
             const delta = 1;
             const range = [];
@@ -330,7 +323,34 @@
             return rangeWithDots;
         }
 
-        let isLoading = false;
+        function renderPagination(state) {
+            const { currentPage, numPages, hasPrevious, hasNext, previousPage, nextPage } = state;
+            if (numPages <= 1) { pagCont.innerHTML = ''; return; }
+
+            let html = '';
+
+            // Prev
+            html += hasPrevious
+                ? `<button class="pm-page-nav" onclick="goToPage(${previousPage})">Prev</button>`
+                : `<button class="pm-page-nav" disabled>Prev</button>`;
+
+            // Numbered pages with ellipsis
+            getPageRange(currentPage, numPages).forEach(p => {
+                if (p === '...') {
+                    html += `<span class="pm-page-ellipsis">…</span>`;
+                } else {
+                    html += `<button class="pm-page-btn${p === currentPage ? ' pm-page-btn--active' : ''}" onclick="goToPage(${p})">${p}</button>`;
+                }
+            });
+
+            // Next
+            html += hasNext
+                ? `<button class="pm-page-nav" onclick="goToPage(${nextPage})">Next</button>`
+                : `<button class="pm-page-nav" disabled>Next</button>`;
+
+            pagCont.innerHTML = html;
+        }
+
         function goToPage(page) {
             if (isLoading) return;
             isLoading = true;
@@ -340,7 +360,6 @@
             params.set('partial', '1');
             const ajaxUrl = '?' + params.toString();
 
-            tbody.style.transition = 'opacity 0.18s ease';
             tbody.style.opacity = '0.35';
 
             fetch(ajaxUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
@@ -373,17 +392,20 @@
                 .finally(() => { isLoading = false; });
         }
 
+        // Initial paint of pagination controls
         renderPagination(pageState);
 
+        // Keyboard nav (skip while a modal is open)
         document.addEventListener('keydown', e => {
             if (document.querySelector('.pm-modal-overlay.active')) return;
             if (e.key === 'ArrowLeft' && pageState.hasPrevious) goToPage(pageState.previousPage);
             if (e.key === 'ArrowRight' && pageState.hasNext) goToPage(pageState.nextPage);
         });
 
+        // Full reload on browser back/forward so filters + page stay in sync
         window.addEventListener('popstate', () => location.reload());
 
-        // Modal Controls
+        // ── Modal Controls ──────────────────────────────────────
         function openViewModal(name, email, mobile, college, username, status) {
             document.getElementById('viewName').innerText = name;
             document.getElementById('viewEmail').innerText = email;
@@ -413,15 +435,14 @@
             document.getElementById('deleteModal').classList.add('active');
         }
         function closeAllModals() {
-            const modals = document.querySelectorAll('.pm-modal-overlay');
-            modals.forEach(modal => modal.classList.remove('active'));
+            document.querySelectorAll('.pm-modal-overlay').forEach(modal => modal.classList.remove('active'));
         }
 
         window.onclick = function (event) {
             if (event.target.classList.contains('pm-modal-overlay')) { closeAllModals(); }
         }
 
-        // Silently generate credentials into hidden inputs (no preview shown in modal)
+        // ── Silently generate credentials into hidden inputs ────
         function generateCredentials() {
             const name = document.getElementById('addName').value.trim();
             const collegeEl = document.getElementById('addCollege');
@@ -442,7 +463,6 @@
         }
 
         document.getElementById('addPrincipalForm')?.addEventListener('submit', function (e) {
-            // Ensure credentials are generated before submit
             generateCredentials();
             const username = document.getElementById('hiddenUsername').value;
             if (!username) {
@@ -451,7 +471,7 @@
             }
         });
 
-        // Auto-open credentials success modal if Django passes new_credentials via session
+        // ── Auto-open credentials success modal if Django passes new_credentials via session ──
         {% if new_credentials %}
         window.addEventListener('DOMContentLoaded', function () {
             document.getElementById('successName').textContent = "{{ new_credentials.name|escapejs }}";

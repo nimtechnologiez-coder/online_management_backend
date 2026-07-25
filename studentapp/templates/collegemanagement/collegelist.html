@@ -142,13 +142,29 @@
                 <!-- ===================== PAGINATION ===================== -->
                 <div class="pagination-bar">
                     <p class="pagination-info">
-                        Showing <strong id="showingCount">1–5</strong> of
-                        <strong id="totalCount">5</strong> Colleges
+                        Showing <strong id="showingCount">{{ page_obj.start_index }}–{{ page_obj.end_index }}</strong> of
+                        <strong id="totalCount">{{ page_obj.paginator.count }}</strong> Colleges
                     </p>
                     <div class="pagination-controls">
-                        <button type="button" class="page-btn" disabled>Prev</button>
-                        <button type="button" class="page-btn active">1</button>
-                        <button type="button" class="page-btn" disabled>Next</button>
+                        {% if page_obj.has_previous %}
+                            <a class="page-btn" href="?page={{ page_obj.previous_page_number }}">Prev</a>
+                        {% else %}
+                            <button type="button" class="page-btn" disabled>Prev</button>
+                        {% endif %}
+
+                        {% for num in page_range %}
+                            {% if num == page_obj.number %}
+                                <button type="button" class="page-btn active">{{ num }}</button>
+                            {% else %}
+                                <a class="page-btn" href="?page={{ num }}">{{ num }}</a>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                            <a class="page-btn" href="?page={{ page_obj.next_page_number }}">Next</a>
+                        {% else %}
+                            <button type="button" class="page-btn" disabled>Next</button>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -224,51 +240,82 @@
             </div>
             <div class="modal-body">
                 <form id="editForm">
-                    <input type="hidden" id="editId" />
-                    <div class="form-group">
-                        <label for="editName">College Name</label>
-                        <input type="text" id="editName" required />
-                    </div>
-                    <div class="form-group">
-                        <label for="editUniversity">University</label>
-                        <input type="text" id="editUniversity" required />
-                    </div>
+                    {% csrf_token %}
+                    <input type="hidden" id="editId" name="id" />
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="editEmail">Email</label>
-                            <input type="email" id="editEmail" required />
+                            <label for="editCode">College Code</label>
+                            <input type="text" id="editCode" name="college_code" />
                         </div>
                         <div class="form-group">
-                            <label for="editPhone">Phone</label>
-                            <input type="text" id="editPhone" required />
+                            <label for="editName">College Name</label>
+                            <input type="text" id="editName" name="college_name" required />
                         </div>
                     </div>
                     <div class="form-row">
+                        <div class="form-group">
+                            <label for="editUniversity">University</label>
+                            <input type="text" id="editUniversity" name="university" />
+                        </div>
+                        <div class="form-group">
+                            <label for="editType">College Type</label>
+                            <input type="text" id="editType" name="college_type" />
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editStream">Stream</label>
+                            <select id="editStream" name="college_stream">
+                                <option value="engineering">Engineering</option>
+                                <option value="arts_science">Arts & Science</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="editStatus">Status</label>
+                            <select id="editStatus" name="status">
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editEmail">Contact Email</label>
+                            <input type="email" id="editEmail" name="contact_email" />
+                        </div>
+                        <div class="form-group">
+                            <label for="editPhone">Contact Phone</label>
+                            <input type="text" id="editPhone" name="contact_phone" />
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editWebsite">Website</label>
+                            <input type="url" id="editWebsite" name="website" />
+                        </div>
                         <div class="form-group">
                             <label for="editState">State</label>
-                            <input type="text" id="editState" required />
-                        </div>
-                        <div class="form-group">
-                            <label for="editDistrict">District</label>
-                            <input type="text" id="editDistrict" required />
+                            <input type="text" id="editState" name="state" />
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="editDepts">Departments</label>
-                            <input type="number" id="editDepts" min="0" required />
+                            <label for="editDistrict">District</label>
+                            <input type="text" id="editDistrict" name="district" />
                         </div>
                         <div class="form-group">
-                            <label for="editStudents">Students</label>
-                            <input type="number" id="editStudents" min="0" required />
+                            <label for="editDepts">Departments</label>
+                            <input type="number" id="editDepts" readonly disabled />
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="editStatus">Status</label>
-                        <select id="editStatus">
-                            <option value="active">Active</option>
-                            <option value="inactive">Inactive</option>
-                        </select>
+                        <label for="editAddress">Address</label>
+                        <textarea id="editAddress" name="address" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="editStudents">Students</label>
+                        <input type="number" id="editStudents" readonly disabled />
                     </div>
                 </form>
             </div>
@@ -308,6 +355,14 @@
 
     <!-- ===================== SCRIPT ===================== -->
     <script>
+        const paginationData = {
+            currentPage: {{ page_obj.number }},
+            totalCount: {{ page_obj.paginator.count }},
+            perPage: {{ page_obj.paginator.per_page }},
+            startIndex: {{ page_obj.start_index }},
+            endIndex: {{ page_obj.end_index }}
+        };
+
         // -------------------------------------------------------------
         // College data rendered from backend (Code field removed)
         // -------------------------------------------------------------
@@ -315,12 +370,17 @@
             {% for college in colleges %}
             {
                 id: {{ college.id|default:0 }},
+                code: '{{ college.college_code|default:""|escapejs }}',
                 name: '{{ college.college_name|escapejs }}',
-                university: '{{ college.university|default:"-"|escapejs }}',
-                email: '{{ college.contact_email|default:"-"|escapejs }}',
-                phone: '{{ college.contact_phone|default:"-"|escapejs }}',
-                state: '{{ college.state|default:"-"|escapejs }}',
-                district: '{{ college.district|default:"-"|escapejs }}',
+                university: '{{ college.university|default:""|escapejs }}',
+                college_type: '{{ college.college_type|default:""|escapejs }}',
+                college_stream: '{{ college.college_stream|default:"other"|escapejs }}',
+                address: '{{ college.address|default:""|escapejs }}',
+                website: '{{ college.website|default:""|escapejs }}',
+                email: '{{ college.contact_email|default:""|escapejs }}',
+                phone: '{{ college.contact_phone|default:""|escapejs }}',
+                state: '{{ college.state|default:""|escapejs }}',
+                district: '{{ college.district|default:""|escapejs }}',
                 depts: {{ college.departments.count|default:0 }},
                 students: {{ college.students.count|default:0 }},
                 status: '{{ college.status|default:"active"|escapejs }}',
@@ -389,8 +449,8 @@
             document.getElementById('statActive').textContent = active;
             document.getElementById('statInactive').textContent = inactive;
             document.getElementById('statStudents').textContent = students.toLocaleString();
-            document.getElementById('totalCount').textContent = total;
-            document.getElementById('showingCount').textContent = total > 0 ? `1–${total}` : '0';
+            document.getElementById('totalCount').textContent = paginationData.totalCount;
+            document.getElementById('showingCount').textContent = paginationData.totalCount > 0 ? `${paginationData.startIndex}–${paginationData.endIndex}` : '0';
         }
 
         // -------------------------------------------------------------
@@ -446,20 +506,25 @@
             if (!c) return;
 
             document.getElementById('editId').value = c.id;
+            document.getElementById('editCode').value = c.code || '';
             document.getElementById('editName').value = c.name;
-            document.getElementById('editUniversity').value = c.university;
-            document.getElementById('editEmail').value = c.email;
-            document.getElementById('editPhone').value = c.phone;
-            document.getElementById('editState').value = c.state;
-            document.getElementById('editDistrict').value = c.district;
+            document.getElementById('editUniversity').value = c.university || '';
+            document.getElementById('editType').value = c.college_type || '';
+            document.getElementById('editStream').value = c.college_stream || 'other';
+            document.getElementById('editEmail').value = c.email || '';
+            document.getElementById('editPhone').value = c.phone || '';
+            document.getElementById('editWebsite').value = c.website || '';
+            document.getElementById('editState').value = c.state || '';
+            document.getElementById('editDistrict').value = c.district || '';
+            document.getElementById('editAddress').value = c.address || '';
             document.getElementById('editDepts').value = c.depts;
             document.getElementById('editStudents').value = c.students;
-            document.getElementById('editStatus').value = c.status;
+            document.getElementById('editStatus').value = c.status || 'active';
 
             openModal('editModal');
         }
 
-        function saveEdit() {
+        async function saveEdit() {
             const form = document.getElementById('editForm');
             if (!form.reportValidity()) return;
 
@@ -467,22 +532,45 @@
             const c = collegeData.find(x => x.id === id);
             if (!c) return;
 
-            c.name = document.getElementById('editName').value.trim();
-            c.university = document.getElementById('editUniversity').value.trim();
-            c.email = document.getElementById('editEmail').value.trim();
-            c.phone = document.getElementById('editPhone').value.trim();
-            c.state = document.getElementById('editState').value.trim();
-            c.district = document.getElementById('editDistrict').value.trim();
-            c.depts = parseInt(document.getElementById('editDepts').value, 10) || 0;
-            c.students = parseInt(document.getElementById('editStudents').value, 10) || 0;
-            c.status = document.getElementById('editStatus').value;
+            const saveButton = document.querySelector('#editModal .btn-primary');
+            saveButton.disabled = true;
 
-            renderTable();
-            closeModal('editModal');
-            showToast(`${c.name} updated successfully.`);
+            try {
+                const response = await fetch(`/colleges/edit/${id}/`, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: new FormData(form)
+                });
 
-            // TODO: replace with real backend call, e.g.
-            // fetch(`/colleges/${id}/edit/`, { method: 'POST', body: new FormData(form) });
+                const data = await response.json();
+                if (!response.ok || data.status !== 'success') {
+                    throw new Error(data.message || 'Unable to save college details.');
+                }
+
+                c.code = document.getElementById('editCode').value.trim();
+                c.name = document.getElementById('editName').value.trim();
+                c.university = document.getElementById('editUniversity').value.trim();
+                c.college_type = document.getElementById('editType').value.trim();
+                c.college_stream = document.getElementById('editStream').value;
+                c.email = document.getElementById('editEmail').value.trim();
+                c.phone = document.getElementById('editPhone').value.trim();
+                c.website = document.getElementById('editWebsite').value.trim();
+                c.state = document.getElementById('editState').value.trim();
+                c.district = document.getElementById('editDistrict').value.trim();
+                c.address = document.getElementById('editAddress').value.trim();
+                c.status = document.getElementById('editStatus').value;
+
+                renderTable();
+                closeModal('editModal');
+                showToast(data.message || `${c.name} updated successfully.`);
+            } catch (error) {
+                showToast(error.message || 'Unable to save changes.');
+            } finally {
+                saveButton.disabled = false;
+            }
         }
 
         // -------------------------------------------------------------

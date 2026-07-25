@@ -18,162 +18,30 @@
     <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
     {% block extra_css %}{% endblock %}
     <style>
-        /* ── Chart Skeleton Loading ───────────────────────── */
-        .chart-skeleton {
-            position: absolute;
-            inset: 0;
-            background: #fff;
-            border-radius: 12px;
-            z-index: 10;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
-            align-items: flex-end;
-            gap: 0;
-            padding: 1rem 1.2rem 2rem 1.2rem;
-            transition: opacity 0.5s ease, visibility 0.5s ease;
+        /* ── Period Filter Dropdown ─────────────────────────── */
+        .period-filter-form {
+            margin: 0;
         }
-        .chart-skeleton.hidden {
-            opacity: 0;
-            visibility: hidden;
-            pointer-events: none;
-        }
-        .chart-skeleton__bars {
-            display: flex;
-            align-items: flex-end;
-            gap: 10px;
-            width: 100%;
-            height: 100%;
-        }
-        .chart-skeleton__bar {
-            flex: 1;
-            border-radius: 6px 6px 0 0;
-            background: linear-gradient(90deg, #f0f2f8 25%, #e4e8f5 50%, #f0f2f8 75%);
-            background-size: 200% 100%;
-            animation: shimmer 1.4s infinite;
-        }
-        .chart-skeleton__bar:nth-child(1)  { height: 55%; animation-delay: 0s; }
-        .chart-skeleton__bar:nth-child(2)  { height: 80%; animation-delay: 0.1s; }
-        .chart-skeleton__bar:nth-child(3)  { height: 45%; animation-delay: 0.2s; }
-        .chart-skeleton__bar:nth-child(4)  { height: 90%; animation-delay: 0.3s; }
-        .chart-skeleton__bar:nth-child(5)  { height: 65%; animation-delay: 0.4s; }
-        .chart-skeleton__bar:nth-child(6)  { height: 35%; animation-delay: 0.5s; }
-        .chart-skeleton__bar:nth-child(7)  { height: 75%; animation-delay: 0.6s; }
-        /* For line/doughnut charts use wave bars */
-        .chart-skeleton--line .chart-skeleton__bar { border-radius: 50% 50% 0 0; }
-        .chart-skeleton--doughnut {
-            justify-content: center;
-            align-items: center;
-        }
-        .chart-skeleton--doughnut .chart-skeleton__bars {
-            justify-content: center;
-            align-items: center;
-        }
-        .chart-skeleton__donut {
-            width: 140px;
-            height: 140px;
-            border-radius: 50%;
-            background: linear-gradient(90deg, #f0f2f8 25%, #e4e8f5 50%, #f0f2f8 75%);
-            background-size: 200% 100%;
-            animation: shimmer 1.4s infinite;
-            position: relative;
-        }
-        .chart-skeleton__donut::after {
-            content: '';
-            position: absolute;
-            inset: 28px;
-            border-radius: 50%;
-            background: #fff;
-        }
-        .chart-skeleton__label-row {
-            display: flex;
-            gap: 12px;
-            margin-top: 14px;
-        }
-        .chart-skeleton__label {
-            height: 10px;
+        .period-select {
+            appearance: none;
+            -webkit-appearance: none;
+            background: #eef0fb;
+            color: var(--db-primary, #4f46e5);
+            font-family: 'Inter', sans-serif;
+            font-size: .75rem;
+            font-weight: 600;
+            border: 1px solid #dfe3f5;
             border-radius: 20px;
-            background: linear-gradient(90deg, #f0f2f8 25%, #e4e8f5 50%, #f0f2f8 75%);
-            background-size: 200% 100%;
-            animation: shimmer 1.4s infinite;
+            padding: .35rem 1.8rem .35rem .8rem;
+            cursor: pointer;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M0 0l5 6 5-6z' fill='%234f46e5'/></svg>");
+            background-repeat: no-repeat;
+            background-position: right .7rem center;
+            background-size: .6rem .4rem;
         }
-        .chart-skeleton__axis {
-            height: 2px;
-            width: 100%;
-            background: #e9ecf4;
-            border-radius: 2px;
-            margin-top: 6px;
-        }
-        @keyframes shimmer {
-            0%   { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
-        }
-
-        /* ── Page Entrance Animations ───────────────────────── */
-        @keyframes fadeSlideUp {
-            from { opacity: 0; transform: translateY(24px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to   { opacity: 1; }
-        }
-        @keyframes countUp {
-            from { opacity: 0; transform: translateY(8px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes progressGrow {
-            from { width: 0% !important; }
-        }
-
-        /* Stat cards stagger */
-        .stat-card {
-            opacity: 0;
-            animation: fadeSlideUp 0.5s ease forwards;
-        }
-        .stat-card:nth-child(1)  { animation-delay: 0.05s; }
-        .stat-card:nth-child(2)  { animation-delay: 0.10s; }
-        .stat-card:nth-child(3)  { animation-delay: 0.15s; }
-        .stat-card:nth-child(4)  { animation-delay: 0.20s; }
-        .stat-card:nth-child(5)  { animation-delay: 0.25s; }
-        .stat-card:nth-child(6)  { animation-delay: 0.30s; }
-        .stat-card:nth-child(7)  { animation-delay: 0.35s; }
-        .stat-card:nth-child(8)  { animation-delay: 0.40s; }
-        .stat-card:nth-child(9)  { animation-delay: 0.45s; }
-        .stat-card:nth-child(10) { animation-delay: 0.50s; }
-
-        /* Chart cards stagger */
-        .chart-card {
-            opacity: 0;
-            animation: fadeSlideUp 0.55s ease forwards;
-        }
-        .charts-grid .chart-card:nth-child(1) { animation-delay: 0.45s; }
-        .charts-grid .chart-card:nth-child(2) { animation-delay: 0.55s; }
-        .charts-grid .chart-card:nth-child(3) { animation-delay: 0.65s; }
-
-        /* Dashboard cards stagger */
-        .dashboard-card {
-            opacity: 0;
-            animation: fadeSlideUp 0.55s ease forwards;
-        }
-        .left-column .dashboard-card:nth-child(1) { animation-delay: 0.6s; }
-        .left-column .dashboard-card:nth-child(2) { animation-delay: 0.7s; }
-        .left-column .dashboard-card:nth-child(3) { animation-delay: 0.8s; }
-        .left-column .dashboard-card:nth-child(4) { animation-delay: 0.9s; }
-        .right-column .dashboard-card:nth-child(1) { animation-delay: 0.65s; }
-        .right-column .dashboard-card:nth-child(2) { animation-delay: 0.75s; }
-
-        /* Number counter animation */
-        .stat-number {
-            animation: countUp 0.4s ease forwards;
-            animation-delay: 0.6s;
-            opacity: 0;
-        }
-
-        /* Progress bar grow animation */
-        .progress-fill {
-            animation: progressGrow 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-            animation-delay: 0.9s;
+        .period-select:focus {
+            outline: none;
+            border-color: var(--db-primary, #4f46e5);
         }
     </style>
 </head>
@@ -240,27 +108,27 @@
                     </div>
                 </div>
 
-                <div class="stat-card card-red">
+                <!-- <div class="stat-card card-red">
                     <div class="stat-icon icon-red"><i class="fas fa-eye"></i></div>
                     <div class="stat-details">
-                        <h3>Today's Views</h3>
-                        <p class="stat-number">{{ today_views }}</p>
+                        <h3>Today's Active Students</h3>
+                        <p class="stat-number">{{ today_active_students }}</p>
                     </div>
-                </div>
+                </div> -->
 
                 <div class="stat-card card-purple">
                     <div class="stat-icon icon-purple"><i class="fas fa-chart-line"></i></div>
                     <div class="stat-details">
-                        <h3>Monthly Views</h3>
-                        <p class="stat-number">{{ this_month_views }}</p>
+                        <h3>Monthly Active Students</h3>
+                        <p class="stat-number">{{ month_active_students }}</p>
                     </div>
                 </div>
 
                 <div class="stat-card card-orange">
                     <div class="stat-icon icon-orange"><i class="fas fa-user-tie"></i></div>
                     <div class="stat-details">
-                        <h3>Total HODs</h3>
-                        <p class="stat-number">{{ total_hods }}</p>
+                        <h3>Total Departments</h3>
+                        <p class="stat-number">{{ total_departments }}</p>
                     </div>
                 </div>
 
@@ -280,13 +148,13 @@
                     </div>
                 </div>
 
-                <div class="stat-card card-yellow">
+                <!-- <div class="stat-card card-yellow">
                     <div class="stat-icon icon-yellow"><i class="fas fa-user-plus"></i></div>
                     <div class="stat-details">
-                        <h3>New Registrations</h3>
-                        <p class="stat-number">{{ active_students }}</p>
+                        <h3>Today's Engagement</h3>
+                        <p class="stat-number">{{ today_percentage }}%</p>
                     </div>
-                </div>
+                </div> -->
 
                 <div class="stat-card card-indigo">
                     <div class="stat-icon icon-indigo"><i class="fas fa-chalkboard-teacher"></i></div>
@@ -302,61 +170,40 @@
             <div class="charts-grid mt-4">
                 <div class="chart-card">
                     <div class="card-header">
-                        <h3><i class="fas fa-bar-chart" style="color:var(--db-primary);margin-right:.4rem;font-size:.85rem;"></i>Weekly Watch Activity</h3>
-                        <span class="card-header-tag">This week</span>
+                        <h3><i class="fas fa-bar-chart" style="color:var(--db-primary);margin-right:.4rem;font-size:.85rem;"></i>Weekly Engagement</h3>
+                        <form method="get" class="period-filter-form">
+                            <select name="period" onchange="this.form.submit()" class="period-select">
+                                <option value="week" {% if selected_period == "week" %}selected{% endif %}>
+                                    This Week
+                                </option>
+                                <option value="3months" {% if selected_period == "3months" %}selected{% endif %}>
+                                    Last 3 Months
+                                </option>
+                                <option value="6months" {% if selected_period == "6months" %}selected{% endif %}>
+                                    Last 6 Months
+                                </option>
+                            </select>
+                        </form>
                     </div>
                     <div class="chart-container" style="position:relative;">
-                        <div class="chart-skeleton" id="skel-weekly">
-                            <div class="chart-skeleton__bars">
-                                <div class="chart-skeleton__bar"></div>
-                                <div class="chart-skeleton__bar"></div>
-                                <div class="chart-skeleton__bar"></div>
-                                <div class="chart-skeleton__bar"></div>
-                                <div class="chart-skeleton__bar"></div>
-                                <div class="chart-skeleton__bar"></div>
-                                <div class="chart-skeleton__bar"></div>
-                            </div>
-                            <div class="chart-skeleton__axis"></div>
-                        </div>
                         <canvas id="watchOverviewChart"></canvas>
                     </div>
                 </div>
                 <div class="chart-card">
                     <div class="card-header">
                         <h3><i class="fas fa-chart-area" style="color:var(--db-teal);margin-right:.4rem;font-size:.85rem;"></i>Monthly Analytics</h3>
-                        <span class="card-header-tag">Last 6 months</span>
+                        <span class="card-header-tag">{% if selected_period == "week" %}This week{% elif selected_period == "3months" %}Last 3 months{% else %}Last 6 months{% endif %}</span>
                     </div>
                     <div class="chart-container" style="position:relative;">
-                        <div class="chart-skeleton chart-skeleton--line" id="skel-monthly">
-                            <div class="chart-skeleton__bars">
-                                <div class="chart-skeleton__bar"></div>
-                                <div class="chart-skeleton__bar"></div>
-                                <div class="chart-skeleton__bar"></div>
-                                <div class="chart-skeleton__bar"></div>
-                                <div class="chart-skeleton__bar"></div>
-                                <div class="chart-skeleton__bar"></div>
-                            </div>
-                            <div class="chart-skeleton__axis"></div>
-                        </div>
                         <canvas id="monthlyWatchChart"></canvas>
                     </div>
                 </div>
                 <div class="chart-card">
                     <div class="card-header">
                         <h3><i class="fas fa-chart-pie" style="color:var(--db-amber);margin-right:.4rem;font-size:.85rem;"></i>College Distribution</h3>
-                        <span class="card-header-tag">Share of views</span>
+                        <span class="card-header-tag">Share of engagement</span>
                     </div>
                     <div class="chart-container" style="position:relative;">
-                        <div class="chart-skeleton chart-skeleton--doughnut" id="skel-college">
-                            <div style="display:flex;flex-direction:column;align-items:center;">
-                                <div class="chart-skeleton__donut"></div>
-                                <div class="chart-skeleton__label-row">
-                                    <div class="chart-skeleton__label" style="width:40px;"></div>
-                                    <div class="chart-skeleton__label" style="width:55px;"></div>
-                                    <div class="chart-skeleton__label" style="width:35px;"></div>
-                                </div>
-                            </div>
-                        </div>
                         <canvas id="collegeDistributionChart"></canvas>
                     </div>
                 </div>
@@ -416,22 +263,22 @@
                             <span class="card-header-tag">{{ now|date:"F Y" }}</span>
                         </div>
                         <ul class="rank-list">
-                            {% for college in top_colleges %}
+                            {% for row in top_colleges %}
                             <li class="rank-item">
                                 <span class="rank-badge {% if forloop.counter == 1 %}rank-1{% elif forloop.counter == 2 %}rank-2{% elif forloop.counter == 3 %}rank-3{% endif %}">
                                     {{ forloop.counter }}
                                 </span>
                                 <div class="rank-info">
-                                    <p>{{ college.college_name }}</p>
+                                    <p>{{ row.college.college_name }}</p>
                                     <div class="progress-track">
-                                        <div class="progress-fill" style="width:{{ college.progress }}%"></div>
+                                        <div class="progress-fill" style="width:{{ row.percentage }}%"></div>
                                     </div>
                                     <div class="rank-meta">
-                                        <i class="fas fa-eye" style="font-size:.65rem;"></i>
-                                        <strong>{{ college.monthly_views }}</strong> views this month
+                                        <i class="fas fa-user-graduate" style="font-size:.65rem;"></i>
+                                        <strong>{{ row.active_students }}</strong> of {{ row.students }} students active this month
                                     </div>
                                 </div>
-                                <span class="rank-pct">{{ college.progress }}%</span>
+                                <span class="rank-pct">{{ row.percentage }}%</span>
                             </li>
                             {% empty %}
                             <li style="text-align:center;color:var(--db-text-muted);font-size:.83rem;padding:1rem 0;">
@@ -441,28 +288,28 @@
                         </ul>
                     </div>
 
-                    <!-- Recent Activity -->
+                    <!-- Recently Uploaded Videos -->
                     <div class="dashboard-card">
                         <div class="card-header">
-                            <h3><i class="fas fa-history" style="color:var(--db-primary);margin-right:.4rem;font-size:.85rem;"></i>Recent Watch Activity</h3>
-                            <span class="card-header-tag">Live</span>
+                            <h3><i class="fas fa-history" style="color:var(--db-primary);margin-right:.4rem;font-size:.85rem;"></i>Recently Uploaded Videos</h3>
+                            <span class="card-header-tag">Latest</span>
                         </div>
                         <ul class="ra-list">
-                            {% for wa in recent_activity %}
+                            {% for video in recent_videos %}
                             <li class="ra-item">
                                 <div class="ra-avatar">
-                                    <i class="fas fa-user-graduate"></i>
+                                    <i class="fas fa-film"></i>
                                 </div>
                                 <div class="ra-info">
-                                    <p><strong>{{ wa.student.full_name|default:"Student" }}</strong> watched <strong>{{ wa.video.title|truncatechars:30 }}</strong></p>
-                                    <span>{{ wa.watched_at|timesince }} ago</span>
+                                    <p><strong>{{ video.title|truncatechars:30 }}</strong> was uploaded</p>
+                                    <span>{{ video.uploaded_at|timesince }} ago</span>
                                 </div>
                                 <span class="ra-badge"><i class="fas fa-play"></i></span>
                             </li>
                             {% empty %}
                             <li class="ra-empty">
                                 <i class="fas fa-film" style="font-size:2rem;color:var(--db-border);display:block;margin-bottom:.5rem;"></i>
-                                No watch activity yet
+                                No videos uploaded yet
                             </li>
                             {% endfor %}
                         </ul>
@@ -559,7 +406,7 @@
                                 </div>
                                 <span class="video-views">
                                     <i class="fas fa-eye"></i>
-                                    {{ video.month_views }}
+                                    {{ video.total_views }}
                                 </span>
                             </li>
                             {% empty %}
@@ -604,49 +451,6 @@
     updateDateTime();
 </script>
 
-<!-- Page Animation Script -->
-<script>
-    /* ── Animated Number Counter ───────────────────────────── */
-    function animateCounter(el, target, duration) {
-        const isDecimal = String(target).includes('.');
-        const hasComma  = String(target).includes(',');
-        const cleanNum  = parseFloat(String(target).replace(/,/g, ''));
-        if (isNaN(cleanNum)) return;
-
-        const start    = performance.now();
-        const startVal = 0;
-
-        function step(now) {
-            const elapsed  = now - start;
-            const progress = Math.min(elapsed / duration, 1);
-            // Ease-out-quart
-            const ease = 1 - Math.pow(1 - progress, 4);
-            const current = Math.round(startVal + (cleanNum - startVal) * ease);
-            const suffix  = el.dataset.suffix || '';
-            if (hasComma && cleanNum >= 1000) {
-                el.textContent = current.toLocaleString() + suffix;
-            } else {
-                el.textContent = current + suffix;
-            }
-            if (progress < 1) requestAnimationFrame(step);
-        }
-        requestAnimationFrame(step);
-    }
-
-    /* Run counters after a short delay */
-    window.addEventListener('DOMContentLoaded', () => {
-        setTimeout(() => {
-            document.querySelectorAll('.stat-number').forEach(el => {
-                const raw    = el.dataset.target || el.textContent.trim();
-                const suffix = raw.match(/[^\d,\.]+$/) ? raw.match(/[^\d,\.]+$/)[0] : '';
-                el.dataset.suffix = suffix;
-                el.dataset.target = raw;
-                animateCounter(el, raw, 1600);
-            });
-        }, 600); /* matches animation-delay on .stat-number */
-    });
-</script>
-
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -656,21 +460,19 @@
     Chart.defaults.font.family    = "'Inter', sans-serif";
     Chart.defaults.font.size      = 11;
 
-    const weekLabels   = {{ week_labels|safe|default:"[]" }};
-    const weekData     = {{ week_data|safe|default:"[]" }};
-    const monthLabels  = {{ month_labels|safe|default:"[]" }};
-    const monthData    = {{ month_data|safe|default:"[]" }};
+    const chartLabels  = {{ chart_labels|safe|default:"[]" }};
+    const chartData    = {{ chart_data|safe|default:"[]" }};
     const collegeLabels= {{ college_labels|safe|default:"[]" }};
     const collegeData  = {{ college_data|safe|default:"[]" }};
 
-    /* ── Bar: Weekly Watch ──────────────────────────────────── */
+    /* ── Bar: Weekly Engagement % (Week / 3mo / 6mo filter) ──── */
     const weeklyChart = new Chart(document.getElementById('watchOverviewChart'), {
         type: 'bar',
         data: {
-            labels: weekLabels,
+            labels: chartLabels,
             datasets: [{
-                label: 'Videos Watched',
-                data: weekData,
+                label: 'Active Students (%)',
+                data: chartData,
                 backgroundColor: 'rgba(79,70,229,.80)',
                 borderRadius: 8,
                 borderSkipped: false,
@@ -681,25 +483,21 @@
             responsive: true, maintainAspectRatio: false,
             plugins: { legend: { display: false } },
             scales: {
-                y: { beginAtZero: true, grid: { color: '#f0f2f8' }, ticks: { stepSize: 1 } },
+                y: { beginAtZero: true, max: 100, grid: { color: '#f0f2f8' }, ticks: { callback: v => v + '%' } },
                 x: { grid: { display: false } }
             },
-            animation: {
-                onComplete: () => {
-                    document.getElementById('skel-weekly').classList.add('hidden');
-                }
-            }
+            animation: false
         }
     });
 
-    /* ── Line: Monthly Watch ────────────────────────────────── */
+    /* ── Line: Monthly Analytics % (same filtered trend) ────── */
     new Chart(document.getElementById('monthlyWatchChart'), {
         type: 'line',
         data: {
-            labels: monthLabels,
+            labels: chartLabels,
             datasets: [{
-                label: 'Total Watches',
-                data: monthData,
+                label: 'Active Students (%)',
+                data: chartData,
                 borderColor: '#0d9488',
                 backgroundColor: 'rgba(13,148,136,.10)',
                 borderWidth: 2.5,
@@ -712,18 +510,14 @@
             responsive: true, maintainAspectRatio: false,
             plugins: { legend: { display: false } },
             scales: {
-                y: { beginAtZero: true, grid: { color: '#f0f2f8' } },
+                y: { beginAtZero: true, max: 100, grid: { color: '#f0f2f8' }, ticks: { callback: v => v + '%' } },
                 x: { grid: { display: false } }
             },
-            animation: {
-                onComplete: () => {
-                    document.getElementById('skel-monthly').classList.add('hidden');
-                }
-            }
+            animation: false
         }
     });
 
-    /* ── Doughnut: College Distribution ─────────────────────── */
+    /* ── Doughnut: College Distribution % ───────────────────── */
     new Chart(document.getElementById('collegeDistributionChart'), {
         type: 'doughnut',
         data: {
@@ -737,12 +531,25 @@
         options: {
             responsive: true, maintainAspectRatio: false,
             cutout: '68%',
-            plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, padding: 12, usePointStyle: true, pointStyle: 'circle' } } },
-            animation: {
-                onComplete: () => {
-                    document.getElementById('skel-college').classList.add('hidden');
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.label + " : " + context.raw + "%";
+                        }
+                    }
+                },
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        boxWidth: 10,
+                        padding: 12,
+                        usePointStyle: true,
+                        pointStyle: 'circle'
+                    }
                 }
-            }
+            },
+            animation: false
         }
     });
 </script>
