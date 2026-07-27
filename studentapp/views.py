@@ -2354,3 +2354,57 @@ def api_student_progress(request):
         import traceback
         traceback.print_exc()
         return JsonResponse({"status": "error", "message": str(e)}, status=500)
+    
+
+
+
+
+
+@csrf_exempt
+def hod_login(request):
+    if request.method != "POST":
+        return JsonResponse({
+            "success": False,
+            "message": "Only POST method is allowed."
+        }, status=405)
+
+    try:
+        data = json.loads(request.body)
+
+        username = (data.get("username") or "").strip()
+        password = (data.get("password") or "").strip()
+
+        hod = Department.objects.filter(
+            username__iexact=username,
+            password=password,
+            status="active"
+        ).first()
+
+        print("HOD Found:", hod)
+
+        if not hod:
+            return JsonResponse({
+                "success": False,
+                "message": "Invalid username or password."
+            }, status=401)
+
+        print("Login Successful")
+
+        return JsonResponse({
+            "success": True,
+            "message": "Login Successful",
+            "user": {
+                "id": hod.id,
+                "hod_name": hod.hod_name,
+                "username": hod.username,
+                "department": hod.dept_name,
+                "college": hod.college.college_name
+            }
+        })
+
+    except Exception as e:
+        print("ERROR:", e)
+        return JsonResponse({
+            "success": False,
+            "message": str(e)
+        }, status=500)

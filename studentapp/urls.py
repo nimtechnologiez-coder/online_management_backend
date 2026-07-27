@@ -4,6 +4,7 @@ from . import views
 urlpatterns = [
 
     path('', views.admin_login, name='home'),
+    
 
     path('dashboard/', views.dashboard, name='dashboard'),
 
@@ -70,6 +71,7 @@ urlpatterns = [
     path('api/student/watch-history/<int:history_id>/delete/', views.api_student_delete_watch_history, name='api_student_delete_watch_history_item'),
     path('api/student/watch-history/<int:history_id>/delete', views.api_student_delete_watch_history),
     path('api/student/progress/', views.api_student_progress, name='api_student_progress'),
+    path("api/hod/login/", views.hod_login, name="hod_login"),
     path('api/student/progress', views.api_student_progress),
     path(
     "students/update/<int:student_id>/",
