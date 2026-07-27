@@ -2356,7 +2356,7 @@ def api_student_progress(request):
         return JsonResponse({"status": "error", "message": str(e)}, status=500)
     
 
-
+# --hodlogin-------------------------------------------
 
 
 
@@ -2407,4 +2407,5 @@ def hod_login(request):
         return JsonResponse({
             "success": False,
             "message": str(e)
+            
         }, status=500)
