@@ -1,5 +1,6 @@
 {% for video in videos %}
-<tr data-title="{{ video.title|escapejs }}" 
+<tr data-id="{{ video.id }}"
+    data-title="{{ video.title|escapejs }}" 
     data-cat="{{ video.category|escapejs }}" 
     data-dur="{{ video.duration|escapejs }}" 
     data-date="{{ video.uploaded_at|date:'Y-m-d' }}" 

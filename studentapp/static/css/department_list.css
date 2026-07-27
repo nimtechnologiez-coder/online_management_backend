@@ -997,3 +997,122 @@
 .dm-toast i {
     color: #34d399;
 }
+
+
+/* ==========================================================================
+   Delete Modal — glassmorphism override (scoped, does NOT affect View/Edit)
+   ========================================================================== */
+#deleteModal {
+    background: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(10px);
+}
+
+#deleteModal .dm-modal--delete {
+    max-width: 430px;
+    padding: 0;
+    border-radius: 22px;
+    overflow: hidden;
+    text-align: center;
+    box-shadow: none;
+    backdrop-filter: blur(18px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  
+    position: relative;
+}
+
+#deleteModal .dm-modal__close--floating {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 32px;
+    height: 32px;
+   
+    border: 1px solid rgba(17, 24, 39, 0.08);
+    color: #111827;
+    z-index: 2;
+}
+
+#deleteModal .dm-modal__close--floating:hover {
+    background: rgba(255, 255, 255, 0.9);
+    color: #dc2626;
+}
+
+#deleteModal .dm-modal__icon--delete {
+    width: 78px;
+    height: 78px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ff5f6d, #ff2d55);
+    box-shadow: 0 10px 25px rgba(255, 45, 85, 0.35);
+    color: #fff;
+    font-size: 34px;
+    margin: 28px auto 18px;
+}
+
+#deleteModal .dm-modal__title--delete {
+    color: #111827;
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0 28px 8px;
+}
+
+#deleteModal .dm-modal__desc--delete {
+    margin: 0;
+    padding: 0 30px 28px;
+    font-size: 15px;
+    line-height: 1.7;
+    color: #4b5563;
+}
+
+#deleteModal .dm-modal__desc--delete strong {
+    color: #111827;
+}
+
+#deleteModal .dm-modal__actions--delete {
+    display: flex;
+    gap: 14px;
+    padding: 22px 28px;
+    background: rgba(248, 250, 252, 0.75);
+    border-top: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+#deleteModal .dm-btn--glass {
+    flex: 1;
+    padding: 14px;
+    border: none;
+    border-radius: 14px;
+    background: #eef2f7;
+    color: #374151;
+    font-size: 15px;
+    font-weight: 600;
+    justify-content: center;
+    transition: 0.3s;
+}
+
+#deleteModal .dm-btn--glass:hover {
+    background: #e2e8f0;
+}
+
+#deleteModal .dm-btn--danger-gradient {
+    flex: 1;
+    padding: 14px;
+    border: none;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    justify-content: center;
+    box-shadow: 0 12px 25px rgba(220, 38, 38, 0.35);
+    transition: 0.3s;
+}
+
+#deleteModal .dm-btn--danger-gradient:hover {
+    transform: translateY(-1px);
+   
+}
+
+@media (max-width: 540px) {
+    #deleteModal .dm-modal--delete {
+        max-width: 92%;
+    }
+}

@@ -243,17 +243,19 @@
     </div>
 
     <!-- Delete Modal -->
-    <div id="deleteModal" class="pm-modal-overlay">
-        <div class="pm-modal">
+    <div id="deleteModal" class="pm-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle" aria-describedby="deleteModalDesc">
+        <div class="pm-modal pm-modal--delete">
+            <button type="button" class="pm-modal__close pm-modal__close--floating" onclick="closeAllModals()" aria-label="Close delete confirmation">
+                <i class="fas fa-times"></i>
+            </button>
             <form id="deleteForm" method="POST" action="">
                 {% csrf_token %}
-                <div class="pm-modal__icon"><i class="fas fa-exclamation-triangle"></i></div>
-                <h3 class="pm-modal__title">Delete Principal?</h3>
-                <p class="pm-modal__desc">Are you sure you want to delete <strong id="deleteName"></strong>? This action
-                    cannot be undone.</p>
-                <div class="pm-modal__actions">
-                    <button type="button" onclick="closeAllModals()" class="pm-btn pm-btn--ghost">Cancel</button>
-                    <button type="submit" class="pm-btn pm-btn--danger">Yes, Delete</button>
+                <div class="pm-modal__icon pm-modal__icon--delete"><i class="fas fa-trash"></i></div>
+                <h3 id="deleteModalTitle" class="pm-modal__title pm-modal__title--delete">Delete Principal?</h3>
+                <p id="deleteModalDesc" class="pm-modal__desc pm-modal__desc--delete">Are you sure you want to permanently delete <strong id="deleteName"></strong>? This action cannot be undone.</p>
+                <div class="pm-modal__actions pm-modal__actions--delete">
+                    <button type="button" onclick="closeAllModals()" class="pm-btn pm-btn--glass">Cancel</button>
+                    <button type="submit" class="pm-btn pm-btn--danger pm-btn--danger-gradient">Yes, Delete</button>
                 </div>
             </form>
         </div>

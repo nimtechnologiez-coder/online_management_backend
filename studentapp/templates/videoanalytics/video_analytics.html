@@ -6,20 +6,15 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Video Analytics | Admin Panel</title>
-    <meta name="description" content="Monitor video performance, student engagement, and watch trends." />
+    <meta name="description" content="Overview of all video performance across the platform." />
 
-    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-
-    <!-- Font Awesome CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
-    <!-- Chart.js & SheetJS -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
-    <!-- CSS Links -->
     <link rel="stylesheet" href="{% static 'css/sidebar.css' %}" />
     <link rel="stylesheet" href="{% static 'css/department.css' %}">
     <link rel="stylesheet" href="{% static 'css/videoanalytics.css' %}">
@@ -28,165 +23,279 @@
 <body class="va-page">
 
     <div class="va-wrapper">
-        <!-- Sidebar -->
         {% include 'includes/sidebar.html' %}
 
-        <!-- Main Content Area -->
         <div class="va-main">
-            <!-- Breadcrumb -->
-            <nav class="va-breadcrumb" aria-label="Breadcrumb">
-                <a href="{% url 'dashboard' %}"><i class="fas fa-home"></i> Dashboard</a>
-                <span class="va-breadcrumb__sep"><i class="fas fa-chevron-right"></i></span>
-                <span class="va-breadcrumb__current">Video Analytics</span>
-            </nav>
 
-            <!-- ── Page Header ────────────────────────────────── -->
-            <div class="va-page-header">
-                <div class="va-header-text">
+            <!-- ── Topbar: Title + Filters ───────────────────── -->
+            <div class="va-topbar">
+                <div class="va-topbar__text">
                     <h1 class="va-page-title">Video Analytics</h1>
-                    <p class="va-page-subtitle">Real-time insights into student engagement and video performance.</p>
+                    <p class="va-page-subtitle">Overview of all video performance across the platform</p>
                 </div>
-                <div class="va-header-actions">
-                    <button class="va-btn va-btn--ghost" onclick="exportReport()">
-                        <i class="fas fa-file-excel" style="color: #107c41;"></i> Export to Excel
+
+                <div class="va-topbar__filters">
+                    <button class="va-filter va-filter--date">
+                        <i class="fas fa-calendar"></i>
+                        <span>{{ range_label }}</span>
+                        <i class="fas fa-chevron-down va-filter__caret"></i>
+                    </button>
+
+                    <select class="va-filter va-filter--select" id="collegeFilter" onchange="applyFilters()">
+                        <option value="">All Colleges</option>
+                        {% for c in all_colleges %}
+                        <option value="{{ c.id }}" {% if request.GET.college == c.id|stringformat:"s" %}selected{% endif %}>{{ c.college_name }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <select class="va-filter va-filter--select" id="deptFilter" onchange="applyFilters()">
+                        <option value="">All Departments</option>
+                        {% for d in all_departments %}
+                        <option value="{{ d.id }}" {% if request.GET.department == d.id|stringformat:"s" %}selected{% endif %}>{{ d.dept_name }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <select class="va-filter va-filter--select" id="videoFilter" onchange="applyFilters()">
+                        <option value="">All Videos</option>
+                        <option value="Published" {% if request.GET.video_status == "Published" %}selected{% endif %}>Published</option>
+                        <option value="Draft" {% if request.GET.video_status == "Draft" %}selected{% endif %}>Draft</option>
+                    </select>
+
+                    <button class="va-filter va-filter--action va-filter--excel" onclick="exportReport()">
+                        <i class="fas fa-file-excel"></i> Export Excel
+                    </button>
+                    <button class="va-filter va-filter--action va-filter--pdf" onclick="window.print()">
+                        <i class="fas fa-file-pdf"></i> Export PDF
+                    </button>
+                    <button class="va-filter va-filter--icon" title="Print" onclick="window.print()">
+                        <i class="fas fa-print"></i>
                     </button>
                 </div>
             </div>
 
-            <!-- ── Summary Stats ──────────────────────────────── -->
+            <!-- ── Summary Stats ───────────────────── -->
             <div class="va-stats-grid">
-                <div class="va-stat-card va-stat-card--blue">
-                    <div class="va-stat-card__icon va-icon-blue"><i class="fas fa-film"></i></div>
+                <div class="va-stat-card">
+                    <div class="va-stat-card__icon va-icon-violet"><i class="fas fa-film"></i></div>
                     <div class="va-stat-card__content">
                         <span class="va-stat-label">Total Videos</span>
                         <span class="va-stat-value">{{ total_videos }}</span>
                     </div>
                 </div>
-                <div class="va-stat-card va-stat-card--green">
-                    <div class="va-stat-card__icon va-icon-green"><i class="fas fa-eye"></i></div>
+
+                <div class="va-stat-card">
+                    <div class="va-stat-card__icon va-icon-blue"><i class="fas fa-eye"></i></div>
                     <div class="va-stat-card__content">
                         <span class="va-stat-label">Total Views</span>
                         <span class="va-stat-value">{{ total_views }}</span>
                     </div>
                 </div>
-                <div class="va-stat-card va-stat-card--purple">
-                    <div class="va-stat-card__icon va-icon-purple"><i class="fas fa-clock"></i></div>
+
+                <div class="va-stat-card">
+                    <div class="va-stat-card__icon va-icon-orange"><i class="fas fa-clock"></i></div>
                     <div class="va-stat-card__content">
-                        <span class="va-stat-label">Watch Hours</span>
-                        <span class="va-stat-value">{{ watch_hours }}h</span>
+                        <span class="va-stat-label">Total Watch Time</span>
+                        <span class="va-stat-value">{{ watch_hours }} hrs</span>
                     </div>
                 </div>
-                <div class="va-stat-card va-stat-card--amber">
-                    <div class="va-stat-card__icon va-icon-amber"><i class="fas fa-chart-pie"></i></div>
+
+                <div class="va-stat-card">
+                    <div class="va-stat-card__icon va-icon-cyan"><i class="fas fa-cloud-arrow-up"></i></div>
                     <div class="va-stat-card__content">
-                        <span class="va-stat-label">Completion Rate</span>
-                        <span class="va-stat-value">{{ completion_rate }}%</span>
+                        <span class="va-stat-label">Videos Uploaded (this month)</span>
+                        <span class="va-stat-value">{{ videos_uploaded }}</span>
+                        <span class="va-stat-sub">{{ videos_uploaded_last_month }} last month</span>
                     </div>
                 </div>
-                <div class="va-stat-card va-stat-card--red">
-                    <div class="va-stat-card__icon va-icon-red"><i class="fas fa-user-check"></i></div>
+
+                <div class="va-stat-card va-stat-card--dark">
+                    <div class="va-stat-card__icon va-icon-flame"><i class="fas fa-fire"></i></div>
                     <div class="va-stat-card__content">
-                        <span class="va-stat-label">Active Students</span>
-                        <span class="va-stat-value">{{ active_students }}</span>
+                        <span class="va-stat-label va-stat-label--dark">Most Viewed Video</span>
+                        <span class="va-stat-value va-stat-value--dark">{{ top_video_title }}</span>
+                        <span class="va-stat-sub">{{ top_video_views }} views</span>
                     </div>
                 </div>
             </div>
 
-            <!-- ── Charts Row ─────────────────────────────────── -->
-            <div class="va-charts-grid">
-                <!-- Views Trend (large) -->
-                <div class="va-chart-card va-chart-card--large">
+            <!-- ── Trend Charts ──────────────── -->
+            <div class="va-trends-grid">
+                <div class="va-chart-card">
                     <div class="va-chart-header">
-                        <div>
-                            <h3 class="va-chart-title">Video Views Trend</h3>
-                            <p class="va-chart-subtitle">Total views over selected period</p>
-                        </div>
-                        <select class="va-select-sm" id="trendFilter" onchange="updateTrendChart()">
-                            <option value="weekly">Weekly</option>
-                            <option value="daily">Daily</option>
-                            <option value="monthly">Monthly</option>
-                        </select>
+                        <h3 class="va-chart-title">Views Over Time <i class="fas fa-circle-info va-info-icon"></i></h3>
                     </div>
-                    <div class="va-chart-body">
-                        <canvas id="viewsTrendChart"></canvas>
+                    <div class="va-chart-body va-chart-body--sm">
+                        <canvas id="viewsOverTimeChart"></canvas>
                     </div>
                 </div>
 
-                <!-- Category Doughnut -->
                 <div class="va-chart-card">
                     <div class="va-chart-header">
-                        <div>
-                            <h3 class="va-chart-title">By Category</h3>
-                            <p class="va-chart-subtitle">View distribution</p>
-                        </div>
+                        <h3 class="va-chart-title">Watch Time Over Time (Hours) <i class="fas fa-circle-info va-info-icon"></i></h3>
                     </div>
-                    <div class="va-chart-body">
-                        <canvas id="deptViewsChart"></canvas>
+                    <div class="va-chart-body va-chart-body--sm">
+                        <canvas id="watchTimeChart"></canvas>
                     </div>
                 </div>
 
-                <!-- Completion Bar -->
                 <div class="va-chart-card">
                     <div class="va-chart-header">
-                        <div>
-                            <h3 class="va-chart-title">Monthly Completion</h3>
-                            <p class="va-chart-subtitle">Avg. completion %</p>
-                        </div>
+                        <h3 class="va-chart-title">Completion Rate Over Time (%) <i class="fas fa-circle-info va-info-icon"></i></h3>
                     </div>
-                    <div class="va-chart-body">
-                        <canvas id="completionChart"></canvas>
+                    <div class="va-chart-body va-chart-body--sm">
+                        <canvas id="completionOverTimeChart"></canvas>
                     </div>
                 </div>
             </div>
 
-            <!-- ── Tables Row ─────────────────────────────────── -->
-            <div class="va-tables-grid">
+            <!-- ── Breakdown Row ── -->
+            <div class="va-breakdown-grid">
+                <div class="va-chart-card">
+                    <div class="va-chart-header">
+                        <h3 class="va-chart-title">Department-wise Views <i class="fas fa-circle-info va-info-icon"></i></h3>
+                    </div>
+                    <div class="va-chart-body va-chart-body--md">
+                        {% if dept_labels == "[]" %}
+                            <div class="va-empty-row">No watch data yet.</div>
+                        {% else %}
+                            <canvas id="deptViewsChart"></canvas>
+                        {% endif %}
+                    </div>
+                </div>
 
-                <!-- Most Watched Videos -->
+                <div class="va-chart-card">
+                    <div class="va-chart-header">
+                        <h3 class="va-chart-title">College-wise Views <i class="fas fa-circle-info va-info-icon"></i></h3>
+                    </div>
+                    <div class="va-chart-body va-chart-body--md">
+                        {% if college_labels_chart == "[]" %}
+                            <div class="va-empty-row">No watch data yet.</div>
+                        {% else %}
+                            <canvas id="collegeViewsChart"></canvas>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="va-chart-card">
+                    <div class="va-chart-header">
+                        <h3 class="va-chart-title">Video Category Distribution <i class="fas fa-circle-info va-info-icon"></i></h3>
+                    </div>
+                    <div class="va-chart-body va-chart-body--md va-chart-body--donut">
+                        {% if category_labels == "[]" %}
+                            <div class="va-empty-row">No videos yet.</div>
+                        {% else %}
+                            <canvas id="categoryDonutChart"></canvas>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="va-chart-card">
+                    <div class="va-chart-header">
+                        <h3 class="va-chart-title">Upload Trend (Videos) <i class="fas fa-circle-info va-info-icon"></i></h3>
+                    </div>
+                    <div class="va-chart-body va-chart-body--md">
+                        {% if monthly_labels == "[]" %}
+                            <div class="va-empty-row">No uploads this year.</div>
+                        {% else %}
+                            <canvas id="uploadTrendChart"></canvas>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Tables Row ────── -->
+            <div class="va-tables-row">
+
                 <div class="va-table-card">
                     <div class="va-table-header">
-                        <h3 class="va-table-title"><i class="fas fa-trophy" style="color:#f59e0b;margin-right:.4rem;"></i>Most Watched Videos</h3>
-                        <div class="va-search-mini">
-                            <i class="fas fa-search"></i>
-                            <input type="text" id="videoSearch" placeholder="Search video..." oninput="filterVideoTable()">
-                        </div>
+                        <h3 class="va-table-title">Top Performing Videos <i class="fas fa-circle-info va-info-icon"></i></h3>
+                        <a href="#" class="va-view-all">View All</a>
                     </div>
                     <div class="va-table-scroll">
-                        <table class="va-table" id="videoTable">
+                        <table class="va-table">
                             <thead>
                                 <tr>
-                                    <th>#</th>
-                                    <th>Video Title</th>
-                                    <th>Category</th>
-                                    <th>Views</th>
-                                    <th>Status</th>
+                                    <th>#</th><th>Category</th><th>Views</th><th>Watch Time</th><th>Completion</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for video in most_watched %}
                                 <tr>
                                     <td>
-                                        <span class="va-rank {% if forloop.counter == 1 %}va-rank--1{% elif forloop.counter == 2 %}va-rank--2{% elif forloop.counter == 3 %}va-rank--3{% endif %}">
-                                            {{ forloop.counter }}
-                                        </span>
-                                    </td>
-                                    <td style="max-width:200px;">
-                                        <strong style="display:block;color:var(--va-text);font-size:.83rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ video.title }}">{{ video.title }}</strong>
-                                        <span style="font-size:.72rem;color:var(--va-text-muted);">{{ video.duration }}</span>
-                                    </td>
-                                    <td>
-                                        <span class="va-dept-tag {% if video.category == 'Mathematics' %}va-dept-tag--teal{% elif video.category == 'Physics' %}va-dept-tag--amber{% elif video.category == 'Soft Skills' %}va-dept-tag--red{% endif %}">
-                                            {{ video.category }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <div class="va-views-bar">
-                                            <div class="va-views-bar__track">
-                                                <div class="va-views-bar__fill" style="width:{{ video.views|default:0 }}%;max-width:100%;"></div>
-                                            </div>
-                                            <span class="va-views-bar__num">{{ video.views }}</span>
+                                        <div class="va-vid-cell">
+                                            <span class="va-vid-thumb va-vid-thumb--{{ forloop.counter0|divisibleby:2|yesno:'a,b' }}">{{ video.title|slice:":2"|upper }}</span>
+                                            <span class="va-vid-name">{{ video.title }}</span>
                                         </div>
                                     </td>
+                                    <td>{{ video.category }}</td>
+                                    <td class="va-num">{{ video.views }}</td>
+                                    <td class="va-num">{{ video.watch_time_display }}</td>
+                                    <td class="va-num">{{ video.completion_display }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="5"><div class="va-empty-row">No videos yet.</div></td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="va-table-card">
+                    <div class="va-table-header">
+                        <h3 class="va-table-title">Least Performing Videos <i class="fas fa-circle-info va-info-icon"></i></h3>
+                        <a href="#" class="va-view-all">View All</a>
+                    </div>
+                    <div class="va-table-scroll">
+                        <table class="va-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th><th>Category</th><th>Views</th><th>Completion</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for video in least_performing %}
+                                <tr>
+                                    <td>
+                                        <div class="va-vid-cell">
+                                            <span class="va-vid-thumb va-vid-thumb--muted">{{ video.title|slice:":2"|upper }}</span>
+                                            <span class="va-vid-name">{{ video.title }}</span>
+                                        </div>
+                                    </td>
+                                    <td>{{ video.category }}</td>
+                                    <td class="va-num">{{ video.views }}</td>
+                                    <td class="va-num va-num--danger">{{ video.completion_display }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="4"><div class="va-empty-row">No videos yet.</div></td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="va-table-card">
+                    <div class="va-table-header">
+                        <h3 class="va-table-title">Recent Video Uploads <i class="fas fa-circle-info va-info-icon"></i></h3>
+                        <a href="#" class="va-view-all">View All</a>
+                    </div>
+                    <div class="va-table-scroll">
+                        <table class="va-table">
+                            <thead>
+                                <tr>
+                                    <th>Video</th><th>Category</th><th>Date</th><th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for video in recent_uploads %}
+                                <tr>
+                                    <td>
+                                        <div class="va-vid-cell">
+                                            <span class="va-vid-thumb">{{ video.title|slice:":2"|upper }}</span>
+                                            <span class="va-vid-name">{{ video.title }}</span>
+                                        </div>
+                                    </td>
+                                    <td>{{ video.category }}</td>
+                                    <td>{{ video.uploaded_at|date:"d M Y" }}</td>
                                     <td>
                                         <span class="va-badge {% if video.status == 'Published' %}va-badge--active{% else %}va-badge--inactive{% endif %}">
                                             {{ video.status }}
@@ -194,188 +303,180 @@
                                     </td>
                                 </tr>
                                 {% empty %}
-                                <tr>
-                                    <td colspan="5">
-                                        <div class="va-empty">
-                                            <i class="fas fa-video-slash"></i>
-                                            No videos available.
-                                        </div>
-                                    </td>
-                                </tr>
+                                <tr><td colspan="4"><div class="va-empty-row">No uploads yet.</div></td></tr>
                                 {% endfor %}
                             </tbody>
                         </table>
                     </div>
                 </div>
 
-                <!-- Recent Student Activity -->
-                <div class="va-table-card">
-                    <div class="va-table-header">
-                        <h3 class="va-table-title"><i class="fas fa-bolt" style="color:var(--va-primary);margin-right:.4rem;"></i>Recent Activity</h3>
+            </div><!-- /va-tables-row -->
+
+            <!-- ── Student Activity Summary ────────────────── -->
+            <div class="va-bottom-grid">
+                <div class="va-mini-card-group">
+                    <div class="va-mini-group-header">
+                        <h3 class="va-table-title">Student Activity Summary <i class="fas fa-circle-info va-info-icon"></i></h3>
                     </div>
-                    <div class="va-table-scroll">
-                        <table class="va-table">
-                            <thead>
-                                <tr>
-                                    <th>Student</th>
-                                    <th>Video</th>
-                                    <th>Watched</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for watch in recent_activity %}
-                                <tr>
-                                    <td>
-                                        <div class="va-student-cell">
-                                            <div class="va-avatar">{{ watch.student.full_name|first|upper }}</div>
-                                            <span class="va-student-name">{{ watch.student.full_name }}</span>
-                                        </div>
-                                    </td>
-                                    <td style="max-width:140px;">
-                                        <span style="font-size:.8rem;color:var(--va-text);font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ watch.video.title }}">
-                                            {{ watch.video.title }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span class="va-time-chip">
-                                            <i class="fas fa-clock"></i>
-                                            {{ watch.watched_at|timesince }} ago
-                                        </span>
-                                    </td>
-                                    <td><span class="va-badge va-badge--watch">Watched</span></td>
-                                </tr>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="4">
-                                        <div class="va-empty">
-                                            <i class="fas fa-users-slash"></i>
-                                            No recent activity.
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                    <div class="va-mini-grid">
+                        <div class="va-mini-card">
+                            <span class="va-mini-label">Today Active</span>
+                            <span class="va-mini-value">{{ today_active }}</span>
+                        </div>
+                        <div class="va-mini-card">
+                            <span class="va-mini-label">This Week Active</span>
+                            <span class="va-mini-value">{{ week_active }}</span>
+                        </div>
+                        <div class="va-mini-card">
+                            <span class="va-mini-label">This Month Active</span>
+                            <span class="va-mini-value">{{ month_active }}</span>
+                        </div>
+                        <div class="va-mini-card">
+                            <span class="va-mini-label">Avg. Videos per Student</span>
+                            <span class="va-mini-value">{{ avg_videos_per_student }}</span>
+                        </div>
                     </div>
                 </div>
+            </div><!-- /va-bottom-grid -->
 
-            </div><!-- /tables-grid -->
         </div><!-- /va-main -->
     </div><!-- /va-wrapper -->
 
     <script>
-        /* ── Views Trend Chart ─────────────────────────────── */
-        const weekLabels   = {{ week_labels|safe }};
-        const weekData     = {{ week_data|safe }};
-        const dailyLabels  = {{ daily_labels|safe }};
-        const dailyData    = {{ daily_data|safe }};
-        const monthLabels  = {{ monthly_labels|safe }};
-        const monthData    = {{ monthly_data|safe }};
-        const catLabels    = {{ category_labels|safe }};
-        const catData      = {{ category_data|safe }};
-
-        const ctxTrend = document.getElementById('viewsTrendChart').getContext('2d');
-        const trendChart = new Chart(ctxTrend, {
-            type: 'line',
-            data: {
-                labels: weekLabels,
-                datasets: [{
-                    label: 'Total Views',
-                    data: weekData,
-                    borderColor: '#4f46e5',
-                    backgroundColor: 'rgba(79,70,229,0.08)',
-                    fill: true,
-                    tension: 0.45,
-                    borderWidth: 3,
-                    pointRadius: 5,
-                    pointBackgroundColor: '#4f46e5',
-                    pointBorderColor: '#fff',
-                    pointBorderWidth: 2,
-                }]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' ' + ctx.parsed.y + ' views' } } },
-                scales: {
-                    x: { grid: { display: false }, ticks: { font: { size: 11 }, color: '#8b93b8' } },
-                    y: { grid: { color: '#f0f2f8' }, ticks: { font: { size: 11 }, color: '#8b93b8' }, beginAtZero: true, ticks: { stepSize: 1 } }
-                }
-            }
-        });
-
-        function updateTrendChart() {
-            const v = document.getElementById('trendFilter').value;
-            if (v === 'daily') {
-                trendChart.data.labels = dailyLabels;
-                trendChart.data.datasets[0].data = dailyData;
-            } else if (v === 'monthly') {
-                trendChart.data.labels = monthLabels;
-                trendChart.data.datasets[0].data = monthData;
-            } else {
-                trendChart.data.labels = weekLabels;
-                trendChart.data.datasets[0].data = weekData;
-            }
-            trendChart.update('active');
+        function applyFilters() {
+            const college = document.getElementById('collegeFilter').value;
+            const dept = document.getElementById('deptFilter').value;
+            const status = document.getElementById('videoFilter').value;
+            const params = new URLSearchParams();
+            if (college) params.set('college', college);
+            if (dept) params.set('department', dept);
+            if (status) params.set('video_status', status);
+            window.location.search = params.toString();
         }
 
-        /* ── Category Doughnut ─────────────────────────────── */
-        const ctxDept = document.getElementById('deptViewsChart').getContext('2d');
-        new Chart(ctxDept, {
-            type: 'doughnut',
-            data: {
-                labels: catLabels,
-                datasets: [{
-                    data: catData,
-                    backgroundColor: ['#4f46e5','#06b6d4','#8b5cf6','#f59e0b'],
-                    borderWidth: 0,
-                    hoverOffset: 6
-                }]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                cutout: '68%',
-                plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, pointStyle: 'circle', padding: 12, font: { size: 11 } } } }
-            }
-        });
+        /* Data from Django — real values only, no fallback dummy arrays */
+        const dailyLabels      = {{ daily_labels|safe }};
+        const viewsSeries      = {{ views_series|safe }};
+        const watchTimeSeries  = {{ watch_time_series|safe }};
+        const completionSeries = {{ completion_series|safe }};
 
-        /* ── Monthly Watch Bar Chart ────────────────────────── */
-        const ctxComp = document.getElementById('completionChart').getContext('2d');
-        new Chart(ctxComp, {
-            type: 'bar',
-            data: {
-                labels: monthLabels,
-                datasets: [{
-                    label: 'Watch Events',
-                    data: monthData,
-                    backgroundColor: 'rgba(139,92,246,0.85)',
-                    borderRadius: 7,
-                    borderSkipped: false,
-                }]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    x: { grid: { display: false }, ticks: { font: { size: 11 }, color: '#8b93b8' } },
-                    y: { grid: { color: '#f0f2f8' }, ticks: { font: { size: 11 }, color: '#8b93b8', stepSize: 1 }, beginAtZero: true }
+        const deptLabels = {{ dept_labels|safe }};
+        const deptData   = {{ dept_data|safe }};
+
+        const collegeLabels = {{ college_labels_chart|safe }};
+        const collegeData   = {{ college_data_chart|safe }};
+
+        const catLabels = {{ category_labels|safe }};
+        const catData   = {{ category_data|safe }};
+
+        const uploadLabels = {{ monthly_labels|safe }};
+        const uploadData   = {{ monthly_data|safe }};
+
+        const fontStyle = { size: 11, family: 'Inter' };
+        const tickColor = '#8b93b8';
+
+        function lineChart(id, data, color, bg) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            new Chart(el.getContext('2d'), {
+                type: 'line',
+                data: { labels: dailyLabels, datasets: [{
+                    data: data, borderColor: color, backgroundColor: bg,
+                    fill: true, tension: 0.4, borderWidth: 2.5, pointRadius: 0,
+                    pointHoverRadius: 4, pointHoverBackgroundColor: color,
+                }]},
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { font: fontStyle, color: tickColor, maxRotation: 0, autoSkip: true, maxTicksLimit: 6 } },
+                        y: { grid: { color: '#f0f2f8' }, ticks: { font: fontStyle, color: tickColor }, beginAtZero: true }
+                    }
                 }
-            }
-        });
-
-
-        /* ── Video Table Search ─────────────────────────────── */
-        function filterVideoTable() {
-            const q = document.getElementById('videoSearch').value.toLowerCase();
-            document.querySelectorAll('#videoTable tbody tr').forEach(row => {
-                row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
             });
         }
 
-        /* ── Export Excel ────────────────────────────────────── */
+        lineChart('viewsOverTimeChart', viewsSeries, '#3b82f6', 'rgba(59,130,246,0.10)');
+        lineChart('watchTimeChart', watchTimeSeries, '#10b981', 'rgba(16,185,129,0.10)');
+        lineChart('completionOverTimeChart', completionSeries, '#8b5cf6', 'rgba(139,92,246,0.10)');
+
+        if (deptLabels.length) {
+            new Chart(document.getElementById('deptViewsChart').getContext('2d'), {
+                type: 'bar',
+                data: { labels: deptLabels, datasets: [{
+                    data: deptData,
+                    backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#f43f5e'],
+                    borderRadius: 6, borderSkipped: false, barThickness: 16,
+                }]},
+                options: {
+                    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' ' + ctx.parsed.x.toLocaleString() + ' views' } } },
+                    scales: {
+                        x: { grid: { color: '#f0f2f8' }, ticks: { font: fontStyle, color: tickColor } },
+                        y: { grid: { display: false }, ticks: { font: fontStyle, color: '#4b5580' } }
+                    }
+                }
+            });
+        }
+
+        if (collegeLabels.length) {
+            new Chart(document.getElementById('collegeViewsChart').getContext('2d'), {
+                type: 'bar',
+                data: { labels: collegeLabels, datasets: [{
+                    data: collegeData, backgroundColor: '#3b82f6',
+                    borderRadius: 8, borderSkipped: false, maxBarThickness: 40,
+                }]},
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' ' + ctx.parsed.y.toLocaleString() + ' views' } } },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { font: fontStyle, color: tickColor } },
+                        y: { grid: { color: '#f0f2f8' }, ticks: { font: fontStyle, color: tickColor } }
+                    }
+                }
+            });
+        }
+
+        if (catLabels.length) {
+            new Chart(document.getElementById('categoryDonutChart').getContext('2d'), {
+                type: 'doughnut',
+                data: { labels: catLabels, datasets: [{
+                    data: catData,
+                    backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#f43f5e'],
+                    borderWidth: 0, hoverOffset: 6,
+                }]},
+                options: {
+                    responsive: true, maintainAspectRatio: false, cutout: '66%',
+                    plugins: { legend: { position: 'right', labels: { usePointStyle: true, pointStyle: 'circle', padding: 14, font: fontStyle, color: '#4b5580' } } }
+                }
+            });
+        }
+
+        if (uploadLabels.length) {
+            new Chart(document.getElementById('uploadTrendChart').getContext('2d'), {
+                type: 'bar',
+                data: { labels: uploadLabels, datasets: [{
+                    data: uploadData, backgroundColor: 'rgba(139,92,246,0.85)',
+                    borderRadius: 7, borderSkipped: false, maxBarThickness: 34,
+                }]},
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { font: fontStyle, color: tickColor } },
+                        y: { grid: { color: '#f0f2f8' }, ticks: { font: fontStyle, color: tickColor }, beginAtZero: true }
+                    }
+                }
+            });
+        }
+
         function exportReport() {
-            const table = document.getElementById('videoTable');
-            const wb = XLSX.utils.table_to_book(table, {sheet: "Video Analytics"});
+            const tables = document.querySelectorAll('.va-table');
+            const wb = XLSX.utils.book_new();
+            tables.forEach((table, i) => {
+                const ws = XLSX.utils.table_to_sheet(table);
+                XLSX.utils.book_append_sheet(wb, ws, 'Table ' + (i + 1));
+            });
             XLSX.writeFile(wb, 'video_analytics_report.xlsx');
         }
     </script>

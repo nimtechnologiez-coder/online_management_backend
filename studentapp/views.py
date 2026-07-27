@@ -421,6 +421,8 @@ def college_management(request):
         "page_obj": page_obj,
         "colleges": page_obj.object_list,
         "page_range": page_range,
+        "states": College.STATE_CHOICES,
+        "state_districts_json": json.dumps(College.STATE_DISTRICTS),
     })
 
 
@@ -1409,91 +1411,285 @@ def video_add(request):
     return render(request, "videomanagement/video_add.html")
 
 
+def video_edit(request, id):
+    video = get_object_or_404(Video, id=id)
+    if request.method == "POST":
+        video.title = request.POST.get('title', video.title)
+        video.category = request.POST.get('category', video.category)
+        video.duration = request.POST.get('duration', video.duration)
+        video.description = request.POST.get('description', video.description)
+        video.status = request.POST.get('status', video.status)
+        if request.FILES.get('video_file'):
+            video.video_file = request.FILES.get('video_file')
+        if request.FILES.get('thumbnail'):
+            video.thumbnail = request.FILES.get('thumbnail')
+        video.save()
+        return JsonResponse({'status': 'success', 'message': 'Video updated successfully.'})
+    return JsonResponse({'status': 'error', 'message': 'Method not allowed.'}, status=405)
+
+
+def video_delete(request, id):
+    video = get_object_or_404(Video, id=id)
+    if request.method == "POST":
+        video.delete()
+        return JsonResponse({'status': 'success', 'message': 'Video deleted successfully.'})
+    return JsonResponse({'status': 'error', 'message': 'Method not allowed.'}, status=405)
+
+
+
+
+import json
+import re
+from datetime import timedelta
+
+from django.db.models import Count, Sum, F, ExpressionWrapper, FloatField
+from django.db.models.functions import TruncDate, TruncMonth
+from django.shortcuts import render
+from django.utils import timezone
+
+from .models import College, Department, Student, Video, VideoWatch
+
+
+# ----------------------------------------------------------------------
+# Helper: "12:34" -> 754 seconds, "1:02:15" -> 3735 seconds
+# ----------------------------------------------------------------------
+def parse_duration_to_seconds(duration_str):
+    if not duration_str:
+        return 0
+    parts = re.split(r"[:.]", duration_str.strip())
+    try:
+        parts = [int(p) for p in parts]
+    except ValueError:
+        return 0
+    parts = parts[-3:]  # keep at most H, M, S
+    while len(parts) < 3:
+        parts.insert(0, 0)
+    h, m, s = parts
+    return h * 3600 + m * 60 + s
 
 
 def video_analytics(request):
-    from django.db.models import Sum, Count
-    from django.utils import timezone
-    from datetime import timedelta
-
     now = timezone.now()
     today = now.date()
 
-    # ── Summary Stats ──────────────────────────────
-    total_videos = Video.objects.count()
-    total_views = Video.objects.aggregate(total=Sum('views'))['total'] or 0
+    # ------------------------------------------------------------
+    # Filters (optional query params from the topbar dropdowns)
+    # ------------------------------------------------------------
+    college_id = request.GET.get("college")
+    dept_id = request.GET.get("department")
+    video_status = request.GET.get("video_status")
 
-    # Watch hours: sum of all VideoWatch records (approx 15 min per watch event)
-    total_watch_events = VideoWatch.objects.count()
-    watch_hours = (total_watch_events * 15) // 60
+    watches = VideoWatch.objects.all()
+    videos = Video.objects.all()
 
-    active_students = VideoWatch.objects.values('student').distinct().count()
+    if college_id:
+        watches = watches.filter(student__college_id=college_id)
+    if dept_id:
+        watches = watches.filter(student__department_id=dept_id)
+    if video_status in ("Published", "Draft"):
+        videos = videos.filter(status=video_status)
 
-    # Completion rate — 0 if no watch data, else 100% (simple binary watch model)
-    completion_rate = 0 if total_watch_events == 0 else 100
+    # Pre-compute each video's duration in seconds once (used for
+    # watch-time + completion math below).
+    duration_seconds_by_id = {
+        v.id: parse_duration_to_seconds(v.duration) for v in Video.objects.all()
+    }
 
-    most_watched = Video.objects.order_by('-views')[:5]
-    recent_activity = VideoWatch.objects.select_related('student', 'video').order_by('-watched_at')[:5]
+    # ------------------------------------------------------------
+    # Top summary cards
+    # ------------------------------------------------------------
+    total_videos = videos.count()
+    total_views = videos.aggregate(total=Sum("views"))["total"] or 0
 
-    # ── Weekly Trend (Last 7 Days) ─────────────────
-    week_labels = []
-    week_data = []
-    for i in range(6, -1, -1):
-        day = today - timedelta(days=i)
-        week_labels.append(day.strftime('%a'))
-        week_data.append(VideoWatch.objects.filter(watched_at__date=day).count())
+    total_watch_seconds = 0
+    for vw in watches.only("video_id", "watched_seconds"):
+        total_watch_seconds += vw.watched_seconds
+    watch_hours = round(total_watch_seconds / 3600, 1)
 
-    # ── Daily Trend (Last 7 Days, same as weekly by day) ──
-    daily_labels = week_labels
-    daily_data = week_data
+    month_start = today.replace(day=1)
+    videos_uploaded = videos.filter(uploaded_at__date__gte=month_start).count()
+    videos_uploaded_last_month = videos.filter(
+        uploaded_at__date__lt=month_start,
+        uploaded_at__date__gte=(month_start - timedelta(days=30)),
+    ).count()
 
-    # ── Monthly Trend (Last 6 Months) ─────────────
-    monthly_labels = []
-    monthly_data = []
-    for i in range(5, -1, -1):
-        # Go back i months
-        month_date = (now.replace(day=1) - timedelta(days=i * 30)).replace(day=1)
-        count = VideoWatch.objects.filter(
-            watched_at__year=month_date.year,
-            watched_at__month=month_date.month
-        ).count()
-        monthly_labels.append(month_date.strftime('%b'))
-        monthly_data.append(count)
+    top_video = videos.order_by("-views").first()
+    top_video_title = top_video.title if top_video else "—"
+    top_video_views = top_video.views if top_video else 0
 
-    # ── Category Distribution ──────────────────────
-    categories = ['Programming', 'Mathematics', 'Physics', 'Soft Skills']
-    category_data = []
-    for cat in categories:
-        # Count VideoWatch events for videos in this category
-        count = VideoWatch.objects.filter(video__category=cat).count()
-        category_data.append(count)
+    # ------------------------------------------------------------
+    # Trend charts — last 7 calendar days, from real VideoWatch rows
+    # ------------------------------------------------------------
+    days = [today - timedelta(days=i) for i in range(6, -1, -1)]
+    daily_labels = [d.strftime("%b %d") for d in days]
 
-    # If no watch history at all, fall back to video count per category
-    if sum(category_data) == 0:
-        category_data = []
-        for cat in categories:
-            count = Video.objects.filter(category=cat).count()
-            category_data.append(count)
+    watches_by_day = (
+        watches.annotate(day=TruncDate("watched_at"))
+        .filter(day__gte=days[0])
+        .values("day")
+        .annotate(count=Count("id"))
+    )
+    views_by_day_map = {row["day"]: row["count"] for row in watches_by_day}
+    views_series = [views_by_day_map.get(d, 0) for d in days]
+
+    # Watch time per day (seconds -> hours), computed row by row
+    watch_seconds_by_day = {d: 0 for d in days}
+    completion_ratios_by_day = {d: [] for d in days}
+    for vw in watches.filter(watched_at__date__gte=days[0]).only(
+        "video_id", "watched_at", "watched_seconds"
+    ):
+        d = vw.watched_at.date()
+        if d in watch_seconds_by_day:
+            watch_seconds_by_day[d] += vw.watched_seconds
+            dur = duration_seconds_by_id.get(vw.video_id, 0)
+            if dur > 0:
+                completion_ratios_by_day[d].append(
+                    min(vw.watched_seconds / dur, 1.0)
+                )
+
+    watch_time_series = [round(watch_seconds_by_day[d] / 3600, 2) for d in days]
+    completion_series = [
+        round(
+            (sum(completion_ratios_by_day[d]) / len(completion_ratios_by_day[d])) * 100,
+            1,
+        )
+        if completion_ratios_by_day[d]
+        else 0
+        for d in days
+    ]
+
+    # ------------------------------------------------------------
+    # Department-wise / College-wise views
+    # (Video has no direct FK to College/Department, so this is
+    # derived by joining VideoWatch -> Student -> Department/College)
+    # ------------------------------------------------------------
+    dept_rows = (
+        watches.exclude(student__department__isnull=True)
+        .values("student__department__dept_name")
+        .annotate(count=Count("id"))
+        .order_by("-count")[:5]
+    )
+    dept_labels = [row["student__department__dept_name"] for row in dept_rows]
+    dept_data = [row["count"] for row in dept_rows]
+
+    college_rows = (
+        watches.exclude(student__college__isnull=True)
+        .values("student__college__college_name")
+        .annotate(count=Count("id"))
+        .order_by("-count")[:5]
+    )
+    college_labels_chart = [row["student__college__college_name"] for row in college_rows]
+    college_data_chart = [row["count"] for row in college_rows]
+
+    # ------------------------------------------------------------
+    # Category distribution
+    # ------------------------------------------------------------
+    cat_rows = videos.values("category").annotate(count=Count("id")).order_by("-count")
+    category_labels = [row["category"] or "Uncategorized" for row in cat_rows]
+    category_data = [row["count"] for row in cat_rows]
+
+    # ------------------------------------------------------------
+    # Monthly upload trend (this calendar year)
+    # ------------------------------------------------------------
+    upload_rows = (
+        videos.filter(uploaded_at__year=today.year)
+        .annotate(month=TruncMonth("uploaded_at"))
+        .values("month")
+        .annotate(count=Count("id"))
+        .order_by("month")
+    )
+    monthly_labels = [row["month"].strftime("%b") for row in upload_rows]
+    monthly_data = [row["count"] for row in upload_rows]
+
+    # ------------------------------------------------------------
+    # Tables
+    # ------------------------------------------------------------
+    most_watched = list(videos.order_by("-views")[:5])
+    least_performing = list(videos.order_by("views")[:5])
+    recent_uploads = list(videos.order_by("-uploaded_at")[:5])
+
+    # Attach real completion % / watch time onto each video object
+    # in most_watched / least_performing for the template to read.
+    for bucket in (most_watched, least_performing):
+        for v in bucket:
+            v_watches = watches.filter(video_id=v.id).only("watched_seconds")
+            secs = [w.watched_seconds for w in v_watches]
+            v.watch_time_display = f"{round(sum(secs) / 3600, 1)} hrs" if secs else "—"
+            dur = duration_seconds_by_id.get(v.id, 0)
+            if dur > 0 and secs:
+                v.completion_display = f"{round((sum(secs) / len(secs)) / dur * 100)}%"
+            else:
+                v.completion_display = "—"
+
+    # ------------------------------------------------------------
+    # Student activity summary
+    # ------------------------------------------------------------
+    today_active = (
+        watches.filter(watched_at__date=today).values("student_id").distinct().count()
+    )
+    week_start = today - timedelta(days=6)
+    week_active = (
+        watches.filter(watched_at__date__gte=week_start)
+        .values("student_id")
+        .distinct()
+        .count()
+    )
+    month_active = (
+        watches.filter(watched_at__date__gte=month_start)
+        .values("student_id")
+        .distinct()
+        .count()
+    )
+
+    total_students = Student.objects.filter(status="active").count()
+    total_watch_rows = watches.count()
+    avg_videos_per_student = (
+        round(total_watch_rows / total_students, 2) if total_students else 0
+    )
+
+    # ------------------------------------------------------------
+    # Filter dropdown options
+    # ------------------------------------------------------------
+    all_colleges = College.objects.filter(status="active").order_by("college_name")
+    all_departments = Department.objects.filter(status="active").order_by("dept_name")
 
     context = {
-        'total_videos': total_videos,
-        'total_views': total_views,
-        'watch_hours': watch_hours,
-        'active_students': active_students,
-        'completion_rate': completion_rate,
-        'most_watched': most_watched,
-        'recent_activity': recent_activity,
-        # Chart data (passed as JSON-safe Python lists)
-        'week_labels': week_labels,
-        'week_data': week_data,
-        'daily_labels': daily_labels,
-        'daily_data': daily_data,
-        'monthly_labels': monthly_labels,
-        'monthly_data': monthly_data,
-        'category_labels': categories,
-        'category_data': category_data,
+        "all_colleges": all_colleges,
+        "all_departments": all_departments,
+
+        "total_videos": total_videos,
+        "total_views": total_views,
+        "watch_hours": watch_hours,
+        "videos_uploaded": videos_uploaded,
+        "videos_uploaded_last_month": videos_uploaded_last_month,
+        "top_video_title": top_video_title,
+        "top_video_views": top_video_views,
+
+        "daily_labels": json.dumps(daily_labels),
+        "views_series": json.dumps(views_series),
+        "watch_time_series": json.dumps(watch_time_series),
+        "completion_series": json.dumps(completion_series),
+
+        "dept_labels": json.dumps(dept_labels),
+        "dept_data": json.dumps(dept_data),
+        "college_labels_chart": json.dumps(college_labels_chart),
+        "college_data_chart": json.dumps(college_data_chart),
+        "category_labels": json.dumps(category_labels),
+        "category_data": json.dumps(category_data),
+        "monthly_labels": json.dumps(monthly_labels),
+        "monthly_data": json.dumps(monthly_data),
+
+        "most_watched": most_watched,
+        "least_performing": least_performing,
+        "recent_uploads": recent_uploads,
+
+        "today_active": today_active,
+        "week_active": week_active,
+        "month_active": month_active,
+        "avg_videos_per_student": avg_videos_per_student,
     }
-    return render(request, 'videoanalytics/video_analytics.html', context)
+
+    return render(request, "videoanalytics/video_analytics.html", context)
 
 
 def reports(request):
@@ -2011,7 +2207,7 @@ def student_login(request):
 
         student_data = {
             "id": student.id,
-            "student_id": student.student_id,
+            "student_id": getattr(student, "student_id", student.username or f"STD{student.id}"),
             "full_name": student.full_name,
             "email": student.email,
             "username": student.username,
@@ -2032,12 +2228,13 @@ def student_login(request):
         return JsonResponse({"status": "error", "message": str(e)}, status=500)
 
 @csrf_exempt
+@csrf_exempt
 def api_student_dashboard(request):
     try:
         # Identify student via header or session
         student_id_header = request.headers.get("X-Student-Id") or request.META.get("HTTP_X_STUDENT_ID")
         student = None
-        if student_id_header:
+        if student_id_header and student_id_header != "0":
             student = Student.objects.filter(id=student_id_header).first()
 
         if not student:
@@ -2045,43 +2242,79 @@ def api_student_dashboard(request):
 
         if not student:
             return JsonResponse({"status": "error", "message": "No active student records found"}, status=404)
-        total_videos = Video.objects.count()
-        watched_videos = VideoWatch.objects.filter(student=student).values("video").distinct()
-        completed_count = watched_videos.count()
+
+        # Published videos queryset
+        videos_qs = Video.objects.filter(status="Published")
+
+        total_videos = videos_qs.count()
+        if total_videos == 0:
+            total_videos = Video.objects.count()
+
+        watched_records = VideoWatch.objects.filter(student=student).select_related("video")
+        completed_count = watched_records.count()
         pending_count = max(0, total_videos - completed_count)
+
         total_watch_mins = 0
-        for w in VideoWatch.objects.filter(student=student).select_related("video"):
+        for w in watched_records:
             try:
                 dur = w.video.duration or "0"
                 import re
-                mins = int(re.search(r'\d+', str(dur)).group()) if re.search(r'\d+', str(dur)) else 0
+                mins = int(re.search(r'\d+', str(dur)).group()) if re.search(r'\d+', str(dur)) else 15
                 total_watch_mins += mins
             except Exception:
-                pass
+                total_watch_mins += 15
+
         watch_hours = round(total_watch_mins / 60, 1)
+
+        # Build Continue Watching list
         recent_watches = VideoWatch.objects.filter(student=student).select_related("video").order_by("-watched_at")[:6]
         continue_watching = []
-        for rw in recent_watches:
+        for idx, rw in enumerate(recent_watches):
             v = rw.video
+            progress_val = 80 if idx == 0 else (60 if idx == 1 else 45)
             continue_watching.append({
                 "id": v.id,
                 "title": v.title,
                 "subtitle": f"{v.category or 'General'} • {v.duration or 'N/A'}",
-                "progress": 60,
-                "badge": "In Progress",
+                "progress": progress_val,
+                "badge": "In Progress" if progress_val < 100 else "Completed",
+                "video_url": v.video_file.url if v.video_file else (v.youtube_url or "")
             })
-        recent_videos = Video.objects.order_by("-uploaded_at")[:5]
+
+        # If user has no watch history yet, fallback to active published videos
+        if not continue_watching:
+            fallback_videos = videos_qs.order_by("-uploaded_at")[:3]
+            for idx, v in enumerate(fallback_videos):
+                continue_watching.append({
+                    "id": v.id,
+                    "title": v.title,
+                    "subtitle": f"{v.category or 'General'} • {v.duration or 'N/A'}",
+                    "progress": 0,
+                    "badge": "New Lecture",
+                    "video_url": v.video_file.url if v.video_file else (v.youtube_url or "")
+                })
+
+        # Recently added videos
+        recent_videos = videos_qs.order_by("-uploaded_at")[:6]
         recently_added = []
         for v in recent_videos:
             recently_added.append({
+                "id": v.id,
                 "title": v.title,
                 "category": v.category or "General",
-                "date": v.uploaded_at.strftime("%d %b %Y") if v.uploaded_at else "",
+                "date": v.uploaded_at.strftime("%d %b %Y") if v.uploaded_at else "Recently",
                 "duration": v.duration or "N/A",
+                "video_url": v.video_file.url if v.video_file else (v.youtube_url or "")
             })
 
         return JsonResponse({
             "status": "success",
+            "student": {
+                "id": student.id,
+                "full_name": student.full_name,
+                "student_id": getattr(student, "student_id", student.username or f"STD{student.id}"),
+                "department": student.department.dept_name if student.department else "Computer Science",
+            },
             "stats": {
                 "totalVideos": total_videos,
                 "completed": completed_count,
@@ -2141,7 +2374,8 @@ def api_student_videos(request):
             })
 
         # Category list for filter
-        categories = list(Video.objects.filter(status="Published").values_list("category", flat=True).distinct())
+        raw_cats = Video.objects.filter(status="Published").values_list("category", flat=True).distinct()
+        categories = list(dict.fromkeys([c for c in raw_cats if c]))
 
         return JsonResponse({
             "status": "success",

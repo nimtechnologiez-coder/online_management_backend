@@ -173,11 +173,11 @@
     </div><!-- end college-main -->
 
     <!-- ===================== VIEW MODAL ===================== -->
-    <div class="modal-overlay" id="viewModal">
+    <div class="modal-overlay" id="viewModal" role="dialog" aria-modal="true" aria-labelledby="viewModalTitle" aria-hidden="true">
         <div class="modal-box">
             <div class="modal-header">
-                <h3 class="modal-title"><i class="fas fa-eye"></i> College Details</h3>
-                <button class="modal-close" onclick="closeModal('viewModal')"><i class="fas fa-times"></i></button>
+                <h3 id="viewModalTitle" class="modal-title"><i class="fas fa-eye"></i> College Details</h3>
+                <button type="button" class="modal-close" onclick="closeModal('viewModal')"><i class="fas fa-times"></i></button>
             </div>
             <div class="modal-body">
                 <div class="view-avatar-row">
@@ -242,29 +242,34 @@
                 <form id="editForm">
                     {% csrf_token %}
                     <input type="hidden" id="editId" name="id" />
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="editCode">College Code</label>
-                            <input type="text" id="editCode" name="college_code" />
-                        </div>
-                        <div class="form-group">
-                            <label for="editName">College Name</label>
-                            <input type="text" id="editName" name="college_name" required />
-                        </div>
+                    <div class="form-group">
+                        <label for="editName">College Name <span style="color:red;">*</span></label>
+                        <input type="text" id="editName" name="college_name" required />
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="editUniversity">University</label>
-                            <input type="text" id="editUniversity" name="university" />
+                            <label for="editUniversity">University Affiliation</label>
+                            <select id="editUniversity" name="university">
+                                <option value="" disabled>Select University</option>
+                                <option value="Anna University">Anna University</option>
+                                <option value="Mumbai University">Mumbai University</option>
+                                <option value="Bangalore University">Bangalore University</option>
+                                <option value="Kerala University">Kerala University</option>
+                                <option value="Madras University">Madras University</option>
+                            </select>
                         </div>
                         <div class="form-group">
                             <label for="editType">College Type</label>
-                            <input type="text" id="editType" name="college_type" />
+                            <select id="editType" name="college_type">
+                                <option value="private">Private</option>
+                                <option value="government">Government</option>
+                                <option value="autonomous">Autonomous</option>
+                            </select>
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="editStream">Stream</label>
+                            <label for="editStream">College Stream</label>
                             <select id="editStream" name="college_stream">
                                 <option value="engineering">Engineering</option>
                                 <option value="arts_science">Arts & Science</option>
@@ -291,31 +296,24 @@
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="editWebsite">Website</label>
-                            <input type="url" id="editWebsite" name="website" />
-                        </div>
-                        <div class="form-group">
                             <label for="editState">State</label>
-                            <input type="text" id="editState" name="state" />
+                            <select id="editState" name="state">
+                                <option value="" disabled selected>Select State</option>
+                                {% for val, label in states %}
+                                <option value="{{ val }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
                         </div>
-                    </div>
-                    <div class="form-row">
                         <div class="form-group">
                             <label for="editDistrict">District</label>
-                            <input type="text" id="editDistrict" name="district" />
-                        </div>
-                        <div class="form-group">
-                            <label for="editDepts">Departments</label>
-                            <input type="number" id="editDepts" readonly disabled />
+                            <select id="editDistrict" name="district">
+                                <option value="">Select District</option>
+                            </select>
                         </div>
                     </div>
                     <div class="form-group">
                         <label for="editAddress">Address</label>
                         <textarea id="editAddress" name="address" rows="3"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="editStudents">Students</label>
-                        <input type="number" id="editStudents" readonly disabled />
                     </div>
                 </form>
             </div>
@@ -326,29 +324,38 @@
         </div>
     </div>
 
-    <!-- ===================== DELETE MODAL ===================== -->
-    <div class="modal-overlay" id="deleteModal">
-        <div class="modal-box">
-            <div class="modal-header">
-                <h3 class="modal-title"><i class="fas fa-trash"></i> Delete College</h3>
-                <button class="modal-close" onclick="closeModal('deleteModal')"><i class="fas fa-times"></i></button>
+  <!-- ===================== DELETE MODAL ===================== -->
+<div class="modal-overlay" id="deleteModal" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle" aria-describedby="deleteModalDesc" aria-hidden="true">
+    <div class="modal-box modal-box--glass">
+        <button type="button" class="modal-close modal-close--floating" onclick="closeModal('deleteModal')" aria-label="Close delete confirmation">
+            <i class="fas fa-times"></i>
+        </button>
+
+        <div class="modal-header modal-header--centered">
+            <div class="modal-icon-circle">
+                <i class="fas fa-trash"></i>
             </div>
-            <div class="modal-body">
-                <div class="delete-warning">
-                    <div class="warn-icon"><i class="fas fa-exclamation-triangle"></i></div>
-                    <p>Are you sure you want to delete<br /><strong id="deleteName"></strong>?<br />This action
-                        cannot be undone.</p>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <form id="deleteForm" method="POST" action="">
-                    {% csrf_token %}
-                    <button type="button" class="btn btn-ghost" onclick="closeModal('deleteModal')">Cancel</button>
-                    <button type="submit" class="btn btn-danger">Delete Permanently</button>
-                </form>
-            </div>
+            <h3 id="deleteModalTitle" class="modal-title modal-title--delete">Delete College</h3>
+            <p class="modal-subtitle">This action cannot be undone.</p>
+        </div>
+
+        <div class="modal-body modal-body--delete">
+            <p id="deleteModalDesc" class="delete-copy">
+                Are you sure you want to permanently delete
+                <strong id="deleteName"></strong>
+                from the system?
+            </p>
+        </div>
+
+        <div class="modal-footer">
+            <form id="deleteForm" method="POST" action="" style="display:flex;gap:14px;width:100%;">
+                {% csrf_token %}
+                <button type="button" class="btn btn-glass" onclick="closeModal('deleteModal')">Cancel</button>
+                <button type="submit" class="btn btn-danger" id="deleteConfirmButton">Delete Permanently</button>
+            </form>
         </div>
     </div>
+</div>
 
     <!-- ===================== TOAST ===================== -->
     <div class="toast" id="toast"><i class="fas fa-check-circle"></i><span id="toastMsg"></span></div>
@@ -457,11 +464,21 @@
         // Modal helpers
         // -------------------------------------------------------------
         function openModal(id) {
-            document.getElementById(id).classList.add('open');
+            const modal = document.getElementById(id);
+            if (!modal) return;
+            modal.classList.add('open');
+            modal.setAttribute('aria-hidden', 'false');
+            document.body.classList.add('modal-open');
         }
 
         function closeModal(id) {
-            document.getElementById(id).classList.remove('open');
+            const modal = document.getElementById(id);
+            if (!modal) return;
+            modal.classList.remove('open');
+            modal.setAttribute('aria-hidden', 'true');
+            if (!document.querySelector('.modal-overlay.open')) {
+                document.body.classList.remove('modal-open');
+            }
         }
 
         document.querySelectorAll('.modal-overlay').forEach(overlay => {
@@ -499,26 +516,50 @@
         }
 
         // -------------------------------------------------------------
-        // Edit
+        // Edit & Dynamic State-District
         // -------------------------------------------------------------
+        const stateDistrictsMap = {{ state_districts_json|safe|default:"{}" }};
+
+        function populateEditDistricts(stateName, selectedDistrict) {
+            const districtSelect = document.getElementById('editDistrict');
+            if (!districtSelect) return;
+            districtSelect.innerHTML = '<option value="">Select District</option>';
+            const districts = stateDistrictsMap[stateName] || [];
+            districts.forEach(function (d) {
+                const opt = document.createElement('option');
+                opt.value = d;
+                opt.textContent = d;
+                if (selectedDistrict && d === selectedDistrict) {
+                    opt.selected = true;
+                }
+                districtSelect.appendChild(opt);
+            });
+        }
+
+        const editStateSelect = document.getElementById('editState');
+        if (editStateSelect) {
+            editStateSelect.addEventListener('change', function () {
+                populateEditDistricts(this.value, null);
+            });
+        }
+
         function openEdit(id) {
             const c = collegeData.find(x => x.id === id);
             if (!c) return;
 
             document.getElementById('editId').value = c.id;
-            document.getElementById('editCode').value = c.code || '';
             document.getElementById('editName').value = c.name;
             document.getElementById('editUniversity').value = c.university || '';
-            document.getElementById('editType').value = c.college_type || '';
+            document.getElementById('editType').value = c.college_type || 'private';
             document.getElementById('editStream').value = c.college_stream || 'other';
             document.getElementById('editEmail').value = c.email || '';
             document.getElementById('editPhone').value = c.phone || '';
-            document.getElementById('editWebsite').value = c.website || '';
-            document.getElementById('editState').value = c.state || '';
-            document.getElementById('editDistrict').value = c.district || '';
+            
+            const stateVal = c.state || 'Tamil Nadu';
+            document.getElementById('editState').value = stateVal;
+            populateEditDistricts(stateVal, c.district || '');
+
             document.getElementById('editAddress').value = c.address || '';
-            document.getElementById('editDepts').value = c.depts;
-            document.getElementById('editStudents').value = c.students;
             document.getElementById('editStatus').value = c.status || 'active';
 
             openModal('editModal');
@@ -550,16 +591,14 @@
                     throw new Error(data.message || 'Unable to save college details.');
                 }
 
-                c.code = document.getElementById('editCode').value.trim();
                 c.name = document.getElementById('editName').value.trim();
-                c.university = document.getElementById('editUniversity').value.trim();
-                c.college_type = document.getElementById('editType').value.trim();
+                c.university = document.getElementById('editUniversity').value;
+                c.college_type = document.getElementById('editType').value;
                 c.college_stream = document.getElementById('editStream').value;
                 c.email = document.getElementById('editEmail').value.trim();
                 c.phone = document.getElementById('editPhone').value.trim();
-                c.website = document.getElementById('editWebsite').value.trim();
-                c.state = document.getElementById('editState').value.trim();
-                c.district = document.getElementById('editDistrict').value.trim();
+                c.state = document.getElementById('editState').value;
+                c.district = document.getElementById('editDistrict').value;
                 c.address = document.getElementById('editAddress').value.trim();
                 c.status = document.getElementById('editStatus').value;
 
@@ -584,6 +623,7 @@
             document.getElementById('deleteName').textContent = c.name;
             document.getElementById('deleteForm').action = `/colleges/delete/${id}/`;
             openModal('deleteModal');
+            document.getElementById('deleteConfirmButton')?.focus();
         }
 
         // -------------------------------------------------------------

@@ -332,30 +332,73 @@
     </div>
 
     <!-- ── DELETE MODAL ────────────────────────────────────── -->
-    <div id="deleteModal" class="sm-modal-overlay">
-        <div class="sm-modal">
-            <div class="sm-modal__icon">
-                <i class="fas fa-exclamation-triangle"></i>
+    <div id="deleteModal" class="sm-modal-overlay delete-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle" aria-describedby="deleteModalDesc" aria-hidden="true">
+        <div class="sm-modal delete-modal">
+            <button type="button" class="delete-modal__close" onclick="closeModal('deleteModal')" aria-label="Close">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="delete-modal__icon" aria-hidden="true">
+                <i class="fas fa-trash-alt"></i>
             </div>
-            <h3 class="sm-modal__title">Delete Student?</h3>
-            <p class="sm-modal__desc">
-                Are you sure you want to permanently delete <strong id="deleteName"></strong>?
-                This action cannot be undone.
-            </p>
-            <div class="sm-modal__actions">
-                <button onclick="closeModal('deleteModal')" class="sm-btn sm-btn--ghost">Cancel</button>
-                <button onclick="confirmDelete()" class="sm-btn sm-btn--danger">Yes, Delete</button>
+            <h3 id="deleteModalTitle" class="delete-modal__title">Delete Student</h3>
+            <p class="delete-modal__warning">This action cannot be undone.</p>
+            <p id="deleteModalDesc" class="delete-modal__message">Are you sure you want to permanently delete <strong id="deleteName"></strong> from your dashboard?</p>
+            <div class="delete-modal__actions">
+                <button type="button" onclick="closeModal('deleteModal')" class="sm-btn sm-btn--ghost delete-modal__cancel">Cancel</button>
+                <button type="button" onclick="confirmDelete()" class="sm-btn sm-btn--danger delete-modal__confirm" id="deleteConfirmBtn">Delete Permanently</button>
             </div>
         </div>
+    </div>
+
+    <!-- ── TOAST NOTIFICATION ─────────────────────────────── -->
+    <div id="smToast" class="sm-toast" role="status" aria-live="polite">
+        <i class="fas fa-check-circle"></i>
+        <span id="smToastMsg"></span>
     </div>
 
     <script>
         const CSRF_TOKEN = '{{ csrf_token }}';
 
+        /* ─── Toast helper ───────────────────────────────────────── */
+        let _toastTimer = null;
+        function showToast(msg, isError = false) {
+            const toast = document.getElementById('smToast');
+            const icon = toast.querySelector('i');
+            document.getElementById('smToastMsg').textContent = msg;
+            icon.className = isError ? 'fas fa-exclamation-circle' : 'fas fa-check-circle';
+            toast.classList.toggle('sm-toast--error', isError);
+            toast.classList.add('show');
+            clearTimeout(_toastTimer);
+            _toastTimer = setTimeout(() => toast.classList.remove('show'), 2800);
+        }
+
         /* ─── Modal helpers ───────────────────────────────────────── */
         function closeModal(id) {
-            document.getElementById(id).classList.remove('active');
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.remove('active');
+            el.setAttribute('aria-hidden', 'true');
         }
+        function openModal(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.add('active');
+            el.setAttribute('aria-hidden', 'false');
+        }
+
+        // Close on backdrop click
+        document.querySelectorAll('.sm-modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', e => {
+                if (e.target === overlay) closeModal(overlay.id);
+            });
+        });
+
+        // Close on Escape key
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.sm-modal-overlay.active').forEach(m => closeModal(m.id));
+            }
+        });
         function openViewModal(btn) {
             const row = btn.closest('tr');
             document.getElementById('viewName').textContent    = row.dataset.name;
@@ -524,13 +567,15 @@
         let _deleteRow = null;
         function openDeleteModal(btn) {
             _deleteRow = btn.closest('tr');
-            document.getElementById('deleteName').textContent = _deleteRow.dataset.name;
-            document.getElementById('deleteModal').classList.add('active');
+            document.getElementById('deleteName').textContent = _deleteRow.dataset.name || 'this student';
+            openModal('deleteModal');
+            document.getElementById('deleteConfirmBtn').focus();
         }
         function confirmDelete() {
             if (!_deleteRow) return;
             const studentId = _deleteRow.dataset.id;
-            const confirmBtn = document.querySelector('#deleteModal .sm-btn--danger');
+            const studentName = _deleteRow.dataset.name || 'Student';
+            const confirmBtn = document.getElementById('deleteConfirmBtn');
             confirmBtn.disabled = true;
             confirmBtn.textContent = 'Deleting...';
 
@@ -538,6 +583,7 @@
                 method: 'POST',
                 headers: {
                     'X-CSRFToken': CSRF_TOKEN,
+                    'X-Requested-With': 'XMLHttpRequest',
                     'Content-Type': 'application/json'
                 }
             })
@@ -546,15 +592,16 @@
                 if (data.status === 'success') {
                     _deleteRow.remove();
                     closeModal('deleteModal');
+                    showToast(`${studentName} has been deleted successfully.`);
                     _deleteRow = null;
                 } else {
-                    alert('Error: ' + (data.message || 'Could not delete student.'));
+                    showToast(data.message || 'Could not delete student.', true);
                 }
             })
-            .catch(() => alert('Network error. Please try again.'))
+            .catch(() => showToast('Network error. Please try again.', true))
             .finally(() => {
                 confirmBtn.disabled = false;
-                confirmBtn.textContent = 'Yes, Delete';
+                confirmBtn.textContent = 'Delete Permanently';
             });
         }
 

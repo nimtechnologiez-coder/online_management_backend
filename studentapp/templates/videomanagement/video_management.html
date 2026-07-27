@@ -244,21 +244,90 @@
     </div>
 
     <script>
-        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+        let currentEditId = null;
+        let currentDeleteId = null;
+
+        function closeModal(id) { 
+            const modal = document.getElementById(id);
+            if (modal) modal.classList.remove('active'); 
+        }
         
         function openEditModal(btn) {
             const row = btn.closest('tr');
-            document.getElementById('editTitle').value = row.dataset.title;
-            document.getElementById('editCat').value = row.dataset.cat;
-            document.getElementById('editDur').value = row.dataset.dur;
-            document.getElementById('editStatus').value = row.dataset.status;
-            document.getElementById('editDesc').value = row.dataset.desc;
+            currentEditId = row.dataset.id;
+            document.getElementById('editTitle').value = row.dataset.title || '';
+            document.getElementById('editCat').value = row.dataset.cat || 'Programming';
+            document.getElementById('editDur').value = row.dataset.dur || '';
+            document.getElementById('editStatus').value = row.dataset.status || 'Published';
+            document.getElementById('editDesc').value = row.dataset.desc || '';
             document.getElementById('editModal').classList.add('active');
         }
 
-        function confirmEdit() { alert('Video updated successfully!'); closeModal('editModal'); }
-        
-        function confirmDelete() { alert('Video deleted successfully!'); closeModal('deleteModal'); }
+        function openDeleteModal(btn) {
+            const row = btn.closest('tr');
+            currentDeleteId = row.dataset.id;
+            const title = row.dataset.title || 'this video';
+            document.getElementById('deleteTitle').textContent = title;
+            document.getElementById('deleteModal').classList.add('active');
+        }
+
+        async function confirmEdit() {
+            if (!currentEditId) return;
+            const formData = new FormData();
+            formData.append('title', document.getElementById('editTitle').value);
+            formData.append('category', document.getElementById('editCat').value);
+            formData.append('duration', document.getElementById('editDur').value);
+            formData.append('status', document.getElementById('editStatus').value);
+            formData.append('description', document.getElementById('editDesc').value);
+
+            const videoFileInput = document.querySelector('#editModal input[accept="video/*"]');
+            if (videoFileInput && videoFileInput.files[0]) {
+                formData.append('video_file', videoFileInput.files[0]);
+            }
+            const thumbFileInput = document.querySelector('#editModal input[accept="image/*"]');
+            if (thumbFileInput && thumbFileInput.files[0]) {
+                formData.append('thumbnail', thumbFileInput.files[0]);
+            }
+
+            try {
+                const response = await fetch(`/videos/edit/${currentEditId}/`, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+                    body: formData
+                });
+                const data = await response.json();
+                if (response.ok && data.status === 'success') {
+                    closeModal('editModal');
+                    location.reload();
+                } else {
+                    alert(data.message || 'Unable to update video.');
+                }
+            } catch (err) {
+                alert('Error updating video.');
+            }
+        }
+
+        async function confirmDelete() {
+            if (!currentDeleteId) return;
+            try {
+                const response = await fetch(`/videos/delete/${currentDeleteId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                const data = await response.json();
+                if (response.ok && data.status === 'success') {
+                    closeModal('deleteModal');
+                    location.reload();
+                } else {
+                    alert(data.message || 'Unable to delete video.');
+                }
+            } catch (err) {
+                alert('Error deleting video.');
+            }
+        }
 
         /* ─── AJAX Pagination ─────────────────────────────────────── */
         const tbody    = document.getElementById('tableBody');

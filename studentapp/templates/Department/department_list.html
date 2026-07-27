@@ -427,24 +427,31 @@
     </div>
 
     <!-- ── Delete Modal ────────────────────────────────────── -->
-    <div id="deleteModal" class="dm-modal-overlay">
-        <div class="dm-modal">
-            <div class="dm-modal__icon">
-                <i class="fas fa-exclamation-triangle"></i>
-            </div>
-            <h3 class="dm-modal__title">Delete Department?</h3>
-            <p class="dm-modal__desc">
-                Are you sure you want to permanently delete
-                <strong id="deleteName"></strong>?
-                This will remove all associated records and cannot be undone.
-            </p>
-            <div class="dm-modal__actions">
-                <button onclick="closeModal('deleteModal')" class="dm-btn dm-btn--ghost">Cancel</button>
-                <button onclick="confirmDelete()" class="dm-btn dm-btn--danger">Yes, Delete</button>
-            </div>
+    <!-- ── Delete Modal ────────────────────────────────────── -->
+<div id="deleteModal" class="dm-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle" aria-describedby="deleteModalDesc">
+    <div class="dm-modal dm-modal--delete">
+        <button type="button" class="dm-modal__close dm-modal__close--floating" onclick="closeModal('deleteModal')" aria-label="Close delete confirmation">
+            <i class="fas fa-times"></i>
+        </button>
+
+        <div class="dm-modal__icon dm-modal__icon--delete">
+            <i class="fas fa-trash"></i>
+        </div>
+
+        <h3 id="deleteModalTitle" class="dm-modal__title dm-modal__title--delete">Delete Department?</h3>
+
+        <p id="deleteModalDesc" class="dm-modal__desc dm-modal__desc--delete">
+            Are you sure you want to permanently delete
+            <strong id="deleteName"></strong>?
+            This will remove all associated records and cannot be undone.
+        </p>
+
+        <div class="dm-modal__actions dm-modal__actions--delete">
+            <button onclick="closeModal('deleteModal')" class="dm-btn dm-btn--glass">Cancel</button>
+            <button onclick="confirmDelete()" class="dm-btn dm-btn--danger dm-btn--danger-gradient" id="deleteConfirmButton">Yes, Delete</button>
         </div>
     </div>
-
+</div>
     <!-- ── Toast ───────────────────────────────────────────── -->
     <div class="dm-toast" id="toast"><i class="fas fa-check-circle"></i><span id="toastMsg"></span></div>
 

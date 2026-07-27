@@ -379,6 +379,128 @@
 }
 .pm-modal__actions { display: flex; justify-content: center; gap: 0.75rem; }
 
+/* Principal delete modal glassmorphism */
+#deleteModal {
+    background: rgba(21, 32, 87, 0.55);
+    backdrop-filter: blur(10px);
+}
+
+#deleteModal .pm-modal {
+    max-width: 460px;
+    padding: 0;
+    border-radius: 22px;
+    overflow: hidden;
+    text-align: center;
+    box-shadow: none;
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.24);
+    background: rgba(255, 255, 255, 0.16);
+    position: relative;
+}
+
+#deleteModal .pm-modal__close--floating {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 36px;
+    height: 36px;
+    border: 1px solid rgba(17, 24, 39, 0.1);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.72);
+    color: #152057;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease, transform 0.2s ease;
+    z-index: 2;
+}
+
+#deleteModal .pm-modal__close--floating:hover {
+    background: rgba(255, 255, 255, 0.95);
+    transform: translateY(-1px);
+}
+
+#deleteModal .pm-modal__icon--delete {
+    width: 76px;
+    height: 76px;
+    margin: 28px auto 16px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 1.5rem;
+    background: linear-gradient(135deg, #ff5f6d 0%, #ff2d55 100%);
+    box-shadow: 0 10px 30px rgba(255, 45, 85, 0.18);
+}
+
+#deleteModal .pm-modal__title--delete {
+    color: #111827;
+    font-size: 1.4rem;
+    margin: 0 28px 8px;
+}
+
+#deleteModal .pm-modal__desc--delete {
+    margin: 0;
+    padding: 0 32px 24px;
+    font-size: 0.96rem;
+    line-height: 1.75;
+    color: #475569;
+}
+
+#deleteModal .pm-modal__desc--delete strong {
+    color: #111827;
+}
+
+#deleteModal .pm-modal__actions--delete {
+    display: flex;
+    gap: 14px;
+    padding: 22px 24px 24px;
+    background: rgba(255,255,255,0.82);
+    border-top: 1px solid rgba(226, 232, 240, 0.9);
+}
+
+#deleteModal .pm-btn--glass {
+    flex: 1;
+    padding: 14px;
+    border-radius: 14px;
+    border: none;
+    background: rgba(255,255,255,0.86);
+    color: #475569;
+    font-weight: 700;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+#deleteModal .pm-btn--glass:hover {
+    background: rgba(255,255,255,0.98);
+    transform: translateY(-1px);
+}
+
+#deleteModal .pm-btn--danger-gradient {
+    flex: 1;
+    padding: 14px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: #ffffff;
+    font-weight: 700;
+    border: none;
+    box-shadow: 0 16px 32px rgba(220, 38, 38, 0.18);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+#deleteModal .pm-btn--danger-gradient:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 20px 40px rgba(220, 38, 38, 0.24);
+}
+
+@media (max-width: 560px) {
+    #deleteModal .pm-modal { max-width: 92%; }
+    #deleteModal .pm-modal__actions--delete { flex-direction: column; }
+    #deleteModal .pm-btn--glass,
+    #deleteModal .pm-btn--danger-gradient { width: 100%; }
+}
+
 @media (max-width: 600px) {
     .pm-form-grid, .pm-view-grid { grid-template-columns: 1fr; }
     .pm-toolbar { flex-direction: column; align-items: stretch; }
