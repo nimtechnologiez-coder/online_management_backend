@@ -127,7 +127,7 @@
                     <div class="stat-icon icon-cyan"><i class="fas fa-user-tie"></i></div>
                     <div class="stat-details">
                         <h3>TOTAL PRINCIPALS</h3>
-                        <p class="stat-number">{{ total_students }}</p>
+                        <p class="stat-number">{{ total_principals }}</p>
                         <span class="stat-sub">Registered Principals</span>
                     </div>
                 </div>
@@ -199,6 +199,7 @@
                         <h3><i class="fas fa-trophy" style="color:var(--db-warning);"></i> Top Performing Colleges</h3>
                         <span class="card-header-tag">{{ now|date:"F Y"|default:"July 2026" }}</span>
                     </div>
+                    {% if top_colleges %}
                     <ul class="rank-list">
                         {% for row in top_colleges %}
                         <li class="rank-item">
@@ -211,15 +212,18 @@
                             </div>
                             <span class="rank-pct">{{ row.percentage }}%</span>
                         </li>
-                        {% empty %}
-                        <li class="rank-item">
-                            <div class="rank-info">
-                                <div class="rank-name">No colleges yet</div>
-                                <div class="rank-sub">Add a college to see rankings here</div>
-                            </div>
-                        </li>
                         {% endfor %}
                     </ul>
+                    {% else %}
+                    <div class="empty-card-state">
+                        <div class="empty-icon-circle icon-amber">
+                            <i class="fas fa-trophy"></i>
+                        </div>
+                        <h4 class="empty-title">No Rankings Available</h4>
+                        <p class="empty-subtitle">Register colleges and track student engagement to view rankings.</p>
+                        <a href="{% url 'college_add' %}" class="empty-cta-btn"><i class="fas fa-plus"></i> Add College</a>
+                    </div>
+                    {% endif %}
                 </div>
 
                 <!-- 2. Most Watched Videos -->
@@ -228,6 +232,7 @@
                         <h3><i class="fas fa-fire" style="color:#ef4444;"></i> Most Watched Videos</h3>
                         <span class="card-header-tag">{{ now|date:"F Y"|default:"July 2026" }}</span>
                     </div>
+                    {% if top_videos %}
                     <ul class="video-list">
                         {% for video in top_videos %}
                         <li class="video-item">
@@ -238,14 +243,18 @@
                             </div>
                             <span class="video-views"><i class="far fa-eye"></i> {{ video.total_views }}</span>
                         </li>
-                        {% empty %}
-                        <li class="video-item">
-                            <div class="video-info">
-                                <div class="video-title">No videos watched yet</div>
-                            </div>
-                        </li>
                         {% endfor %}
                     </ul>
+                    {% else %}
+                    <div class="empty-card-state">
+                        <div class="empty-icon-circle icon-red">
+                            <i class="fas fa-fire"></i>
+                        </div>
+                        <h4 class="empty-title">No Watch Activity</h4>
+                        <p class="empty-subtitle">Student video views will appear here as students watch content.</p>
+                        <a href="{% url 'video_add' %}" class="empty-cta-btn"><i class="fas fa-upload"></i> Upload Video</a>
+                    </div>
+                    {% endif %}
                 </div>
 
                 <!-- 3. Recently Uploaded -->
@@ -254,6 +263,7 @@
                         <h3><i class="fas fa-cloud-upload-alt" style="color:var(--db-primary);"></i> Recently Uploaded</h3>
                         <span class="card-header-tag">Latest</span>
                     </div>
+                    {% if recent_videos %}
                     <div class="recent-upload-list">
                         {% for video in recent_videos %}
                         <div class="recent-upload-item">
@@ -266,14 +276,18 @@
                             </div>
                             <button class="play-btn-circle"><i class="fas fa-play"></i></button>
                         </div>
-                        {% empty %}
-                        <div class="recent-upload-item">
-                            <div class="upload-info">
-                                <div class="upload-title">No videos uploaded yet</div>
-                            </div>
-                        </div>
                         {% endfor %}
                     </div>
+                    {% else %}
+                    <div class="empty-card-state">
+                        <div class="empty-icon-circle icon-blue">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                        </div>
+                        <h4 class="empty-title">No Uploads Found</h4>
+                        <p class="empty-subtitle">Upload new educational videos to build your learning library.</p>
+                        <a href="{% url 'video_add' %}" class="empty-cta-btn"><i class="fas fa-plus"></i> Upload Video</a>
+                    </div>
+                    {% endif %}
                 </div>
 
             </div><!-- /three-col-grid row 1 -->
@@ -325,99 +339,77 @@
                 <!-- 2. Recent Activity -->
                 <div class="dashboard-card">
                     <div class="card-header">
-                        <h3><i class="fas fa-calendar-alt" style="color:var(--db-primary);"></i> Recent Activity</h3>
-                        <span class="card-header-tag">Last 6 Months</span>
+                        <h3><i class="fas fa-clock-rotate-left" style="color:var(--db-primary);"></i> Recent Activity</h3>
+                        <span class="card-header-tag">Real-time Feed</span>
                     </div>
+                    {% if recent_activities %}
                     <div class="activity-timeline">
+                        {% for activity in recent_activities %}
                         <div class="timeline-item">
-                            <div class="timeline-dot dot-blue"></div>
+                            <div class="timeline-dot {{ activity.dot_class }}"></div>
                             <div class="timeline-content">
-                                <div class="timeline-title">New college registered</div>
-                                <div class="timeline-desc">Apex Institute of Technology</div>
-                                <div class="timeline-time">2 days ago</div>
+                                <div class="timeline-header-row">
+                                    <span class="timeline-title">{{ activity.title }}</span>
+                                    <span class="activity-type-badge">{{ activity.badge }}</span>
+                                </div>
+                                <div class="timeline-desc">{{ activity.description }}</div>
+                                <div class="timeline-time"><i class="far fa-clock"></i> {{ activity.timestamp|timesince }} ago</div>
                             </div>
                         </div>
-                        <div class="timeline-item">
-                            <div class="timeline-dot dot-green"></div>
-                            <div class="timeline-content">
-                                <div class="timeline-title">New video uploaded</div>
-                                <div class="timeline-desc">Python Tutorial Part 11</div>
-                                <div class="timeline-time">2 days ago</div>
-                            </div>
-                        </div>
-                        <div class="timeline-item">
-                            <div class="timeline-dot dot-orange"></div>
-                            <div class="timeline-content">
-                                <div class="timeline-title">Student registered</div>
-                                <div class="timeline-desc">John Doe</div>
-                                <div class="timeline-time">3 days ago</div>
-                            </div>
-                        </div>
-                        <div class="timeline-item">
-                            <div class="timeline-dot dot-blue"></div>
-                            <div class="timeline-content">
-                                <div class="timeline-title">Department added</div>
-                                <div class="timeline-desc">Computer Science & Engineering</div>
-                                <div class="timeline-time">5 days ago</div>
-                            </div>
-                        </div>
+                        {% endfor %}
                     </div>
+                    {% else %}
+                    <div class="empty-card-state">
+                        <div class="empty-icon-circle icon-indigo">
+                            <i class="fas fa-clock-rotate-left"></i>
+                        </div>
+                        <h4 class="empty-title">No Recent Activity</h4>
+                        <p class="empty-subtitle">System activity logs will appear here automatically in real-time.</p>
+                    </div>
+                    {% endif %}
                 </div>
 
-                <!-- 3. System Overview -->
+                <!-- 3. Department Breakdown -->
                 <div class="dashboard-card">
                     <div class="card-header">
-                        <h3><i class="fas fa-server" style="color:var(--db-teal);"></i> System Overview</h3>
-                        <span class="card-header-tag tag-live">● Live</span>
+                        <h3><i class="fas fa-layer-group" style="color:var(--db-indigo);"></i> Department Breakdown</h3>
+                        <span class="card-header-tag">Student Distribution</span>
                     </div>
-                    <div class="sys-overview-grid">
-
-                        <div class="sys-overview-box">
-                            <div class="sys-box-left">
-                                <div class="sys-icon-square icon-green"><i class="fas fa-video"></i></div>
-                                <div class="sys-info">
-                                    <span class="sys-label">Server Status</span>
-                                    <span class="sys-val val-green">Online</span>
-                                </div>
+                    {% if dept_distribution %}
+                    <div class="dept-breakdown-list">
+                        {% for dept in dept_distribution %}
+                        <div class="dept-breakdown-item">
+                            <div class="dept-info-row">
+                                <span class="dept-name-title">{{ dept.dept_name }} <small style="color:var(--db-text-muted);">({{ dept.dept_code }})</small></span>
+                                <span class="dept-count-badge">{{ dept.student_count }} Students ({{ dept.percentage }}%)</span>
+                            </div>
+                            <div class="progress-bar-bg">
+                                <div class="progress-bar-fill" style="width: {{ dept.percentage }}%;"></div>
                             </div>
                         </div>
+                        {% endfor %}
 
-                        <div class="sys-overview-box">
-                            <div class="sys-box-left">
-                                <div class="sys-icon-square icon-blue"><i class="fas fa-cloud"></i></div>
-                                <div class="sys-info">
-                                    <span class="sys-label">Storage Used</span>
-                                    <span class="sys-val">36%</span>
-                                    <span style="font-size:0.65rem;color:var(--db-text-muted);">72 GB / 200 GB</span>
-                                </div>
-                            </div>
-                            <div class="sys-ring-container">
-                                <canvas id="storageRingChart"></canvas>
+                        {% if video_categories %}
+                        <div class="category-chips-wrapper">
+                            <span class="chips-label">Content Categories:</span>
+                            <div class="chips-list">
+                                {% for cat in video_categories %}
+                                <span class="cat-chip"><i class="fas fa-tag"></i> {{ cat.category }} ({{ cat.count }})</span>
+                                {% endfor %}
                             </div>
                         </div>
-
-                        <div class="sys-overview-box">
-                            <div class="sys-box-left">
-                                <div class="sys-icon-square icon-blue"><i class="fas fa-users"></i></div>
-                                <div class="sys-info">
-                                    <span class="sys-label">Active Sessions</span>
-                                    <span class="sys-val">12</span>
-                                    <span style="font-size:0.65rem;color:var(--db-text-muted);">Users Online</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="sys-overview-box">
-                            <div class="sys-box-left">
-                                <div class="sys-icon-square icon-green"><i class="fas fa-database"></i></div>
-                                <div class="sys-info">
-                                    <span class="sys-label">Database Status</span>
-                                    <span class="sys-val val-green">Healthy</span>
-                                </div>
-                            </div>
-                        </div>
-
+                        {% endif %}
                     </div>
+                    {% else %}
+                    <div class="empty-card-state">
+                        <div class="empty-icon-circle icon-purple">
+                            <i class="fas fa-sitemap"></i>
+                        </div>
+                        <h4 class="empty-title">No Department Data</h4>
+                        <p class="empty-subtitle">Add academic departments to view student distribution breakdown.</p>
+                        <a href="{% url 'department_add' %}" class="empty-cta-btn"><i class="fas fa-plus"></i> Add Department</a>
+                    </div>
+                    {% endif %}
                 </div>
 
             </div><!-- /three-col-grid row 2 -->
@@ -615,23 +607,6 @@
             legendContainer.appendChild(item);
         }
     }
-
-    /* ── 4. System Overview Mini Storage Gauge Ring ──────────── */
-    new Chart(document.getElementById('storageRingChart'), {
-        type: 'doughnut',
-        data: {
-            datasets: [{
-                data: [36, 64],
-                backgroundColor: ['#2563eb', '#e2e8f0'],
-                borderWidth: 0
-            }]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            cutout: '72%',
-            plugins: { legend: { display: false }, tooltip: { enabled: false } }
-        }
-    });
 </script>
 {% endblock %}
 </body>

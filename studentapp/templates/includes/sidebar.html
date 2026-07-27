@@ -16,28 +16,42 @@
 <aside class="sidebar" id="sidebar">
     <!-- Sidebar Header -->
     <div class="sidebar-header">
-        <h2 class="sidebar-title">College Management System</h2>
-        <span class="sidebar-subtitle">Admin Panel</span>
+        <div class="brand-container">
+            <div class="brand-logo-icon">
+                <i class="fas fa-graduation-cap"></i>
+            </div>
+            <div class="brand-details">
+                <h2 class="sidebar-title">EduSuite <span class="brand-badge">PRO</span></h2>
+                <span class="sidebar-subtitle">College Portal</span>
+            </div>
+        </div>
     </div>
 
     <!-- Navigation Menu -->
     <nav class="sidebar-nav">
         <ul class="nav-list">
+            
+            <li class="nav-section-title">MAIN NAVIGATION</li>
+
             <!-- Dashboard -->
             <li class="nav-item">
                 <a href="{% url 'dashboard' %}"
                     class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
-                    <i class="fas fa-tachometer-alt nav-icon"></i>
+                    <i class="fas fa-chart-pie nav-icon"></i>
                     <span class="nav-text">Dashboard</span>
+                    {% if request.resolver_match.url_name == 'dashboard' %}<span class="active-indicator"></span>{% endif %}
                 </a>
             </li>
+
+            <li class="nav-section-title">MANAGEMENT</li>
 
             <!-- College Management -->
             <li class="nav-item">
                 <a href="{% url 'collegemanagement' %}"
                     class="nav-link {% if request.resolver_match.url_name == 'collegemanagement' %}active{% endif %}">
                     <i class="fas fa-university nav-icon"></i>
-                    <span class="nav-text">College Management</span>
+                    <span class="nav-text">Colleges</span>
+                    {% if request.resolver_match.url_name == 'collegemanagement' %}<span class="active-indicator"></span>{% endif %}
                 </a>
             </li>
 
@@ -45,25 +59,19 @@
             <li class="nav-item">
                 <a href="{% url 'department_management' %}"
                     class="nav-link {% if request.resolver_match.url_name == 'department_management' %}active{% endif %}">
-                    <i class="fas fa-building nav-icon"></i>
-                    <span class="nav-text">Department Management</span>
+                    <i class="fas fa-sitemap nav-icon"></i>
+                    <span class="nav-text">Departments</span>
+                    {% if request.resolver_match.url_name == 'department_management' %}<span class="active-indicator"></span>{% endif %}
                 </a>
             </li>
-
-            <!-- HOD Management -->
-            <!-- <li class="nav-item">
-                <a href="{% url 'hod_management' %}" class="nav-link {% if request.resolver_match.url_name == 'hod_management' %}active{% endif %}">
-                    <i class="fas fa-user-tie nav-icon"></i>
-                    <span class="nav-text">HOD Management</span>
-                </a>
-            </li> -->
 
             <!-- Principal Management -->
             <li class="nav-item">
                 <a href="{% url 'principal_management' %}"
                     class="nav-link {% if request.resolver_match.url_name == 'principal_management' %}active{% endif %}">
-                    <i class="fas fa-chalkboard-teacher nav-icon"></i>
-                    <span class="nav-text">Principal Management</span>
+                    <i class="fas fa-user-tie nav-icon"></i>
+                    <span class="nav-text">Principals</span>
+                    {% if request.resolver_match.url_name == 'principal_management' %}<span class="active-indicator"></span>{% endif %}
                 </a>
             </li>
 
@@ -72,16 +80,20 @@
                 <a href="{% url 'student_management' %}"
                     class="nav-link {% if request.resolver_match.url_name == 'student_management' %}active{% endif %}">
                     <i class="fas fa-user-graduate nav-icon"></i>
-                    <span class="nav-text">Student Management</span>
+                    <span class="nav-text">Students</span>
+                    {% if request.resolver_match.url_name == 'student_management' %}<span class="active-indicator"></span>{% endif %}
                 </a>
             </li>
+
+            <li class="nav-section-title">MEDIA & ANALYTICS</li>
 
             <!-- Video Management -->
             <li class="nav-item">
                 <a href="{% url 'video_management' %}"
                     class="nav-link {% if request.resolver_match.url_name == 'video_management' %}active{% endif %}">
                     <i class="fas fa-video nav-icon"></i>
-                    <span class="nav-text">Video Management</span>
+                    <span class="nav-text">Video Catalog</span>
+                    {% if request.resolver_match.url_name == 'video_management' %}<span class="active-indicator"></span>{% endif %}
                 </a>
             </li>
 
@@ -91,6 +103,7 @@
                     class="nav-link {% if request.resolver_match.url_name == 'video_analytics' %}active{% endif %}">
                     <i class="fas fa-chart-line nav-icon"></i>
                     <span class="nav-text">Video Analytics</span>
+                    {% if request.resolver_match.url_name == 'video_analytics' %}<span class="active-indicator"></span>{% endif %}
                 </a>
             </li>
 
@@ -98,30 +111,13 @@
             <li class="nav-item">
                 <a href="{% url 'reports' %}"
                     class="nav-link {% if request.resolver_match.url_name == 'reports' %}active{% endif %}">
-                    <i class="fas fa-file-alt nav-icon"></i>
+                    <i class="fas fa-file-invoice nav-icon"></i>
                     <span class="nav-text">Reports</span>
+                    {% if request.resolver_match.url_name == 'reports' %}<span class="active-indicator"></span>{% endif %}
                 </a>
             </li>
 
-            <!-- User Management -->
-            <!-- <li class="nav-item">
-                <a href="{% url 'user_management' %}"
-                    class="nav-link {% if request.resolver_match.url_name == 'user_management' %}active{% endif %}">
-                    <i class="fas fa-users nav-icon"></i>
-                    <span class="nav-text">User Management</span>
-                </a>
-            </li> -->
-
-            <!-- System Settings -->
-            <!-- <li class="nav-item">
-                <a href="{% url 'system_settings' %}"
-                    class="nav-link {% if request.resolver_match.url_name == 'system_settings' %}active{% endif %}">
-                    <i class="fas fa-cogs nav-icon"></i>
-                    <span class="nav-text">System Settings</span>
-                </a>
-            </li> -->
-
-        
+            <li class="nav-section-title">ACCOUNT</li>
 
             <!-- Logout -->
             <li class="nav-item">
@@ -132,6 +128,20 @@
             </li>
         </ul>
     </nav>
+
+    <!-- Sidebar Bottom Profile Badge -->
+    <div class="sidebar-footer">
+        <div class="admin-user-card">
+            <div class="user-avatar-circle">
+                <span>AU</span>
+                <span class="status-online-dot"></span>
+            </div>
+            <div class="user-meta">
+                <span class="user-meta-name">Admin User</span>
+                <span class="user-meta-role">Super Admin</span>
+            </div>
+        </div>
+    </div>
 </aside>
 
 <!-- Sidebar Toggle Script -->

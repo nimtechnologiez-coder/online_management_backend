@@ -323,6 +323,95 @@ def dashboard(request):
         )
 
     # ==========================================
+    # Dynamic Recent Activity Logic
+    # ==========================================
+
+    recent_activities = []
+
+    # 1. Colleges
+    for c in College.objects.order_by("-created_at")[:5]:
+        if c.created_at:
+            recent_activities.append({
+                "title": "New College Registered",
+                "description": c.college_name,
+                "timestamp": c.created_at,
+                "icon": "fas fa-university",
+                "dot_class": "dot-blue",
+                "badge": "College"
+            })
+
+    # 2. Students
+    for s in Student.objects.order_by("-created_at")[:5]:
+        if s.created_at:
+            college_title = s.college.college_name if s.college else "System"
+            recent_activities.append({
+                "title": "Student Enrolled",
+                "description": f"{s.full_name} ({college_title})",
+                "timestamp": s.created_at,
+                "icon": "fas fa-user-graduate",
+                "dot_class": "dot-purple",
+                "badge": "Student"
+            })
+
+    # 3. Departments
+    for d in Department.objects.order_by("-created_at")[:5]:
+        if d.created_at:
+            college_title = d.college.college_name if d.college else "System"
+            recent_activities.append({
+                "title": "Department Created",
+                "description": f"{d.dept_name} ({college_title})",
+                "timestamp": d.created_at,
+                "icon": "fas fa-sitemap",
+                "dot_class": "dot-green",
+                "badge": "Department"
+            })
+
+    # 4. Videos Uploaded
+    for v in Video.objects.order_by("-uploaded_at")[:5]:
+        if v.uploaded_at:
+            recent_activities.append({
+                "title": "New Video Uploaded",
+                "description": v.title,
+                "timestamp": v.uploaded_at,
+                "icon": "fas fa-video",
+                "dot_class": "dot-pink",
+                "badge": "Video"
+            })
+
+    # 5. Video Watches
+    for w in VideoWatch.objects.order_by("-watched_at")[:5]:
+        if w.watched_at:
+            recent_activities.append({
+                "title": "Video Watched",
+                "description": f"{w.student.full_name} watched '{w.video.title}'",
+                "timestamp": w.watched_at,
+                "icon": "fas fa-play-circle",
+                "dot_class": "dot-orange",
+                "badge": "Watch"
+            })
+
+    recent_activities.sort(key=lambda x: x["timestamp"], reverse=True)
+    recent_activities = recent_activities[:6]
+
+    # ==========================================
+    # Department & Category Breakdown (Replaces System Overview)
+    # ==========================================
+
+    dept_distribution = []
+    if total_students > 0:
+        depts = Department.objects.annotate(student_count=Count("students")).order_by("-student_count")[:4]
+        for d in depts:
+            pct = round((d.student_count / total_students) * 100, 1)
+            dept_distribution.append({
+                "dept_name": d.dept_name,
+                "dept_code": d.dept_code,
+                "student_count": d.student_count,
+                "percentage": pct,
+            })
+
+    video_categories = list(Video.objects.values("category").annotate(count=Count("id")).order_by("-count")[:4])
+
+    # ==========================================
     # Monthly Activities
     # ==========================================
 
@@ -366,11 +455,14 @@ def dashboard(request):
         "today_percentage": today_percentage,
         "month_percentage": month_percentage,
 
-        # Lists
+        # Lists & Activity
         "recent_videos": recent_videos,
         "top_videos": top_videos,
         "top_colleges": top_colleges,
         "monthly_activities": monthly_activities,
+        "recent_activities": recent_activities,
+        "dept_distribution": dept_distribution,
+        "video_categories": video_categories,
 
         # Dynamic Chart
         "chart_labels": json.dumps(chart_labels),
