@@ -73,13 +73,14 @@
                 </div>
             </div>
 
-            <!-- ── Summary Stats ───────────────────── -->
+            <!-- ── Summary Stats (6 Cards Grid) ───────────────────── -->
             <div class="va-stats-grid">
                 <div class="va-stat-card">
                     <div class="va-stat-card__icon va-icon-violet"><i class="fas fa-film"></i></div>
                     <div class="va-stat-card__content">
                         <span class="va-stat-label">Total Videos</span>
                         <span class="va-stat-value">{{ total_videos }}</span>
+                        <span class="va-stat-sub">Across Catalog</span>
                     </div>
                 </div>
 
@@ -88,6 +89,7 @@
                     <div class="va-stat-card__content">
                         <span class="va-stat-label">Total Views</span>
                         <span class="va-stat-value">{{ total_views }}</span>
+                        <span class="va-stat-sub">Student Plays</span>
                     </div>
                 </div>
 
@@ -96,23 +98,33 @@
                     <div class="va-stat-card__content">
                         <span class="va-stat-label">Total Watch Time</span>
                         <span class="va-stat-value">{{ watch_hours }} hrs</span>
+                        <span class="va-stat-sub">Cumulative Hours</span>
+                    </div>
+                </div>
+
+                <div class="va-stat-card">
+                    <div class="va-stat-card__icon va-icon-green"><i class="fas fa-chart-pie"></i></div>
+                    <div class="va-stat-card__content">
+                        <span class="va-stat-label">Avg. Completion Rate</span>
+                        <span class="va-stat-value">{{ avg_completion }}%</span>
+                        <span class="va-stat-sub">Platform Average</span>
                     </div>
                 </div>
 
                 <div class="va-stat-card">
                     <div class="va-stat-card__icon va-icon-cyan"><i class="fas fa-cloud-arrow-up"></i></div>
                     <div class="va-stat-card__content">
-                        <span class="va-stat-label">Videos Uploaded (this month)</span>
+                        <span class="va-stat-label">Uploaded (This Month)</span>
                         <span class="va-stat-value">{{ videos_uploaded }}</span>
                         <span class="va-stat-sub">{{ videos_uploaded_last_month }} last month</span>
                     </div>
                 </div>
 
-                <div class="va-stat-card va-stat-card--dark">
+                <div class="va-stat-card va-stat-card--featured">
                     <div class="va-stat-card__icon va-icon-flame"><i class="fas fa-fire"></i></div>
                     <div class="va-stat-card__content">
-                        <span class="va-stat-label va-stat-label--dark">Most Viewed Video</span>
-                        <span class="va-stat-value va-stat-value--dark">{{ top_video_title }}</span>
+                        <span class="va-stat-label">Most Viewed Video</span>
+                        <span class="va-stat-value" title="{{ top_video_title }}">{{ top_video_title }}</span>
                         <span class="va-stat-sub">{{ top_video_views }} views</span>
                     </div>
                 </div>

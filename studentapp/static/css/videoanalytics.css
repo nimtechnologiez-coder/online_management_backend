@@ -95,10 +95,10 @@
 .va-filter--pdf i { color: #d92d20; }
 .va-filter--icon { padding: .55rem .7rem; color: var(--va-text-sub); }
 
-/* ── Stat Cards Row (8) ───────────────────────────────────── */
+/* ── Stat Cards Grid (6 Cards Symmetrical Layout) ───────────── */
 .va-stats-grid {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: var(--va-gap-md);
     margin-bottom: var(--va-gap-lg);
 }
@@ -106,15 +106,21 @@
     background: var(--va-card);
     border: 1px solid var(--va-border);
     border-radius: var(--va-radius-md);
-    padding: 1.1rem 1rem;
-    display: flex; align-items: flex-start; gap: .7rem;
+    padding: 1.1rem;
+    display: flex; align-items: flex-start; gap: .85rem;
     box-shadow: var(--va-shadow-sm);
     min-width: 0;
+    min-height: 96px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.va-stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--va-shadow-md);
 }
 .va-stat-card__icon {
-    width: 38px; height: 38px; min-width: 38px; border-radius: 10px;
+    width: 42px; height: 42px; min-width: 42px; border-radius: 12px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 1rem; flex-shrink: 0; margin-top: .1rem;
+    font-size: 1.1rem; flex-shrink: 0;
 }
 .va-icon-violet { background: #ede9fe; color: #7c3aed; }
 .va-icon-blue   { background: #dbeafe; color: var(--va-blue); }
@@ -123,26 +129,27 @@
 .va-icon-amber  { background: #fef3c7; color: var(--va-warning); }
 .va-icon-rose   { background: #ffe4e6; color: var(--va-rose); }
 .va-icon-cyan   { background: #cffafe; color: var(--va-accent); }
-.va-icon-flame  { background: rgba(255,255,255,.12); color: #fb923c; }
+.va-icon-flame  { background: #ffedd5; color: #ea580c; }
 
 .va-stat-card__content { min-width: 0; flex: 1; display: flex; flex-direction: column; }
 .va-stat-label {
-    font-size: .68rem; font-weight: 600; color: var(--va-text-muted);
+    font-size: .7rem; font-weight: 600; color: var(--va-text-muted);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    margin-bottom: .3rem;
+    margin-bottom: .25rem;
 }
-.va-stat-value { font-size: 1.15rem; font-weight: 800; color: var(--va-text); line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.va-stat-value {
+    font-size: 1.25rem; font-weight: 800; color: var(--va-text);
+    line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 .va-stat-trend { font-size: .68rem; font-weight: 600; margin-top: .3rem; display: inline-flex; align-items: center; gap: .25rem; }
-.va-stat-sub { font-size: .72rem; font-weight: 600; color: #cbd5f5; margin-top: .3rem; }
+.va-stat-sub { font-size: .7rem; font-weight: 500; color: var(--va-text-muted); margin-top: .25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .va-trend-up { color: var(--va-success); }
 .va-trend-down { color: var(--va-danger); }
 
-.va-stat-card--dark {
-    background: linear-gradient(135deg, #14162e, #1e2140);
-    border-color: #14162e;
+.va-stat-card--featured {
+    background: var(--va-card);
+    border-color: #fdba74;
 }
-.va-stat-label--dark { color: #a5adc9; }
-.va-stat-value--dark { color: #fff; }
 
 /* ── Chart Cards (shared: trend row + breakdown row) ─────────── */
 .va-trends-grid {

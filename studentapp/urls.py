@@ -4,7 +4,6 @@ from . import views
 urlpatterns = [
 
     path('', views.admin_login, name='home'),
-    
 
     path('dashboard/', views.dashboard, name='dashboard'),
 
@@ -29,6 +28,7 @@ urlpatterns = [
     path('students/', views.student_management, name='student_management'),
     path('students/add/', views.student_add, name='student_add'),
     path('students/delete/<int:student_id>/', views.student_delete, name='student_delete'),
+    path('students/update/<int:student_id>/', views.student_update, name='student_update'),
 
     # ================= VIDEO =================
 
@@ -47,6 +47,8 @@ urlpatterns = [
     path('logout/', views.user_logout, name='logout'),
     path('search/', views.global_search, name='global_search'),
 
+    # ================= PRINCIPAL API =================
+
     path('api/principal/dashboard/', views.api_principal_dashboard, name='api_principal_dashboard'),
     path('api/principal/students/', views.api_principal_students, name='api_principal_students'),
     path('api/principal/students/<int:student_id>/delete/', views.api_principal_student_delete, name='api_principal_student_delete'),
@@ -54,7 +56,9 @@ urlpatterns = [
     path('api/principal/departments/', views.api_principal_departments, name='api_principal_departments'),
     path('api/principal/videos/', views.api_principal_videos, name='api_principal_videos'),
     path('api/principal/attendance_reports/', views.api_principal_attendance_reports, name='api_principal_attendance_reports'),
-    path("api/principal/login/", views.principal_login, name="principal_login"),
+    path('api/principal/login/', views.principal_login, name='principal_login'),
+
+    # ================= STUDENT API =================
 
     path('api/student/login/', views.student_login, name='student_login'),
     path('api/student/login', views.student_login),
@@ -66,16 +70,22 @@ urlpatterns = [
     path('api/student/watch-history', views.api_student_watch_history),
     path('api/student/videos/<int:video_id>/watch/', views.api_student_record_watch, name='api_student_record_watch'),
     path('api/student/videos/<int:video_id>/watch', views.api_student_record_watch),
+    path('api/student/videos/<int:video_id>/progress/', views.api_student_save_progress, name='api_student_save_progress'),
+    path('api/student/videos/<int:video_id>/progress', views.api_student_save_progress),
+    path('api/student/videos/<int:video_id>/stream/', views.video_stream, name='video_stream'),
+    path('api/student/videos/<int:video_id>/stream', views.video_stream),
     path('api/student/watch-history/clear/', views.api_student_delete_watch_history, name='api_student_clear_watch_history'),
     path('api/student/watch-history/clear', views.api_student_delete_watch_history),
     path('api/student/watch-history/<int:history_id>/delete/', views.api_student_delete_watch_history, name='api_student_delete_watch_history_item'),
     path('api/student/watch-history/<int:history_id>/delete', views.api_student_delete_watch_history),
     path('api/student/progress/', views.api_student_progress, name='api_student_progress'),
-    path("api/hod/login/", views.hod_login, name="hod_login"),
     path('api/student/progress', views.api_student_progress),
-    path(
-    "students/update/<int:student_id>/",
-    views.student_update,
-    name="student_update",
-)
+
+    # ================= HOD API =================
+    path("api/hod/login/", views.hod_login, name="hod_login"),
+    path("api/hod/dashboard/", views.api_hod_dashboard, name="api_hod_dashboard"),
+    path("api/hod/students/", views.api_hod_students, name="api_hod_students"),
+    path("api/hod/videos/", views.api_hod_videos, name="api_hod_videos"),
+    path("api/hod/performance/", views.api_hod_performance, name="api_hod_performance"),
+
 ]

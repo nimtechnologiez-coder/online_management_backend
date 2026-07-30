@@ -4,8 +4,28 @@ import random
 import string
 from datetime import date, timedelta
 
+
+def _format_time_ago(value):
+    if not value:
+        return "just now"
+
+    diff = timezone.now() - value
+    seconds = int(diff.total_seconds())
+
+    if seconds < 60:
+        return "just now"
+    if seconds < 3600:
+        minutes = seconds // 60
+        return f"{minutes} min ago"
+    if seconds < 86400:
+        hours = seconds // 3600
+        return f"{hours} hr ago"
+
+    days = seconds // 86400
+    return f"{days} day ago"
+
 from django.core.paginator import Paginator
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, Q, Sum, Max
 from django.db.models.functions import TruncMonth
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -1532,6 +1552,7 @@ def video_delete(request, id):
 
 import json
 import re
+from collections import Counter
 from datetime import timedelta
 
 from django.db.models import Count, Sum, F, ExpressionWrapper, FloatField
@@ -1594,9 +1615,14 @@ def video_analytics(request):
     total_views = videos.aggregate(total=Sum("views"))["total"] or 0
 
     total_watch_seconds = 0
+    all_completion_ratios = []
     for vw in watches.only("video_id", "watched_seconds"):
         total_watch_seconds += vw.watched_seconds
+        dur = duration_seconds_by_id.get(vw.video_id, 0)
+        if dur > 0:
+            all_completion_ratios.append(min(vw.watched_seconds / dur, 1.0))
     watch_hours = round(total_watch_seconds / 3600, 1)
+    avg_completion = round((sum(all_completion_ratios) / len(all_completion_ratios)) * 100, 1) if all_completion_ratios else 0
 
     month_start = today.replace(day=1)
     videos_uploaded = videos.filter(uploaded_at__date__gte=month_start).count()
@@ -1752,6 +1778,7 @@ def video_analytics(request):
         "total_videos": total_videos,
         "total_views": total_views,
         "watch_hours": watch_hours,
+        "avg_completion": avg_completion,
         "videos_uploaded": videos_uploaded,
         "videos_uploaded_last_month": videos_uploaded_last_month,
         "top_video_title": top_video_title,
@@ -1817,26 +1844,26 @@ def global_search(request):
         'principals': [],
         'students': [],
         'videos': [],
+        'total': 0,
     }
     if query:
-        results['colleges']   = College.objects.filter(college_name__icontains=query)[:10]
-        results['principals'] = Principal.objects.filter(
+        colleges = College.objects.filter(college_name__icontains=query)
+        principals = Principal.objects.filter(
             Q(principal_name__icontains=query) | Q(principal_email__icontains=query)
-        ).select_related('college')[:10]
-        results['students']   = Student.objects.filter(
-            Q(full_name__icontains=query) | Q(email__icontains=query) | Q(student_id__icontains=query)
-        ).select_related('college', 'department')[:10]
-        results['videos']     = Video.objects.filter(
+        ).select_related('college')
+        students = Student.objects.filter(
+            Q(full_name__icontains=query) | Q(email__icontains=query) | Q(username__icontains=query)
+        ).select_related('college', 'department')
+        videos = Video.objects.filter(
             Q(title__icontains=query) | Q(category__icontains=query) | Q(description__icontains=query)
-        )[:10]
+        )
 
-    total = (
-        results['colleges'].count() +
-        results['principals'].count() +
-        results['students'].count() +
-        results['videos'].count()
-    )
-    results['total'] = total
+        results['total'] = colleges.count() + principals.count() + students.count() + videos.count()
+        results['colleges'] = colleges[:10]
+        results['principals'] = principals[:10]
+        results['students'] = students[:10]
+        results['videos'] = videos[:10]
+
     return render(request, 'search/search_results.html', results)
 
 def reports(request):
@@ -1929,6 +1956,8 @@ def get_authenticated_principal(request):
     ).first()
 
 def api_principal_dashboard(request):
+    from collections import Counter
+    import re
 
     principal = get_authenticated_principal(request)
 
@@ -1940,41 +1969,109 @@ def api_principal_dashboard(request):
 
     college = principal.college
 
-    total_students = Student.objects.filter(college=college).count()
-    active_students = Student.objects.filter(college=college, status="active").count()
+    college_students = Student.objects.filter(college=college)
+    total_students = college_students.count()
+    active_students = college_students.filter(status="active").count()
     total_videos = Video.objects.count()
-    total_views = VideoWatch.objects.filter(
-        student__college=college
-    ).count()
 
-    # Recent views filtered specifically for logged in principal's college
-    recent_views_qs = VideoWatch.objects.filter(
-        student__college=college
-    ).select_related("student", "student__department", "video")[:10]
+    watches_qs = VideoWatch.objects.filter(student__college=college).select_related("student", "video")
+    total_views = watches_qs.count()
 
+    # Calculate real watch hours
+    total_watch_seconds = 0
+    for w in watches_qs:
+        if getattr(w, "watched_seconds", 0) > 0:
+            total_watch_seconds += w.watched_seconds
+        elif w.video and w.video.duration:
+            m = re.search(r'\d+', str(w.video.duration))
+            if m:
+                total_watch_seconds += int(m.group()) * 60
+
+    watch_hours = round(total_watch_seconds / 3600, 1)
+    watch_time_str = f"{watch_hours} Hours" if watch_hours >= 1 else f"{round(total_watch_seconds / 60)} Mins"
+
+    engagement_rate = round((active_students / total_students) * 100, 1) if total_students > 0 else 0.0
+
+    recent_views_qs = watches_qs.select_related("student__department").order_by("-watched_at")[:10]
     recent_views_data = [
         {
             "student": rw.student.full_name,
             "department": rw.student.department.dept_name if rw.student.department else "N/A",
-            "video": rw.video.title,
-            "watchTime": rw.video.duration,
-            "lastViewed": rw.watched_at.strftime("%Y-%m-%d %H:%M"),
+            "video": rw.video.title if rw.video else "N/A",
+            "watchTime": rw.video.duration if rw.video else "N/A",
+            "lastViewed": rw.watched_at.strftime("%Y-%m-%d %H:%M") if rw.watched_at else "Recently",
         }
         for rw in recent_views_qs
     ]
 
-    # Latest videos
-    latest_videos_qs = Video.objects.all()[:5]
+    latest_videos_qs = Video.objects.all().order_by("-uploaded_at")[:5]
     latest_videos_data = [
         {
             "title": v.title,
-            "category": v.category,
-            "duration": v.duration,
-            "views": v.views,
-            "uploadDate": v.uploaded_at.strftime("%Y-%m-%d"),
+            "category": v.category or "General",
+            "duration": v.duration or "N/A",
+            "views": v.views or 0,
+            "uploadDate": v.uploaded_at.strftime("%Y-%m-%d") if v.uploaded_at else "Recently",
+            "thumbnail": request.build_absolute_uri(v.thumbnail.url) if v.thumbnail else None,
         }
         for v in latest_videos_qs
     ]
+
+    today = timezone.localdate()
+    daily_views = []
+    for offset in range(6, -1, -1):
+        day = today - timedelta(days=offset)
+        day_start = timezone.make_aware(timezone.datetime.combine(day, timezone.datetime.min.time()))
+        day_end = day_start + timedelta(days=1)
+        count = watches_qs.filter(
+            watched_at__gte=day_start,
+            watched_at__lt=day_end,
+        ).count()
+        daily_views.append({"day": day.strftime("%b %d"), "views": count})
+
+    category_counts = Counter(
+        watch.video.category
+        for watch in watches_qs
+        if watch.video and watch.video.category
+    )
+    palette = ["#6366f1", "#0d9488", "#f59e0b", "#10b981", "#8b5cf6", "#ec4899"]
+    top_categories = [
+        {
+            "name": category,
+            "value": count,
+            "color": palette[index % len(palette)],
+        }
+        for index, (category, count) in enumerate(category_counts.most_common(5))
+    ]
+
+    # Department Performance Analytics
+    departments = Department.objects.filter(college=college)
+    dept_performance = []
+    for dept in departments:
+        dept_students = Student.objects.filter(college=college, department=dept)
+        std_count = dept_students.count()
+        dept_views = VideoWatch.objects.filter(student__in=dept_students).count()
+        comp_rate = round((dept_views / (std_count * max(total_videos, 1))) * 100) if std_count > 0 else 0
+        dept_performance.append({
+            "name": dept.dept_name,
+            "code": dept.dept_code,
+            "students": std_count,
+            "views": dept_views,
+            "completionRate": min(100, comp_rate),
+            "hod": dept.hod_name or "N/A",
+        })
+
+    # Live Activity Feed
+    live_activities = []
+    for w in watches_qs.order_by("-watched_at")[:6]:
+        live_activities.append({
+            "id": f"watch-{w.id}",
+            "type": "watch",
+            "title": "Video Watched",
+            "description": f"{w.student.full_name} watched '{w.video.title if w.video else 'Lecture'}'",
+            "time": _format_time_ago(w.watched_at),
+            "badge": w.student.department.dept_name if w.student.department else "General",
+        })
 
     return JsonResponse({
         "status": "success",
@@ -1984,16 +2081,18 @@ def api_principal_dashboard(request):
                 "activeStudents": active_students,
                 "videos": total_videos,
                 "totalViews": total_views,
-                "watchTime": "0 Hours",
+                "watchTime": watch_time_str,
+                "engagementRate": engagement_rate,
             },
-            "dailyViews": [],
-            "topCategories": [],
+            "dailyViews": daily_views,
+            "topCategories": top_categories,
             "latestVideos": latest_videos_data,
             "recentViews": recent_views_data,
+            "departmentPerformance": dept_performance,
+            "liveActivities": live_activities,
+            "collegeName": college.college_name if college else "Institutional Portal",
         }
     })
-
-
 
 
 def api_principal_students(request):
@@ -2009,28 +2108,52 @@ def api_principal_students(request):
         college=principal.college
     ).select_related("department", "college")
 
+    total_videos = Video.objects.count()
     data = []
 
     for student in students:
+        join_date_value = student.join_date or getattr(student, "created_at", None)
+        end_date_value = student.end_date
+
+        student_watches = VideoWatch.objects.filter(student=student).select_related("video")
+        viewed_videos_count = student_watches.values("video").distinct().count()
+        total_student_views = student_watches.count()
+        progress_pct = round((viewed_videos_count / total_videos) * 100) if total_videos > 0 else 0
+
+        recent_vids = [
+            sw.video.title for sw in student_watches.order_by("-watched_at")[:5] if sw.video
+        ]
+        recent_acts = [
+            f"Watched '{sw.video.title}' ({_format_time_ago(sw.watched_at)})"
+            for sw in student_watches.order_by("-watched_at")[:5] if sw.video
+        ]
+
         data.append({
             "id": student.id,
-            "student_id": student.student_id,
-            "full_name": student.full_name,
-            "email": student.email,
-            "phone": student.phone,
+            "student_id": getattr(student, "student_id", student.username or f"STD{student.id}"),
+            "full_name": student.full_name or "",
+            "email": student.email or "",
+            "phone": student.phone or "",
             "department": student.department.dept_name if student.department else "N/A",
-            "year": student.year,
-            "status": student.status,
-            "username": getattr(student, "username", student.student_id),
-            "password": getattr(student, "password", "********"),
-            "college": principal.college.college_name,
-            "join_date": student.created_at.strftime("%Y-%m-%d") if hasattr(student, "created_at") and student.created_at else "2026-07-21",
-            "end_date": "2030-07-21",
+            "year": student.year or "",
+            "status": student.status or "active",
+            "username": getattr(student, "username", None) or getattr(student, "student_id", None) or f"STD{student.id}",
+            "password": getattr(student, "password", "********") or "********",
+            "college": principal.college.college_name if principal.college else "N/A",
+            "join_date": join_date_value.strftime("%Y-%m-%d") if join_date_value else "2026-07-21",
+            "end_date": end_date_value.strftime("%Y-%m-%d") if end_date_value else "2030-07-21",
+            "viewedVideos": viewed_videos_count,
+            "totalVideos": total_videos,
+            "totalViews": total_student_views,
+            "progress": min(100, progress_pct),
+            "lastLogin": _format_time_ago(student_watches.order_by("-watched_at").first().watched_at) if student_watches.exists() else "No recent login",
+            "recentVideos": recent_vids,
+            "recentActivity": recent_acts,
         })
 
     return JsonResponse({
         "status": "success",
-        "college": principal.college.college_name,
+        "college": principal.college.college_name if principal.college else "N/A",
         "total": len(data),
         "data": data
     })
@@ -2320,6 +2443,87 @@ def student_login(request):
         return JsonResponse({"status": "error", "message": str(e)}, status=500)
 
 @csrf_exempt
+def video_stream(request, video_id):
+    """
+    Streams a video file with HTTP Range Request support so browsers can seek.
+    Returns 206 Partial Content when the client sends a Range header,
+    or 200 OK with the full file if no Range header is present.
+    """
+    import os
+    import mimetypes
+    from django.http import StreamingHttpResponse, HttpResponse
+
+    video = Video.objects.filter(id=video_id).first()
+    if not video or not video.video_file:
+        return HttpResponse("Video not found.", status=404)
+
+    file_path = video.video_file.path
+    if not os.path.exists(file_path):
+        return HttpResponse("Video file missing on disk.", status=404)
+
+    file_size = os.path.getsize(file_path)
+    content_type, _ = mimetypes.guess_type(file_path)
+    if not content_type:
+        content_type = "video/mp4"
+
+    range_header = request.META.get("HTTP_RANGE", "").strip()
+    CHUNK = 1024 * 1024  # 1 MB chunks
+
+    if range_header:
+        # Parse Range: bytes=start-end
+        try:
+            byte_range = range_header.replace("bytes=", "").split("-")
+            first_byte = int(byte_range[0]) if byte_range[0] else 0
+            last_byte = int(byte_range[1]) if len(byte_range) > 1 and byte_range[1] else file_size - 1
+        except (ValueError, IndexError):
+            return HttpResponse(status=416)  # Range Not Satisfiable
+
+        last_byte = min(last_byte, file_size - 1)
+        length = last_byte - first_byte + 1
+
+        def file_iterator(path, offset, chunk_size, remaining):
+            with open(path, "rb") as f:
+                f.seek(offset)
+                while remaining > 0:
+                    data = f.read(min(chunk_size, remaining))
+                    if not data:
+                        break
+                    remaining -= len(data)
+                    yield data
+
+        response = StreamingHttpResponse(
+            file_iterator(file_path, first_byte, CHUNK, length),
+            status=206,
+            content_type=content_type,
+        )
+        response["Content-Length"] = str(length)
+        response["Content-Range"] = f"bytes {first_byte}-{last_byte}/{file_size}"
+        response["Accept-Ranges"] = "bytes"
+        response["Access-Control-Allow-Origin"] = "*"
+        response["Access-Control-Expose-Headers"] = "Content-Range, Accept-Ranges, Content-Length"
+        return response
+    else:
+        # No Range header: stream entire file
+        def full_iterator(path, chunk_size):
+            with open(path, "rb") as f:
+                while True:
+                    data = f.read(chunk_size)
+                    if not data:
+                        break
+                    yield data
+
+        response = StreamingHttpResponse(
+            full_iterator(file_path, CHUNK),
+            status=200,
+            content_type=content_type,
+        )
+        response["Content-Length"] = str(file_size)
+        response["Accept-Ranges"] = "bytes"
+        response["Access-Control-Allow-Origin"] = "*"
+        response["Access-Control-Expose-Headers"] = "Content-Range, Accept-Ranges, Content-Length"
+        return response
+
+
 @csrf_exempt
 def api_student_dashboard(request):
     try:
@@ -2363,14 +2567,26 @@ def api_student_dashboard(request):
         continue_watching = []
         for idx, rw in enumerate(recent_watches):
             v = rw.video
-            progress_val = 80 if idx == 0 else (60 if idx == 1 else 45)
+            # Compute real progress from watched_seconds vs video duration
+            progress_val = 0
+            try:
+                import re as _re
+                dur_str = str(v.duration or "0")
+                dur_mins = int(_re.search(r'\d+', dur_str).group()) if _re.search(r'\d+', dur_str) else 0
+                dur_secs = dur_mins * 60
+                if dur_secs > 0 and rw.watched_seconds > 0:
+                    progress_val = min(100, round((rw.watched_seconds / dur_secs) * 100))
+                elif rw.watched_seconds == 0:
+                    progress_val = 0
+            except Exception:
+                progress_val = 0
             continue_watching.append({
                 "id": v.id,
                 "title": v.title,
                 "subtitle": f"{v.category or 'General'} • {v.duration or 'N/A'}",
                 "progress": progress_val,
-                "badge": "In Progress" if progress_val < 100 else "Completed",
-                "video_url": v.video_file.url if v.video_file else (v.youtube_url or "")
+                "badge": "Completed" if progress_val >= 95 else ("In Progress" if progress_val > 0 else "Not Started"),
+                "video_url": v.video_file.url if v.video_file else (getattr(v, 'youtube_url', '') or "")
             })
 
         # If user has no watch history yet, fallback to active published videos
@@ -2383,7 +2599,7 @@ def api_student_dashboard(request):
                     "subtitle": f"{v.category or 'General'} • {v.duration or 'N/A'}",
                     "progress": 0,
                     "badge": "New Lecture",
-                    "video_url": v.video_file.url if v.video_file else (v.youtube_url or "")
+                    "video_url": v.video_file.url if v.video_file else (getattr(v, 'youtube_url', '') or "")
                 })
 
         # Recently added videos
@@ -2439,10 +2655,12 @@ def api_student_videos(request):
         if category_filter and category_filter != "All":
             videos_qs = videos_qs.filter(category=category_filter)
         watched_ids = set()
+        watched_seconds_map = {}  # video_id -> watched_seconds
         if student:
-            watched_ids = set(
-                VideoWatch.objects.filter(student=student).values_list("video_id", flat=True)
-            )
+            watch_records = VideoWatch.objects.filter(student=student).values("video_id", "watched_seconds")
+            for wr in watch_records:
+                watched_ids.add(wr["video_id"])
+                watched_seconds_map[wr["video_id"]] = wr["watched_seconds"]
 
         videos_data = []
         for v in videos_qs:
@@ -2451,6 +2669,14 @@ def api_student_videos(request):
                 m = re.search(r'\d+', str(v.duration))
                 if m:
                     mins = int(m.group())
+
+            # Compute real progress percentage from watched_seconds
+            duration_secs = mins * 60
+            vid_watched_seconds = watched_seconds_map.get(v.id, 0)
+            if duration_secs > 0 and vid_watched_seconds > 0:
+                progress_pct = min(100, round((vid_watched_seconds / duration_secs) * 100))
+            else:
+                progress_pct = 100 if (v.id in watched_ids and vid_watched_seconds == 0) else 0
 
             videos_data.append({
                 "id": v.id,
@@ -2463,6 +2689,8 @@ def api_student_videos(request):
                 "views": v.views,
                 "uploaded_at": v.uploaded_at.strftime("%d %b %Y") if v.uploaded_at else "",
                 "watched": v.id in watched_ids,
+                "watched_seconds": vid_watched_seconds,
+                "progress": progress_pct,
             })
 
         # Category list for filter
@@ -2524,7 +2752,10 @@ def api_student_watch_history(request):
 
 @csrf_exempt
 def api_student_record_watch(request, video_id):
-    """Records that a student has started/rewatched a video and increments views."""
+    """Records that a student has started/rewatched a video.
+    View count is incremented ONLY on the first watch per student.
+    Rewatches update the timestamp but do NOT add to the count.
+    """
     try:
         student_id_header = request.headers.get("X-Student-Id") or request.META.get("HTTP_X_STUDENT_ID")
         student = None
@@ -2535,23 +2766,78 @@ def api_student_record_watch(request, video_id):
         if not video:
             return JsonResponse({"status": "error", "message": "Video not found"}, status=404)
 
-        # Increment video view count
-        video.views += 1
-        video.save()
-
-        # Record in VideoWatch history if student is identified
-        # update_or_create prevents duplicate rows — rewatching updates the timestamp
         if student:
-            VideoWatch.objects.update_or_create(
+            # Only count as a new view if this student has NOT watched it before
+            watch_obj, created = VideoWatch.objects.get_or_create(
                 student=student,
                 video=video,
                 defaults={"watched_at": timezone.now()},
             )
+            if not created:
+                # Already watched before — just refresh the timestamp, don't increment views
+                watch_obj.watched_at = timezone.now()
+                watch_obj.save(update_fields=["watched_at"])
+            else:
+                # First time this student watches — count it
+                video.views += 1
+                video.save(update_fields=["views"])
+        else:
+            # Anonymous viewer — always count (no dedup possible without identity)
+            video.views += 1
+            video.save(update_fields=["views"])
 
         return JsonResponse({
             "status": "success",
             "message": "Watch recorded successfully",
-            "views": video.views
+            "views": video.views,
+            "is_new_view": student is not None,
+        })
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({"status": "error", "message": str(e)}, status=500)
+
+
+@csrf_exempt
+def api_student_save_progress(request, video_id):
+    """
+    Saves the current playback position (watched_seconds) for a student.
+    Called periodically by the frontend video player.
+    Expected JSON body: { "watched_seconds": <int> }
+    """
+    if request.method not in ("POST", "PATCH"):
+        return JsonResponse({"status": "error", "message": "Method not allowed"}, status=405)
+    try:
+        import json
+        student_id_header = request.headers.get("X-Student-Id") or request.META.get("HTTP_X_STUDENT_ID")
+        student = None
+        if student_id_header:
+            student = Student.objects.filter(id=student_id_header).first()
+        if not student:
+            return JsonResponse({"status": "error", "message": "Student not identified"}, status=401)
+
+        video = Video.objects.filter(id=video_id).first()
+        if not video:
+            return JsonResponse({"status": "error", "message": "Video not found"}, status=404)
+
+        body = json.loads(request.body or "{}")
+        watched_seconds = int(body.get("watched_seconds", 0))
+
+        watch_obj, created = VideoWatch.objects.get_or_create(
+            student=student,
+            video=video,
+            defaults={"watched_at": timezone.now(), "watched_seconds": watched_seconds},
+        )
+        if not created:
+            # Only update if the new position is further along
+            if watched_seconds > watch_obj.watched_seconds:
+                watch_obj.watched_seconds = watched_seconds
+            watch_obj.watched_at = timezone.now()
+            watch_obj.save(update_fields=["watched_seconds", "watched_at"])
+
+        return JsonResponse({
+            "status": "success",
+            "watched_seconds": watch_obj.watched_seconds,
         })
     except Exception as e:
         import traceback
@@ -2686,52 +2972,544 @@ def api_student_progress(request):
 
 
 
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+
+# ---------------------------------------------------
+# HOD Authentication Helper
+# ---------------------------------------------------
+def get_authenticated_hod(request):
+    hod_id = (
+        request.headers.get("X-Hod-Id")
+        or request.session.get("hod_id")
+        or request.GET.get("hod_id")
+    )
+
+    if not hod_id:
+        return None
+
+    return (
+        Department.objects
+        .select_related("college")
+        .filter(id=hod_id, status="active")
+        .first()
+    )
+
+
+# ---------------------------------------------------
+# HOD Login
+# ---------------------------------------------------
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import json
+
 @csrf_exempt
 def hod_login(request):
+
     if request.method != "POST":
-        return JsonResponse({
-            "success": False,
-            "message": "Only POST method is allowed."
-        }, status=405)
+        return JsonResponse({"success": False, "message": "Only POST allowed"}, status=405)
 
     try:
         data = json.loads(request.body)
 
-        username = (data.get("username") or "").strip()
-        password = (data.get("password") or "").strip()
+        username = data.get("username", "").strip()
+        password = data.get("password", "").strip()
 
-        hod = Department.objects.filter(
-            username__iexact=username,
+        hod = Department.objects.select_related("college").filter(
+            username=username,
             password=password,
             status="active"
         ).first()
 
-        print("HOD Found:", hod)
-
         if not hod:
             return JsonResponse({
                 "success": False,
-                "message": "Invalid username or password."
+                "message": "Invalid Username or Password"
             }, status=401)
 
-        print("Login Successful")
+        request.session["hod_id"] = hod.id
 
         return JsonResponse({
             "success": True,
             "message": "Login Successful",
+
             "user": {
                 "id": hod.id,
-                "hod_name": hod.hod_name,
-                "username": hod.username,
+                "name": hod.hod_name,
                 "department": hod.dept_name,
-                "college": hod.college.college_name
+                "college": hod.college.college_name,
+                "username": hod.username
             }
         })
 
     except Exception as e:
-        print("ERROR:", e)
         return JsonResponse({
             "success": False,
             "message": str(e)
-            
         }, status=500)
+
+
+def get_authenticated_hod(request):
+
+    hod_id = request.session.get("hod_id")
+
+    if not hod_id:
+        hod_id = request.headers.get("X-Hod-Id")
+
+    if not hod_id:
+        return None
+
+    try:
+        return Department.objects.select_related("college").get(
+            id=hod_id,
+            status="active"
+        )
+    except Department.DoesNotExist:
+        return None
+    
+@csrf_exempt
+def api_hod_dashboard(request):
+
+    if request.method != "GET":
+        return JsonResponse({"status":"error"}, status=405)
+
+    hod = get_authenticated_hod(request)
+
+    if not hod:
+        return JsonResponse({
+            "status":"error",
+            "message":"Unauthorized"
+        }, status=401)
+
+    students = Student.objects.filter(
+        department=hod,
+        college=hod.college,
+    ).select_related("college", "department")
+
+    total_students = students.count()
+    active_students = students.filter(status="active").count()
+
+    watched_videos = VideoWatch.objects.filter(
+        student__department=hod,
+        student__college=hod.college,
+    )
+    total_videos = watched_videos.values("video").distinct().count()
+
+    all_videos = Video.objects.all()
+    total_video_views = all_videos.aggregate(total_views=Sum("views"))["total_views"] or 0
+    this_month_videos = all_videos.filter(
+        uploaded_at__year=timezone.now().year,
+        uploaded_at__month=timezone.now().month,
+    ).count()
+
+    engagement_data = []
+    for offset in range(6, -1, -1):
+        day = timezone.now().date() - timedelta(days=offset)
+        day_count = watched_videos.filter(watched_at__date=day).values("student").distinct().count()
+        engagement_data.append({
+            "day": day.strftime("%a"),
+            "value": day_count,
+        })
+
+    top_students_qs = students.annotate(
+        watched_videos=Count("watch_history", distinct=True),
+        last_watch=Max("watch_history__watched_at"),
+    ).order_by("-watched_videos", "-last_watch")[:5]
+
+    top_students = []
+    for index, student in enumerate(top_students_qs, start=1):
+        watched_count = student.watched_videos or 0
+        score = int(round((watched_count / max(total_videos, 1)) * 100)) if total_videos else 0
+        top_students.append({
+            "rank": index,
+            "name": student.full_name,
+            "year": student.year,
+            "score": max(0, min(100, score)),
+        })
+
+    recent_activities = []
+    for watch in watched_videos.select_related("student", "video").order_by("-watched_at")[:5]:
+        completed = watch.watched_seconds >= 60
+        recent_activities.append({
+            "id": watch.id,
+            "name": watch.student.full_name,
+            "action": f"{'completed' if completed else 'watched'} \"{watch.video.title}\"",
+            "time": _format_time_ago(watch.watched_at),
+            "icon": "check" if completed else "play",
+            "color": "green" if completed else "purple",
+        })
+
+    recent_videos = []
+    for video in all_videos.order_by("-uploaded_at")[:4]:
+        recent_videos.append({
+            "id": video.id,
+            "title": video.title,
+            "sub": f"Uploaded {video.uploaded_at.strftime('%b %d')}",
+            "views": video.views,
+            "status": video.status,
+            "bgColor": ["#3776ab", "#092e20", "#1e2338", "#e34c26"][len(recent_videos) % 4],
+            "emoji": ["🎥", "📘", "🧠", "🌐"][len(recent_videos) % 4],
+        })
+
+    year_distribution = []
+    year_order = ["I", "II", "III", "IV"]
+    year_colors = {
+        "I": "#4f6cf7",
+        "II": "#22c55e",
+        "III": "#f97316",
+        "IV": "#06b6d4",
+    }
+    for year in year_order:
+        count = students.filter(year=year).count()
+        percent = round((count / total_students) * 100, 1) if total_students else 0
+        year_distribution.append({
+            "label": f"{year} Year",
+            "count": count,
+            "percent": percent,
+            "color": year_colors.get(year, "#4f6cf7"),
+        })
+
+    quick_overview = [
+        {"label": "Total Videos", "value": str(all_videos.count()), "icon": "video-sm", "color": "purple"},
+        {"label": "Total Views", "value": f"{total_video_views:,}", "icon": "eye-sm", "color": "blue"},
+        {"label": "Videos This Month", "value": str(this_month_videos), "icon": "calendar-sm", "color": "red"},
+    ]
+
+    return JsonResponse({
+        "status":"success",
+        "hod":{
+            "name":hod.hod_name,
+            "department":hod.dept_name,
+            "college":hod.college.college_name,
+        },
+        "stats":{
+            "totalStudents":total_students,
+            "activeStudents":active_students,
+            "totalVideos":total_videos,
+        },
+        "engagementData": engagement_data,
+        "topStudents": top_students,
+        "recentActivities": recent_activities,
+        "recentVideos": recent_videos,
+        "yearDistribution": year_distribution,
+        "quickOverview": quick_overview,
+    })
+
+
+@csrf_exempt
+def api_hod_videos(request):
+
+    if request.method != "GET":
+        return JsonResponse({"status":"error"}, status=405)
+
+    hod = get_authenticated_hod(request)
+
+    if not hod:
+        return JsonResponse({
+            "status":"error",
+            "message":"Unauthorized"
+        }, status=401)
+
+    videos = Video.objects.filter(status="Published").order_by("-uploaded_at")
+
+    data = []
+    for video in videos:
+        data.append({
+            "id": video.id,
+            "title": video.title,
+            "category": video.category,
+            "duration": video.duration,
+            "description": video.description or "",
+            "views": video.views or 0,
+            "uploadDate": video.uploaded_at.strftime("%d %b %Y") if video.uploaded_at else "",
+            "uploadedBy": hod.hod_name,
+            "status": video.status,
+            "thumbnail": request.build_absolute_uri(video.thumbnail.url) if video.thumbnail else "",
+            "isMine": True,
+            "videoUrl": request.build_absolute_uri(video.video_file.url) if video.video_file else "",
+        })
+
+    return JsonResponse({
+        "status": "success",
+        "college": hod.college.college_name,
+        "department": hod.dept_name,
+        "total": len(data),
+        "videos": data,
+    })
+
+
+@csrf_exempt
+def api_hod_performance(request):
+
+    if request.method != "GET":
+        return JsonResponse({"status":"error"}, status=405)
+
+    hod = get_authenticated_hod(request)
+
+    if not hod:
+        return JsonResponse({
+            "status":"error",
+            "message":"Unauthorized"
+        }, status=401)
+
+    students = Student.objects.filter(
+        department=hod,
+        college=hod.college,
+    ).select_related("college", "department")
+
+    watched_videos = VideoWatch.objects.filter(
+        student__department=hod,
+        student__college=hod.college,
+    ).select_related("student", "video")
+
+    total_students = students.count()
+    active_students = students.filter(status="active").count()
+
+    video_count = Video.objects.filter(status="Published").count()
+    total_views = Video.objects.aggregate(total_views=Sum("views"))["total_views"] or 0
+
+    weekly_progress = []
+    for offset in range(6, -1, -1):
+        day = timezone.now().date() - timedelta(days=offset)
+        value = watched_videos.filter(watched_at__date=day).values("student").distinct().count()
+        weekly_progress.append({
+            "label": day.strftime("%a"),
+            "value": value,
+        })
+
+    watch_time_week = []
+    for offset in range(6, -1, -1):
+        day = timezone.now().date() - timedelta(days=offset)
+        watched_seconds_total = watched_videos.filter(watched_at__date=day).aggregate(total=Sum("watched_seconds"))["total"] or 0
+        minutes = int(watched_seconds_total // 60)
+        watch_time_week.append({
+            "label": day.strftime("%a"),
+            "value": minutes,
+        })
+
+    student_rows = []
+    for student in students.order_by("full_name"):
+        student_watch_history = watched_videos.filter(student=student)
+        watched_seconds = int(student_watch_history.aggregate(total=Sum("watched_seconds"))["total"] or 0)
+        watched_count = student_watch_history.values("video").distinct().count()
+        progress = min(100, int(round((watched_seconds / max(1, watched_count * 60)) * 100))) if watched_count else 0
+        score = max(0, min(100, int(round((progress + watched_count * 5) / 2))))
+        student_rows.append({
+            "id": student.id,
+            "name": student.full_name,
+            "avgProgress": progress,
+            "watchMinutes": max(0, watched_seconds // 60),
+            "score": score,
+            "lastActivity": _format_time_ago(student_watch_history.order_by("-watched_at").first().watched_at) if student_watch_history.exists() else "No activity",
+            "level": "High Performer" if score >= 75 else "Average Performer" if score >= 50 else "Needs Improvement",
+        })
+
+    top_students = []
+    for student in students.annotate(
+        watched_videos=Count("watch_history", distinct=True),
+        last_watch=Max("watch_history__watched_at"),
+    ).order_by("-watched_videos", "-last_watch")[:10]:
+        top_students.append({
+            "name": student.full_name,
+            "score": int(round((student.watched_videos / max(video_count, 1)) * 100)) if video_count else 0,
+        })
+
+    most_watched_videos = []
+    for video in Video.objects.filter(status="Published").order_by("-views")[:5]:
+        most_watched_videos.append({
+            "title": video.title,
+            "views": video.views or 0,
+        })
+
+    summary = {
+        "high": sum(1 for row in student_rows if row["score"] >= 75),
+        "avg": sum(1 for row in student_rows if 50 <= row["score"] < 75),
+        "low": sum(1 for row in student_rows if row["score"] < 50),
+        "overallAvg": round(sum(row["score"] for row in student_rows) / len(student_rows), 1) if student_rows else 0,
+    }
+
+    return JsonResponse({
+        "status": "success",
+        "hod": {
+            "name": hod.hod_name,
+            "department": hod.dept_name,
+            "college": hod.college.college_name,
+        },
+        "stats": {
+            "totalStudents": total_students,
+            "activeStudents": active_students,
+            "totalVideos": video_count,
+            "totalViews": total_views,
+        },
+        "weeklyProgress": weekly_progress,
+        "watchTimeWeek": watch_time_week,
+        "students": student_rows,
+        "topStudents": top_students,
+        "mostWatchedVideos": most_watched_videos,
+        "summary": summary,
+    })
+
+
+@csrf_exempt
+def api_hod_students(request):
+
+    if request.method != "GET":
+        return JsonResponse({"status":"error"}, status=405)
+
+    hod = get_authenticated_hod(request)
+
+    if not hod:
+        return JsonResponse({
+            "status":"error",
+            "message":"Unauthorized"
+        }, status=401)
+
+    students = Student.objects.filter(
+        department=hod,
+        college=hod.college,
+    ).select_related(
+        "college",
+        "department"
+    ).order_by("full_name")
+
+    data = []
+
+    for student in students:
+        data.append({
+            "id": student.id,
+            "name": student.full_name,
+            "username": student.username,
+            "email": student.email,
+            "phone": student.phone,
+            "year": student.year,
+            "joinDate": student.join_date,
+            "status": student.status,
+            "college": student.college.college_name,
+            "department": student.department.dept_name,
+        })
+
+    return JsonResponse({
+        "status": "success",
+        "college": hod.college.college_name,
+        "department": hod.dept_name,
+        "totalStudents": len(data),
+        "students": data,
+    })
+
+
+@csrf_exempt
+def api_student_progress(request):
+    """
+    Returns student progress analytics including weekly watch time,
+    monthly progress trend, and recent watched video activity.
+    """
+    if request.method != "GET":
+        return JsonResponse({"status": "error", "message": "GET method required"}, status=405)
+
+    try:
+        student_id = request.headers.get("X-Student-Id") or request.GET.get("student_id")
+        student = None
+        if student_id and str(student_id).isdigit():
+            student = Student.objects.filter(id=int(student_id)).first()
+        if not student:
+            student = Student.objects.filter(status="active").first()
+
+        if not student:
+            return JsonResponse({"status": "error", "message": "No student found"}, status=404)
+
+        # 1. Weekly watch time (last 7 days: Mon-Sun)
+        weekly_watch_time = []
+        days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+        today = timezone.now().date()
+        start_of_week = today - timedelta(days=today.weekday())
+        has_watches = VideoWatch.objects.filter(student=student).exists()
+        default_weekly_hours = [1.2, 2.5, 0.8, 3.0, 1.0, 0.5, 0.55]
+
+        for i in range(7):
+            day_date = start_of_week + timedelta(days=i)
+            watches = VideoWatch.objects.filter(student=student, watched_at__date=day_date)
+            secs = watches.aggregate(total=Sum("watched_seconds"))["total"] or 0
+            hours = round(secs / 3600, 2)
+            if not has_watches:
+                hours = default_weekly_hours[i]
+            weekly_watch_time.append({"day": days[i], "hours": hours})
+
+        # 2. Monthly progress trend (last 6 months)
+        monthly_trend = []
+        total_videos_count = Video.objects.filter(status="Published").count() or 1
+        now = timezone.now()
+        default_monthly_prog = [40, 55, 62, 60, 75, 82]
+
+        for i in range(5, -1, -1):
+            m = now.month - i
+            y = now.year
+            while m <= 0:
+                m += 12
+                y -= 1
+            month_watches = VideoWatch.objects.filter(student=student, watched_at__year=y, watched_at__month=m)
+            watched_distinct = month_watches.values("video").distinct().count()
+            progress = min(100, int(round((watched_distinct / total_videos_count) * 100)))
+            if not has_watches:
+                progress = default_monthly_prog[5 - i]
+            monthly_trend.append({
+                "month": calendar.month_abbr[m],
+                "progress": progress
+            })
+
+        # 3. Recent video activity
+        recent_watches = VideoWatch.objects.filter(student=student).select_related("video").order_by("-watched_at")[:10]
+        recent_videos = []
+        for w in recent_watches:
+            vid = w.video
+            duration_str = f"{int(vid.duration // 60)} min" if vid and getattr(vid, "duration", None) else "30 min"
+            recent_videos.append({
+                "id": w.id,
+                "title": vid.title if vid else "Video Session",
+                "subtitle": getattr(vid, "category", "") or "Course Module",
+                "duration": duration_str,
+                "date": w.watched_at.strftime("%d %b %Y") if w.watched_at else "",
+            })
+
+        # Fallback to available published videos if student has no watch records yet
+        if not recent_videos:
+            for vid in Video.objects.filter(status="Published").order_by("-uploaded_at")[:5]:
+                duration_str = f"{int(vid.duration // 60)} min" if vid and getattr(vid, "duration", None) else "30 min"
+                recent_videos.append({
+                    "id": vid.id,
+                    "title": vid.title,
+                    "subtitle": vid.category or "Course Module",
+                    "duration": duration_str,
+                    "date": vid.uploaded_at.strftime("%d %b %Y") if vid.uploaded_at else "Recently Added",
+                })
+
+        # Smart fallbacks for profile dates & mentor
+        join_date_str = student.join_date.strftime("%d %b %Y") if student.join_date else "15 Aug 2023"
+        end_date_str = student.end_date.strftime("%b %Y") if student.end_date else "May 2026"
+        mentor_str = (student.department.hod_name if student.department and student.department.hod_name else "Dr. S. Harish")
+
+        student_info = {
+            "id": student.id,
+            "full_name": student.full_name,
+            "roll_number": student.username or f"STU{student.id}",
+            "register_number": student.username or f"STU{student.id}",
+            "department_name": student.department.dept_name if student.department else "Artificial Intelligence and Data Science",
+            "email": student.email,
+            "mobile": student.phone or "+91 98765 43210",
+            "college_name": student.college.college_name if student.college else "Green Valley Arts & Science College",
+            "join_date": join_date_str,
+            "end_date": end_date_str,
+            "mentor_name": mentor_str,
+            "status": student.status,
+        }
+
+        return JsonResponse({
+            "status": "success",
+            "student": student_info,
+            "weeklyWatchTime": weekly_watch_time,
+            "monthlyTrend": monthly_trend,
+            "recentVideos": recent_videos,
+        })
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({"status": "error", "message": str(e)}, status=500)
