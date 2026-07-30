@@ -1,6 +1,7 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,7 +10,9 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
 
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -18,596 +21,628 @@
     <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
     {% block extra_css %}{% endblock %}
 </head>
+
 <body>
-<div class="app-container">
-    {% include 'includes/sidebar.html' %}
+    <div class="app-container">
+        {% include 'includes/sidebar.html' %}
 
-    <main class="main-content">
+        <main class="main-content">
 
-        <!-- ── Sticky Top Header ──────────────────────────────── -->
-        <header class="top-header">
-            <div class="header-left">
-                <h1 class="page-title">{% block page_title %}Dashboard{% endblock %}</h1>
-                <p class="welcome-message">{% block welcome_message %}Welcome back, Admin! Here's what's happening today.{% endblock %}</p>
-            </div>
-
-            <div class="header-center">
-                <form method="GET" action="{% url 'global_search' %}" style="width:100%;">
-                    <div class="search-box">
-                        <i class="fas fa-search search-icon"></i>
-                        <input type="text" name="q" placeholder="Search colleges, students, videos..." class="search-input" autocomplete="off">
-                    </div>
-                </form>
-            </div>
-
-            <div class="header-right">
-                <div class="datetime-display">
-                    <i class="far fa-calendar-alt"></i>
-                    <span id="current-datetime">Sun, Jul 26, 2026 | 11:26 AM</span>
+            <!-- ── Sticky Top Header ──────────────────────────────── -->
+            <header class="top-header">
+                <div class="header-left">
+                    <h1 class="page-title">{% block page_title %}Dashboard{% endblock %}</h1>
+                    <p class="welcome-message">{% block welcome_message %}Welcome back, Admin! Here's what's happening
+                        today.{% endblock %}</p>
                 </div>
 
-                <button class="notification-btn" title="Notifications">
-                    <i class="far fa-bell"></i>
-                    <span class="notification-badge">2</span>
-                </button>
-
-                <div class="user-profile">
-                    <div class="avatar-badge">AU</div>
-                    <div class="user-info">
-                        <span class="user-name">Admin User</span>
-                        <span class="user-role">Super Admin</span>
-                    </div>
-                    <i class="fas fa-chevron-down dropdown-icon"></i>
-                </div>
-            </div>
-        </header>
-
-        <!-- ── Dashboard Content Body ────────────────────────── -->
-        <div class="dashboard-content">
-            {% block content %}
-
-            <!-- ── Stat Cards Grid (7 Cards) ──────────────────── -->
-            <div class="stats-grid">
-
-                <div class="stat-card">
-                    <div class="stat-icon icon-blue"><i class="fas fa-university"></i></div>
-                    <div class="stat-details">
-                        <h3>TOTAL COLLEGES</h3>
-                        <p class="stat-number">{{ total_colleges}}</p>
-                        <span class="stat-sub">All Registered Colleges</span>
-                    </div>
+                <div class="header-center">
+                    <form method="GET" action="{% url 'global_search' %}" style="width:100%;">
+                        <div class="search-box">
+                            <i class="fas fa-search search-icon"></i>
+                            <input type="text" name="q" placeholder="Search colleges, students, videos..."
+                                class="search-input" autocomplete="off">
+                        </div>
+                    </form>
                 </div>
 
-                <div class="stat-card">
-                    <div class="stat-icon icon-green"><i class="fas fa-user-check"></i></div>
-                    <div class="stat-details">
-                        <h3>ACTIVE STUDENTS</h3>
-                        <p class="stat-number">{{ active_students }}</p>
-                        <span class="stat-sub">Currently Active</span>
+                <div class="header-right">
+                    <div class="datetime-display">
+                        <i class="far fa-calendar-alt"></i>
+                        <span id="current-datetime">Sun, Jul 26, 2026 | 11:26 AM</span>
+                    </div>
+
+                    <button class="notification-btn" title="Notifications">
+                        <i class="far fa-bell"></i>
+                        <span class="notification-badge">2</span>
+                    </button>
+
+                    <div class="user-profile">
+                        <div class="avatar-badge">AU</div>
+                        <div class="user-info">
+                            <span class="user-name">Admin User</span>
+                            <span class="user-role">Super Admin</span>
+                        </div>
+                        <i class="fas fa-chevron-down dropdown-icon"></i>
                     </div>
                 </div>
+            </header>
 
-                <div class="stat-card">
-                    <div class="stat-icon icon-orange"><i class="fas fa-chart-line"></i></div>
-                    <div class="stat-details">
-                        <h3>MONTHLY ACTIVE</h3>
-                        <p class="stat-number">{{ month_active_students }}</p>
-                        <span class="stat-sub">This Month</span>
+            <!-- ── Dashboard Content Body ────────────────────────── -->
+            <div class="dashboard-content">
+                {% block content %}
+
+                <!-- ── Stat Cards Grid (7 Cards) ──────────────────── -->
+                <div class="stats-grid">
+
+                    <div class="stat-card">
+                        <div class="stat-icon icon-blue"><i class="fas fa-university"></i></div>
+                        <div class="stat-details">
+                            <h3>TOTAL COLLEGES</h3>
+                            <p class="stat-number">{{ total_colleges}}</p>
+                            <span class="stat-sub">All Registered Colleges</span>
+                        </div>
                     </div>
-                </div>
 
-                <div class="stat-card">
-                    <div class="stat-icon icon-indigo"><i class="fas fa-layer-group"></i></div>
-                    <div class="stat-details">
-                        <h3>TOTAL DEPARTMENTS</h3>
-                        <p class="stat-number">{{ total_departments }}</p>
-                        <span class="stat-sub">Across All Colleges</span>
+                    <div class="stat-card">
+                        <div class="stat-icon icon-green"><i class="fas fa-user-check"></i></div>
+                        <div class="stat-details">
+                            <h3>ACTIVE STUDENTS</h3>
+                            <p class="stat-number">{{ active_students }}</p>
+                            <span class="stat-sub">Currently Active</span>
+                        </div>
                     </div>
-                </div>
 
-                <div class="stat-card">
-                    <div class="stat-icon icon-pink"><i class="fas fa-video"></i></div>
-                    <div class="stat-details">
-                        <h3>TOTAL VIDEOS</h3>
-                        <p class="stat-number">{{ total_videos }}</p>
-                        <span class="stat-sub">Uploaded Videos</span>
+                    <div class="stat-card">
+                        <div class="stat-icon icon-orange"><i class="fas fa-chart-line"></i></div>
+                        <div class="stat-details">
+                            <h3>MONTHLY ACTIVE</h3>
+                            <p class="stat-number">{{ month_active_students }}</p>
+                            <span class="stat-sub">This Month</span>
+                        </div>
                     </div>
-                </div>
 
-                <div class="stat-card">
-                    <div class="stat-icon icon-purple"><i class="fas fa-graduation-cap"></i></div>
-                    <div class="stat-details">
-                        <h3>TOTAL STUDENTS</h3>
-                        <p class="stat-number">{{ total_students }}</p>
-                        <span class="stat-sub">All Students</span>
+                    <div class="stat-card">
+                        <div class="stat-icon icon-indigo"><i class="fas fa-layer-group"></i></div>
+                        <div class="stat-details">
+                            <h3>TOTAL DEPARTMENTS</h3>
+                            <p class="stat-number">{{ total_departments }}</p>
+                            <span class="stat-sub">Across All Colleges</span>
+                        </div>
                     </div>
-                </div>
 
-                <div class="stat-card">
-                    <div class="stat-icon icon-cyan"><i class="fas fa-user-tie"></i></div>
-                    <div class="stat-details">
-                        <h3>TOTAL PRINCIPALS</h3>
-                        <p class="stat-number">{{ total_principals }}</p>
-                        <span class="stat-sub">Registered Principals</span>
+                    <div class="stat-card">
+                        <div class="stat-icon icon-pink"><i class="fas fa-video"></i></div>
+                        <div class="stat-details">
+                            <h3>TOTAL VIDEOS</h3>
+                            <p class="stat-number">{{ total_videos }}</p>
+                            <span class="stat-sub">Uploaded Videos</span>
+                        </div>
                     </div>
-                </div>
 
-            </div><!-- /stats-grid -->
+                    <div class="stat-card">
+                        <div class="stat-icon icon-purple"><i class="fas fa-graduation-cap"></i></div>
+                        <div class="stat-details">
+                            <h3>TOTAL STUDENTS</h3>
+                            <p class="stat-number">{{ total_students }}</p>
+                            <span class="stat-sub">All Students</span>
+                        </div>
+                    </div>
 
-            <!-- ── Charts Grid (3 Cards) ───────────────────────── -->
-            <div class="charts-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon icon-cyan"><i class="fas fa-user-tie"></i></div>
+                        <div class="stat-details">
+                            <h3>TOTAL PRINCIPALS</h3>
+                            <p class="stat-number">{{ total_principals }}</p>
+                            <span class="stat-sub">Registered Principals</span>
+                        </div>
+                    </div>
 
-                <!-- 1. Weekly Engagement Chart -->
-                <div class="dashboard-card">
-                    <div class="card-header">
-                        <h3><i class="fas fa-chart-line" style="color:var(--db-primary);"></i> Weekly Engagement</h3>
-                        <form method="get">
-                            <select name="period" onchange="this.form.submit()" class="period-select-custom">
+                </div><!-- /stats-grid -->
+
+                <!-- ── Charts Grid (3 Cards) ───────────────────────── -->
+                <div class="charts-grid">
+
+                    <!-- 1. Weekly Engagement Chart -->
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-chart-line" style="color:var(--db-primary);"></i> Weekly Engagement</h3>
+                            <select id="weeklyPeriodSelect" class="period-select-custom">
                                 <option value="week" {% if selected_period == "week" %}selected{% endif %}>This Week</option>
                                 <option value="3months" {% if selected_period == "3months" %}selected{% endif %}>Last 3 Months</option>
                                 <option value="6months" {% if selected_period == "6months" %}selected{% endif %}>Last 6 Months</option>
                             </select>
-                        </form>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="watchOverviewChart"></canvas>
-                    </div>
-                </div>
-
-                <!-- 2. Monthly Analytics Chart -->
-                <div class="dashboard-card">
-                    <div class="card-header">
-                        <h3><i class="fas fa-chart-area" style="color:var(--db-success);"></i> Monthly Analytics</h3>
-                        <select class="period-select-custom">
-                            <option>This Month</option>
-                            <option>Last Month</option>
-                        </select>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="monthlyWatchChart"></canvas>
-                    </div>
-                </div>
-
-                <!-- 3. College Distribution Donut Chart -->
-                <div class="dashboard-card">
-                    <div class="card-header">
-                        <h3><i class="fas fa-chart-pie" style="color:var(--db-warning);"></i> College Distribution</h3>
-                        <span class="card-header-tag">Engagement Share</span>
-                    </div>
-                    <div class="donut-wrapper">
-                        <div class="donut-canvas-container">
-                            <canvas id="collegeDistributionChart"></canvas>
-                            <div class="donut-center-text">
-                                <div class="cnt">{{ total_colleges }}</div>
-                                <div class="lbl">Colleges</div>
-                            </div>
                         </div>
-                        <div class="donut-legend-list" id="customDonutLegend">
-                            <!-- Filled dynamically by JavaScript -->
+                        <div class="chart-container">
+                            <canvas id="watchOverviewChart"></canvas>
                         </div>
                     </div>
-                </div>
 
-            </div><!-- /charts-grid -->
-
-            <!-- ── Lower Row 1: 3 Columns ──────────────────────── -->
-            <div class="three-col-grid">
-
-                <!-- 1. Top Performing Colleges -->
-                <div class="dashboard-card">
-                    <div class="card-header">
-                        <h3><i class="fas fa-trophy" style="color:var(--db-warning);"></i> Top Performing Colleges</h3>
-                        <span class="card-header-tag">{{ now|date:"F Y"|default:"July 2026" }}</span>
-                    </div>
-                    {% if top_colleges %}
-                    <ul class="rank-list">
-                        {% for row in top_colleges %}
-                        <li class="rank-item">
-                            <span class="rank-badge {% if forloop.counter == 1 %}rank-1{% elif forloop.counter == 2 %}rank-2{% elif forloop.counter == 3 %}rank-3{% endif %}">
-                                {{ forloop.counter }}
+                    <!-- 2. Monthly Analytics Chart -->
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-chart-area" style="color:var(--db-success);"></i> Monthly Analytics</h3>
+                            <span class="card-header-tag" style="background:rgba(16,185,129,0.12);color:#10b981;border:1px solid rgba(16,185,129,0.25);">
+                                <i class="fas fa-calendar-alt" style="font-size:0.65rem;"></i> This Month
                             </span>
-                            <div class="rank-info">
-                                <div class="rank-name">{{ row.college.college_name }}</div>
-                                <div class="rank-sub">{{ row.active_students }} of {{ row.students }} students active</div>
-                            </div>
-                            <span class="rank-pct">{{ row.percentage }}%</span>
-                        </li>
-                        {% endfor %}
-                    </ul>
-                    {% else %}
-                    <div class="empty-card-state">
-                        <div class="empty-icon-circle icon-amber">
-                            <i class="fas fa-trophy"></i>
                         </div>
-                        <h4 class="empty-title">No Rankings Available</h4>
-                        <p class="empty-subtitle">Register colleges and track student engagement to view rankings.</p>
-                        <a href="{% url 'college_add' %}" class="empty-cta-btn"><i class="fas fa-plus"></i> Add College</a>
-                    </div>
-                    {% endif %}
-                </div>
-
-                <!-- 2. Most Watched Videos -->
-                <div class="dashboard-card">
-                    <div class="card-header">
-                        <h3><i class="fas fa-fire" style="color:#ef4444;"></i> Most Watched Videos</h3>
-                        <span class="card-header-tag">{{ now|date:"F Y"|default:"July 2026" }}</span>
-                    </div>
-                    {% if top_videos %}
-                    <ul class="video-list">
-                        {% for video in top_videos %}
-                        <li class="video-item">
-                            <div class="video-thumb"><i class="fas fa-play"></i></div>
-                            <div class="video-info">
-                                <div class="video-title" title="{{ video.title }}">{{ video.title }}</div>
-                                <div class="video-cat">Programming</div>
-                            </div>
-                            <span class="video-views"><i class="far fa-eye"></i> {{ video.total_views }}</span>
-                        </li>
-                        {% endfor %}
-                    </ul>
-                    {% else %}
-                    <div class="empty-card-state">
-                        <div class="empty-icon-circle icon-red">
-                            <i class="fas fa-fire"></i>
+                        <div class="chart-container">
+                            <canvas id="monthlyWatchChart"></canvas>
                         </div>
-                        <h4 class="empty-title">No Watch Activity</h4>
-                        <p class="empty-subtitle">Student video views will appear here as students watch content.</p>
-                        <a href="{% url 'video_add' %}" class="empty-cta-btn"><i class="fas fa-upload"></i> Upload Video</a>
                     </div>
-                    {% endif %}
-                </div>
 
-                <!-- 3. Recently Uploaded -->
-                <div class="dashboard-card">
-                    <div class="card-header">
-                        <h3><i class="fas fa-cloud-upload-alt" style="color:var(--db-primary);"></i> Recently Uploaded</h3>
-                        <span class="card-header-tag">Latest</span>
-                    </div>
-                    {% if recent_videos %}
-                    <div class="recent-upload-list">
-                        {% for video in recent_videos %}
-                        <div class="recent-upload-item">
-                            <div class="upload-left">
-                                <div class="upload-icon-box"><i class="fas fa-video"></i></div>
-                                <div class="upload-info">
-                                    <div class="upload-title">{{ video.title }}</div>
-                                    <div class="upload-time">{{ video.uploaded_at|timesince }} ago</div>
+                    <!-- 3. College Distribution Donut Chart -->
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-chart-pie" style="color:var(--db-warning);"></i> College Distribution
+                            </h3>
+                            <span class="card-header-tag">Engagement Share</span>
+                        </div>
+                        <div class="donut-wrapper">
+                            <div class="donut-canvas-container">
+                                <canvas id="collegeDistributionChart"></canvas>
+                                <div class="donut-center-text">
+                                    <div class="cnt">{{ total_colleges }}</div>
+                                    <div class="lbl">Colleges</div>
                                 </div>
                             </div>
-                            <button class="play-btn-circle"><i class="fas fa-play"></i></button>
+                            <div class="donut-legend-list" id="customDonutLegend">
+                                <!-- Filled dynamically by JavaScript -->
+                            </div>
                         </div>
-                        {% endfor %}
                     </div>
-                    {% else %}
-                    <div class="empty-card-state">
-                        <div class="empty-icon-circle icon-blue">
-                            <i class="fas fa-cloud-upload-alt"></i>
+
+                </div><!-- /charts-grid -->
+
+                <!-- ── Lower Row 1: 3 Columns ──────────────────────── -->
+                <div class="three-col-grid">
+
+                    <!-- 1. Top Performing Colleges -->
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-trophy" style="color:var(--db-warning);"></i> Top Performing Colleges
+                            </h3>
+                            <div style="display:flex;align-items:center;gap:0.4rem;flex-shrink:0;">
+                                <span class="card-header-tag" style="background:rgba(245,158,11,0.12);color:#f59e0b;border:1px solid rgba(245,158,11,0.25);">
+                                    <i class="fas fa-calendar-week"></i> This Week
+                                </span>
+                                <span class="card-header-tag">Top 5</span>
+                            </div>
                         </div>
-                        <h4 class="empty-title">No Uploads Found</h4>
-                        <p class="empty-subtitle">Upload new educational videos to build your learning library.</p>
-                        <a href="{% url 'video_add' %}" class="empty-cta-btn"><i class="fas fa-plus"></i> Upload Video</a>
-                    </div>
-                    {% endif %}
-                </div>
-
-            </div><!-- /three-col-grid row 1 -->
-
-            <!-- ── Lower Row 2: 3 Columns ──────────────────────── -->
-            <div class="three-col-grid">
-
-                <!-- 1. Quick Actions -->
-                <div class="dashboard-card">
-                    <div class="card-header">
-                        <h3><i class="fas fa-bolt" style="color:var(--db-warning);"></i> Quick Actions</h3>
-                    </div>
-                    <div class="quick-actions-grid">
-                        <a href="{% url 'college_add' %}" class="quick-action-btn">
-                            <div class="quick-action-icon icon-blue"><i class="fas fa-university"></i></div>
-                            <span>Add College</span>
-                        </a>
-                        <a href="{% url 'department_add' %}" class="quick-action-btn">
-                            <div class="quick-action-icon icon-green"><i class="fas fa-sitemap"></i></div>
-                            <span>Add Department</span>
-                        </a>
-                        <a href="{% url 'student_add' %}" class="quick-action-btn">
-                            <div class="quick-action-icon icon-purple"><i class="fas fa-user-plus"></i></div>
-                            <span>Add Student</span>
-                        </a>
-                        <a href="{% url 'video_add' %}" class="quick-action-btn">
-                            <div class="quick-action-icon icon-pink"><i class="fas fa-upload"></i></div>
-                            <span>Upload Video</span>
-                        </a>
-                        <a href="{% url 'reports' %}" class="quick-action-btn">
-                            <div class="quick-action-icon icon-blue"><i class="fas fa-chart-bar"></i></div>
-                            <span>View Reports</span>
-                        </a>
-                        <a href="{% url 'video_analytics' %}" class="quick-action-btn">
-                            <div class="quick-action-icon icon-orange"><i class="fas fa-chart-line"></i></div>
-                            <span>Analytics</span>
-                        </a>
-                        <a href="{% url 'user_management' %}" class="quick-action-btn">
-                            <div class="quick-action-icon icon-cyan"><i class="fas fa-users-cog"></i></div>
-                            <span>Manage Users</span>
-                        </a>
-                        <a href="{% url 'system_settings' %}" class="quick-action-btn">
-                            <div class="quick-action-icon icon-indigo"><i class="fas fa-cog"></i></div>
-                            <span>System Settings</span>
-                        </a>
-                    </div>
-                </div>
-
-                <!-- 2. Recent Activity -->
-                <div class="dashboard-card">
-                    <div class="card-header">
-                        <h3><i class="fas fa-clock-rotate-left" style="color:var(--db-primary);"></i> Recent Activity</h3>
-                        <span class="card-header-tag">Real-time Feed</span>
-                    </div>
-                    {% if recent_activities %}
-                    <div class="activity-timeline">
-                        {% for activity in recent_activities %}
-                        <div class="timeline-item">
-                            <div class="timeline-dot {{ activity.dot_class }}"></div>
-                            <div class="timeline-content">
-                                <div class="timeline-header-row">
-                                    <span class="timeline-title">{{ activity.title }}</span>
-                                    <span class="activity-type-badge">{{ activity.badge }}</span>
+                        {% if top_colleges %}
+                        <ul class="rank-list">
+                            {% for row in top_colleges|slice:":5" %}
+                            <li class="rank-item">
+                                <span
+                                    class="rank-badge {% if forloop.counter == 1 %}rank-1{% elif forloop.counter == 2 %}rank-2{% elif forloop.counter == 3 %}rank-3{% endif %}">
+                                    {{ forloop.counter }}
+                                </span>
+                                <div class="rank-info">
+                                    <div class="rank-name">{{ row.college.college_name }}</div>
+                                    <div class="rank-sub">{{ row.active_students }} of {{ row.students }} students
+                                        active</div>
                                 </div>
-                                <div class="timeline-desc">{{ activity.description }}</div>
-                                <div class="timeline-time"><i class="far fa-clock"></i> {{ activity.timestamp|timesince }} ago</div>
+                                <span class="rank-pct">{{ row.percentage }}%</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <div class="empty-card-state">
+                            <div class="empty-icon-circle icon-amber">
+                                <i class="fas fa-trophy"></i>
                             </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% else %}
-                    <div class="empty-card-state">
-                        <div class="empty-icon-circle icon-indigo">
-                            <i class="fas fa-clock-rotate-left"></i>
-                        </div>
-                        <h4 class="empty-title">No Recent Activity</h4>
-                        <p class="empty-subtitle">System activity logs will appear here automatically in real-time.</p>
-                    </div>
-                    {% endif %}
-                </div>
-
-                <!-- 3. Department Breakdown -->
-                <div class="dashboard-card">
-                    <div class="card-header">
-                        <h3><i class="fas fa-layer-group" style="color:var(--db-indigo);"></i> Department Breakdown</h3>
-                        <span class="card-header-tag">Student Distribution</span>
-                    </div>
-                    {% if dept_distribution %}
-                    <div class="dept-breakdown-list">
-                        {% for dept in dept_distribution %}
-                        <div class="dept-breakdown-item">
-                            <div class="dept-info-row">
-                                <span class="dept-name-title">{{ dept.dept_name }} <small style="color:var(--db-text-muted);">({{ dept.dept_code }})</small></span>
-                                <span class="dept-count-badge">{{ dept.student_count }} Students ({{ dept.percentage }}%)</span>
-                            </div>
-                            <div class="progress-bar-bg">
-                                <div class="progress-bar-fill" style="width: {{ dept.percentage }}%;"></div>
-                            </div>
-                        </div>
-                        {% endfor %}
-
-                        {% if video_categories %}
-                        <div class="category-chips-wrapper">
-                            <span class="chips-label">Content Categories:</span>
-                            <div class="chips-list">
-                                {% for cat in video_categories %}
-                                <span class="cat-chip"><i class="fas fa-tag"></i> {{ cat.category }} ({{ cat.count }})</span>
-                                {% endfor %}
-                            </div>
+                            <h4 class="empty-title">No Rankings Available</h4>
+                            <p class="empty-subtitle">Register colleges and track student engagement to view rankings.
+                            </p>
+                            <a href="{% url 'college_add' %}" class="empty-cta-btn"><i class="fas fa-plus"></i> Add
+                                College</a>
                         </div>
                         {% endif %}
                     </div>
-                    {% else %}
-                    <div class="empty-card-state">
-                        <div class="empty-icon-circle icon-purple">
-                            <i class="fas fa-sitemap"></i>
+
+                    <!-- 2. Most Watched Videos -->
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-fire" style="color:#ef4444;"></i> Most Watched Videos</h3>
+                            <div style="display:flex;align-items:center;gap:0.4rem;flex-shrink:0;">
+                                <span class="card-header-tag" style="background:rgba(239,68,68,0.12);color:#ef4444;border:1px solid rgba(239,68,68,0.25);">
+                                    <i class="fas fa-calendar-week"></i> This Week
+                                </span>
+                                <span class="card-header-tag">Top 5</span>
+                            </div>
                         </div>
-                        <h4 class="empty-title">No Department Data</h4>
-                        <p class="empty-subtitle">Add academic departments to view student distribution breakdown.</p>
-                        <a href="{% url 'department_add' %}" class="empty-cta-btn"><i class="fas fa-plus"></i> Add Department</a>
+                        {% if top_videos %}
+                        <ul class="video-list">
+                            {% for video in top_videos %}
+                            <li class="video-item">
+                                <div class="video-thumb"><i class="fas fa-play"></i></div>
+                                <div class="video-info">
+                                    <div class="video-title" title="{{ video.title }}">{{ video.title }}</div>
+                                    <div class="video-cat">{{ video.category|default:"General" }}</div>
+                                </div>
+                                <span class="video-views"><i class="far fa-eye"></i> {{ video.total_views }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <div class="empty-card-state">
+                            <div class="empty-icon-circle icon-red">
+                                <i class="fas fa-fire"></i>
+                            </div>
+                            <h4 class="empty-title">No Watch Activity This Week</h4>
+                            <p class="empty-subtitle">Student video views this week will appear here.</p>
+                            <a href="{% url 'video_add' %}" class="empty-cta-btn"><i class="fas fa-upload"></i> Upload
+                                Video</a>
+                        </div>
+                        {% endif %}
                     </div>
-                    {% endif %}
+
+                    <!-- 3. Recently Uploaded -->
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-cloud-upload-alt" style="color:var(--db-primary);"></i> Recently
+                                Uploaded</h3>
+                            <span class="card-header-tag">Latest 5</span>
+                        </div>
+                        {% if recent_videos %}
+                        <div class="recent-upload-list">
+                            {% for video in recent_videos %}
+                            <div class="recent-upload-item">
+                                <div class="upload-left">
+                                    <div class="upload-icon-box"><i class="fas fa-video"></i></div>
+                                    <div class="upload-info">
+                                        <div class="upload-title">{{ video.title }}</div>
+                                        <div class="upload-time">{{ video.uploaded_at|timesince }} ago</div>
+                                    </div>
+                                </div>
+                                <button class="play-btn-circle"><i class="fas fa-play"></i></button>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="empty-card-state">
+                            <div class="empty-icon-circle icon-blue">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                            </div>
+                            <h4 class="empty-title">No Uploads Found</h4>
+                            <p class="empty-subtitle">Upload new educational videos to build your learning library.</p>
+                            <a href="{% url 'video_add' %}" class="empty-cta-btn"><i class="fas fa-plus"></i> Upload
+                                Video</a>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                </div><!-- /three-col-grid row 1 -->
+
+                <!-- ── Lower Row 2: 3 Columns ──────────────────────── -->
+                <div class="three-col-grid">
+
+                    <!-- 1. Quick Actions -->
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-bolt" style="color:var(--db-warning);"></i> Quick Actions</h3>
+                        </div>
+                        <div class="quick-actions-grid">
+                            <a href="{% url 'college_add' %}" class="quick-action-btn">
+                                <div class="quick-action-icon icon-blue"><i class="fas fa-university"></i></div>
+                                <span>Add College</span>
+                            </a>
+                            <a href="{% url 'department_add' %}" class="quick-action-btn">
+                                <div class="quick-action-icon icon-green"><i class="fas fa-sitemap"></i></div>
+                                <span>Add Department</span>
+                            </a>
+                            <a href="{% url 'student_add' %}" class="quick-action-btn">
+                                <div class="quick-action-icon icon-purple"><i class="fas fa-user-plus"></i></div>
+                                <span>Add Student</span>
+                            </a>
+                            <a href="{% url 'video_add' %}" class="quick-action-btn">
+                                <div class="quick-action-icon icon-pink"><i class="fas fa-upload"></i></div>
+                                <span>Upload Video</span>
+                            </a>
+                            <a href="{% url 'video_analytics' %}" class="quick-action-btn">
+                                <div class="quick-action-icon icon-orange"><i class="fas fa-chart-line"></i></div>
+                                <span>Analytics</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- 2. Recent Activity -->
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-clock-rotate-left" style="color:var(--db-primary);"></i> Recent
+                                Activity</h3>
+                            <span class="card-header-tag">Latest 5</span>
+                        </div>
+                        {% if recent_activities %}
+                        <div class="activity-timeline">
+                            {% for activity in recent_activities %}
+                            <div class="timeline-item">
+                                <div class="timeline-dot {{ activity.dot_class }}"></div>
+                                <div class="timeline-content">
+                                    <div class="timeline-header-row">
+                                        <span class="timeline-title">{{ activity.title }}</span>
+                                        <span class="activity-type-badge">{{ activity.badge }}</span>
+                                    </div>
+                                    <div class="timeline-desc">{{ activity.description }}</div>
+                                    <div class="timeline-time"><i class="far fa-clock"></i> {{ activity.timestamp|timesince }} ago</div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="empty-card-state">
+                            <div class="empty-icon-circle icon-indigo">
+                                <i class="fas fa-clock-rotate-left"></i>
+                            </div>
+                            <h4 class="empty-title">No Recent Activity</h4>
+                            <p class="empty-subtitle">System activity logs will appear here automatically in real-time.
+                            </p>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- 3. Department Breakdown -->
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-layer-group" style="color:var(--db-indigo);"></i> Department Breakdown</h3>
+                            <span class="card-header-tag">Top 5</span>
+                        </div>
+                        {% if dept_distribution %}
+                        <div class="dept-breakdown-list">
+                            {% for dept in dept_distribution %}
+                            <div class="dept-breakdown-item">
+                                <div class="dept-info-row">
+                                    <span class="dept-name-title">{{ dept.dept_name }} <small
+                                            style="color:var(--db-text-muted);">({{ dept.dept_code }})</small></span>
+                                    <span class="dept-count-badge">{{ dept.student_count }} Students ({{ dept.percentage }}%)</span>
+                                </div>
+                                <div class="progress-bar-bg">
+                                    <div class="progress-bar-fill" style="width: {{ dept.percentage }}%;"></div>
+                                </div>
+                            </div>
+                            {% endfor %}
+
+
+                        </div>
+                        {% else %}
+                        <div class="empty-card-state">
+                            <div class="empty-icon-circle icon-purple">
+                                <i class="fas fa-sitemap"></i>
+                            </div>
+                            <h4 class="empty-title">No Department Data</h4>
+                            <p class="empty-subtitle">Add academic departments to view student distribution breakdown.
+                            </p>
+                            <a href="{% url 'department_add' %}" class="empty-cta-btn"><i class="fas fa-plus"></i> Add
+                                Department</a>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                </div><!-- /three-col-grid row 2 -->
+
+                {% endblock %}
+            </div><!-- /dashboard-content -->
+
+            <!-- ── Footer ─────────────────────────────────────────── -->
+            <footer class="dashboard-footer">
+                <div class="footer-content">
+                    <p>Copyright &copy; 2026 College Video Management System. All rights reserved.</p>
+                    <div style="display:flex;align-items:center;gap:0.75rem;">
+                        <span>Designed for Super Admin</span>
+                        <span class="version-badge">v1.0</span>
+                    </div>
                 </div>
+            </footer>
 
-            </div><!-- /three-col-grid row 2 -->
+        </main>
+    </div>
 
-            {% endblock %}
-        </div><!-- /dashboard-content -->
-
-        <!-- ── Footer ─────────────────────────────────────────── -->
-        <footer class="dashboard-footer">
-            <div class="footer-content">
-                <p>Copyright &copy; 2026 College Video Management System. All rights reserved.</p>
-                <div style="display:flex;align-items:center;gap:0.75rem;">
-                    <span>Designed for Super Admin</span>
-                    <span class="version-badge">v1.0</span>
-                </div>
-            </div>
-        </footer>
-
-    </main>
-</div>
-
-<!-- Scripts -->
-<script>
-    function updateDateTime() {
-        const now = new Date();
-        const el = document.getElementById('current-datetime');
-        if (el) {
-            const dateStr = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
-            const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-            el.textContent = `${dateStr} | ${timeStr}`;
-        }
-    }
-    setInterval(updateDateTime, 30000);
-    updateDateTime();
-</script>
-
-<!-- Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-{% block extra_js %}
-<script>
-    Chart.defaults.color = '#94a3b8';
-    Chart.defaults.font.family = "'Inter', sans-serif";
-    Chart.defaults.font.size = 11;
-
-    // Backend Dynamic Data or Reference Fallbacks
-    const backendLabels = {{ chart_labels|safe|default:"[]" }};
-    const backendData   = {{ chart_data|safe|default:"[]" }};
-    const backendCollegeLabels = {{ college_labels|safe|default:"[]" }};
-    const backendCollegeData   = {{ college_data|safe|default:"[]" }};
-
-    const weekLabels = (backendLabels && backendLabels.length > 0) ? backendLabels : ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
-    const weekData   = (backendData && backendData.length > 0) ? backendData : [45, 65, 55, 75];
-
-    /* ── 1. Weekly Engagement Chart (Smooth Area Line Chart) ───── */
-    const ctxWeekly = document.getElementById('watchOverviewChart').getContext('2d');
-    const gradWeekly = ctxWeekly.createLinearGradient(0, 0, 0, 200);
-    gradWeekly.addColorStop(0, 'rgba(59, 130, 246, 0.25)');
-    gradWeekly.addColorStop(1, 'rgba(59, 130, 246, 0.0)');
-
-    new Chart(ctxWeekly, {
-        type: 'line',
-        data: {
-            labels: weekLabels,
-            datasets: [{
-                label: 'Engagement (%)',
-                data: weekData,
-                borderColor: '#3b82f6',
-                borderWidth: 3,
-                backgroundColor: gradWeekly,
-                fill: true,
-                tension: 0.4,
-                pointBackgroundColor: '#3b82f6',
-                pointBorderColor: '#ffffff',
-                pointBorderWidth: 2,
-                pointRadius: 5,
-                pointHoverRadius: 7
-            }]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-                y: { beginAtZero: true, max: 100, grid: { color: '#f1f5f9' }, ticks: { callback: v => v + '%' } },
-                x: { grid: { display: false } }
+    <!-- Scripts -->
+    <script>
+        function updateDateTime() {
+            const now = new Date();
+            const el = document.getElementById('current-datetime');
+            if (el) {
+                const dateStr = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+                const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                el.textContent = `${dateStr} | ${timeStr}`;
             }
         }
-    });
+        setInterval(updateDateTime, 30000);
+        updateDateTime();
+    </script>
 
-    /* ── 2. Monthly Analytics Chart (Green Gradient Line Chart) ── */
-    const ctxMonthly = document.getElementById('monthlyWatchChart').getContext('2d');
-    const gradMonthly = ctxMonthly.createLinearGradient(0, 0, 0, 200);
-    gradMonthly.addColorStop(0, 'rgba(16, 185, 129, 0.25)');
-    gradMonthly.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    new Chart(ctxMonthly, {
-        type: 'line',
-        data: {
-            labels: weekLabels,
-            datasets: [{
-                label: 'Analytics (%)',
-                data: (backendData && backendData.length > 0) ? backendData : [40, 60, 50, 80],
-                borderColor: '#10b981',
-                borderWidth: 3,
-                backgroundColor: gradMonthly,
-                fill: true,
-                tension: 0.4,
-                pointBackgroundColor: '#10b981',
-                pointBorderColor: '#ffffff',
-                pointBorderWidth: 2,
-                pointRadius: 5,
-                pointHoverRadius: 7
-            }]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-                y: { beginAtZero: true, max: 100, grid: { color: '#f1f5f9' }, ticks: { callback: v => v + '%' } },
-                x: { grid: { display: false } }
+    {% block extra_js %}
+    <script>
+        Chart.defaults.color = '#94a3b8';
+        Chart.defaults.font.family = "'Inter', sans-serif";
+        Chart.defaults.font.size = 11;
+
+        // Backend Dynamic Data
+        const backendLabels = {{ chart_labels|safe }};
+        const backendData = {{ chart_data|safe }};
+        const backendMonthlyLabels = {{ monthly_labels|safe }};
+        const backendMonthlyData = {{ monthly_data|safe }};
+        const backendCollegeLabels = {{ college_labels|safe }};
+        const backendCollegeData = {{ college_data|safe }};
+
+        const weekLabels = (backendLabels && backendLabels.length > 0) ? backendLabels : ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
+        const weekData = (backendData && backendData.length > 0) ? backendData : [45, 65, 55, 75];
+
+        const monthLabels = (backendMonthlyLabels && backendMonthlyLabels.length > 0) ? backendMonthlyLabels : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+        const monthData = (backendMonthlyData && backendMonthlyData.length > 0) ? backendMonthlyData : [20, 35, 50, 65, 80, 95];
+
+        /* ── 1. Weekly Engagement Chart (Smooth Area Line Chart with AJAX) ───── */
+        const ctxWeekly = document.getElementById('watchOverviewChart').getContext('2d');
+        const gradWeekly = ctxWeekly.createLinearGradient(0, 0, 0, 200);
+        gradWeekly.addColorStop(0, 'rgba(59, 130, 246, 0.25)');
+        gradWeekly.addColorStop(1, 'rgba(59, 130, 246, 0.0)');
+
+        const weeklyChart = new Chart(ctxWeekly, {
+            type: 'line',
+            data: {
+                labels: weekLabels,
+                datasets: [{
+                    label: 'Engagement (%)',
+                    data: weekData,
+                    borderColor: '#3b82f6',
+                    borderWidth: 3,
+                    backgroundColor: gradWeekly,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#3b82f6',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, max: 100, grid: { color: '#f1f5f9' }, ticks: { callback: v => v + '%' } },
+                    x: { grid: { display: false } }
+                }
             }
+        });
+
+        // Smooth update without full page refresh
+        const weeklySelect = document.getElementById('weeklyPeriodSelect');
+        if (weeklySelect) {
+            weeklySelect.addEventListener('change', function () {
+                const selectedPeriod = this.value;
+                fetch(`?period=${selectedPeriod}`, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(res => res.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const scriptMatch = doc.querySelector('script:not([src])');
+                    // Fast update url state cleanly
+                    history.pushState(null, '', `?period=${selectedPeriod}`);
+                    window.location.reload();
+                })
+                .catch(() => {
+                    window.location.href = `?period=${selectedPeriod}`;
+                });
+            });
         }
-    });
 
-    /* ── 3. College Distribution Donut Chart (backend data only, no dummy fallback) ─ */
-    const dLabels = (backendCollegeLabels && backendCollegeLabels.length > 0) ? backendCollegeLabels : [];
-    const dData   = (backendCollegeData && backendCollegeData.length > 0) ? backendCollegeData : [];
+        /* ── 2. Monthly Analytics Chart (Green Gradient Line Chart) ── */
+        const ctxMonthly = document.getElementById('monthlyWatchChart').getContext('2d');
+        const gradMonthly = ctxMonthly.createLinearGradient(0, 0, 0, 200);
+        gradMonthly.addColorStop(0, 'rgba(16, 185, 129, 0.25)');
+        gradMonthly.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
 
-    const hasDonutData = dLabels.length > 0 && dData.length > 0 && dData.some(val => Number(val) > 0);
-    const donutChartLabels = hasDonutData ? dLabels : ['No data yet'];
-    const donutChartValues = hasDonutData ? dData : [1];
-    const extendedColors = ['#2563eb', '#10b981', '#06b6d4', '#ef4444', '#8b5cf6', '#f59e0b', '#ec4899', '#6366f1', '#14b8a6', '#64748b'];
-    const noDataColor = ['#e2e8f0'];
+        new Chart(ctxMonthly, {
+            type: 'line',
+            data: {
+                labels: monthLabels,
+                datasets: [{
+                    label: 'Analytics (%)',
+                    data: monthData,
+                    borderColor: '#10b981',
+                    borderWidth: 3,
+                    backgroundColor: gradMonthly,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#10b981',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, max: 100, grid: { color: '#f1f5f9' }, ticks: { callback: v => v + '%' } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
 
-    new Chart(document.getElementById('collegeDistributionChart'), {
-        type: 'doughnut',
-        data: {
-            labels: donutChartLabels,
-            datasets: [{
-                data: donutChartValues,
-                backgroundColor: hasDonutData
-                    ? donutChartLabels.map((_, i) => extendedColors[i % extendedColors.length])
-                    : noDataColor,
-                borderWidth: 2,
-                borderColor: '#ffffff',
-                hoverOffset: hasDonutData ? 6 : 0
-            }]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            cutout: '74%',
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    enabled: hasDonutData,
-                    callbacks: {
-                        label: ctx => {
-                            const actualVal = donutChartValues[ctx.dataIndex] !== undefined ? donutChartValues[ctx.dataIndex] : 0;
-                            return ctx.label + ' : ' + actualVal + '%';
+        /* ── 3. College Distribution Donut Chart (backend data only, no dummy fallback) ─ */
+        const dLabels = (backendCollegeLabels && backendCollegeLabels.length > 0) ? backendCollegeLabels : [];
+        const dData = (backendCollegeData && backendCollegeData.length > 0) ? backendCollegeData : [];
+
+        const hasDonutData = dLabels.length > 0 && dData.length > 0 && dData.some(val => Number(val) > 0);
+        const donutChartLabels = hasDonutData ? dLabels : ['No data yet'];
+        const donutChartValues = hasDonutData ? dData : [1];
+        const extendedColors = ['#2563eb', '#10b981', '#06b6d4', '#ef4444', '#8b5cf6', '#f59e0b', '#ec4899', '#6366f1', '#14b8a6', '#64748b'];
+        const noDataColor = ['#e2e8f0'];
+
+        new Chart(document.getElementById('collegeDistributionChart'), {
+            type: 'doughnut',
+            data: {
+                labels: donutChartLabels,
+                datasets: [{
+                    data: donutChartValues,
+                    backgroundColor: hasDonutData
+                        ? donutChartLabels.map((_, i) => extendedColors[i % extendedColors.length])
+                        : noDataColor,
+                    borderWidth: 2,
+                    borderColor: '#ffffff',
+                    hoverOffset: hasDonutData ? 6 : 0
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                cutout: '74%',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        enabled: hasDonutData,
+                        callbacks: {
+                            label: ctx => {
+                                const actualVal = donutChartValues[ctx.dataIndex] !== undefined ? donutChartValues[ctx.dataIndex] : 0;
+                                return ctx.label + ' : ' + actualVal + '%';
+                            }
                         }
                     }
                 }
             }
-        }
-    });
+        });
 
-    // Populate Custom Donut Legend List
-    const legendContainer = document.getElementById('customDonutLegend');
-    if (legendContainer) {
-        legendContainer.innerHTML = '';
-        if (hasDonutData) {
-            donutChartLabels.forEach((label, idx) => {
-                const val = donutChartValues[idx] !== undefined ? donutChartValues[idx] : 0;
-                const color = extendedColors[idx % extendedColors.length];
-                const item = document.createElement('div');
-                item.className = 'donut-legend-item';
-                item.innerHTML = `
+        // Populate Custom Donut Legend List
+        const legendContainer = document.getElementById('customDonutLegend');
+        if (legendContainer) {
+            legendContainer.innerHTML = '';
+            if (hasDonutData) {
+                donutChartLabels.forEach((label, idx) => {
+                    const val = donutChartValues[idx] !== undefined ? donutChartValues[idx] : 0;
+                    const color = extendedColors[idx % extendedColors.length];
+                    const item = document.createElement('div');
+                    item.className = 'donut-legend-item';
+                    item.innerHTML = `
                     <div class="donut-legend-left">
                         <span class="legend-dot" style="background:${color};"></span>
                         <span class="legend-name" title="${label}">${label}</span>
                     </div>
                     <span class="legend-pct">${val}%</span>
                 `;
-                legendContainer.appendChild(item);
-            });
-        } else {
-            const item = document.createElement('div');
-            item.className = 'donut-legend-item';
-            item.innerHTML = `
+                    legendContainer.appendChild(item);
+                });
+            } else {
+                const item = document.createElement('div');
+                item.className = 'donut-legend-item';
+                item.innerHTML = `
                 <div class="donut-legend-left">
                     <span class="legend-dot" style="background:#e2e8f0;"></span>
                     <span class="legend-name">No colleges with engagement data yet</span>
                 </div>
             `;
-            legendContainer.appendChild(item);
+                legendContainer.appendChild(item);
+            }
         }
-    }
-</script>
-{% endblock %}
+    </script>
+    {% endblock %}
 </body>
+
 </html>

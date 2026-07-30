@@ -113,7 +113,7 @@ def dashboard(request):
     )
 
     # ------------------------------------------
-    # Recent Videos
+    # Recent Videos (latest 5)
     # ------------------------------------------
 
     recent_videos = Video.objects.order_by(
@@ -121,16 +121,18 @@ def dashboard(request):
     )[:5]
 
     # ------------------------------------------
-    # Top Videos
+    # Top Videos – Most Watched this Week (5 items)
     # ------------------------------------------
+
+    week_start = today - timedelta(days=today.weekday())   # Monday
+    week_end   = week_start + timedelta(days=6)            # Sunday
 
     top_videos = (
         Video.objects.annotate(
             total_views=Count(
                 "watch_history",
                 filter=Q(
-                    watch_history__watched_at__year=now.year,
-                    watch_history__watched_at__month=now.month,
+                    watch_history__watched_at__date__range=(week_start, week_end),
                 ),
             )
         )
@@ -150,8 +152,7 @@ def dashboard(request):
 
         active_students = (
             VideoWatch.objects.filter(
-                watched_at__year=now.year,
-                watched_at__month=now.month,
+                watched_at__date__range=(week_start, week_end),
                 student__college=college
             )
             .values("student")
@@ -300,7 +301,38 @@ def dashboard(request):
             chart_data.append(
                 percentage
             )
-            # ==========================================
+
+    # ==========================================
+    # Monthly Analytics Data (Last 6 Months)
+    # ==========================================
+    monthly_labels = []
+    monthly_data = []
+
+    for i in range(5, -1, -1):
+        month = now.month - i
+        year = now.year
+        while month <= 0:
+            month += 12
+            year -= 1
+
+        active = (
+            VideoWatch.objects.filter(
+                watched_at__year=year,
+                watched_at__month=month
+            )
+            .values("student")
+            .distinct()
+            .count()
+        )
+
+        percentage = (
+            round((active / total_students) * 100, 2)
+            if total_students
+            else 0
+        )
+
+        monthly_labels.append(calendar.month_abbr[month])
+        monthly_data.append(percentage)
     # College Distribution
     # ==========================================
 
@@ -411,7 +443,7 @@ def dashboard(request):
             })
 
     recent_activities.sort(key=lambda x: x["timestamp"], reverse=True)
-    recent_activities = recent_activities[:6]
+    recent_activities = recent_activities[:5]
 
     # ==========================================
     # Department & Category Breakdown (Replaces System Overview)
@@ -419,7 +451,7 @@ def dashboard(request):
 
     dept_distribution = []
     if total_students > 0:
-        depts = Department.objects.annotate(student_count=Count("students")).order_by("-student_count")[:4]
+        depts = Department.objects.annotate(student_count=Count("students")).order_by("-student_count")[:5]
         for d in depts:
             pct = round((d.student_count / total_students) * 100, 1)
             dept_distribution.append({
@@ -487,6 +519,8 @@ def dashboard(request):
         # Dynamic Chart
         "chart_labels": json.dumps(chart_labels),
         "chart_data": json.dumps(chart_data),
+        "monthly_labels": json.dumps(monthly_labels),
+        "monthly_data": json.dumps(monthly_data),
 
         # College Distribution
         "college_labels": json.dumps(college_labels),
@@ -496,6 +530,10 @@ def dashboard(request):
         "selected_period": period,
 
         "now": now,
+
+        # Weekly range (for Most Watched Videos label)
+        "week_start": week_start,
+        "week_end": week_end,
     }
 
     # ==========================================
@@ -1690,6 +1728,18 @@ def video_analytics(request):
     dept_labels = [row["student__department__dept_name"] for row in dept_rows]
     dept_data = [row["count"] for row in dept_rows]
 
+    # Weekly variant for Dept switcher
+    _week_start = today - timedelta(days=today.weekday())  # Monday this week
+    dept_week_rows = (
+        watches.filter(watched_at__date__gte=_week_start)
+        .exclude(student__department__isnull=True)
+        .values("student__department__dept_name")
+        .annotate(count=Count("id"))
+        .order_by("-count")[:5]
+    )
+    dept_week_labels = [row["student__department__dept_name"] for row in dept_week_rows]
+    dept_week_data   = [row["count"] for row in dept_week_rows]
+
     college_rows = (
         watches.exclude(student__college__isnull=True)
         .values("student__college__college_name")
@@ -1698,6 +1748,17 @@ def video_analytics(request):
     )
     college_labels_chart = [row["student__college__college_name"] for row in college_rows]
     college_data_chart = [row["count"] for row in college_rows]
+
+    # Weekly variant for College switcher
+    college_week_rows = (
+        watches.filter(watched_at__date__gte=_week_start)
+        .exclude(student__college__isnull=True)
+        .values("student__college__college_name")
+        .annotate(count=Count("id"))
+        .order_by("-count")[:5]
+    )
+    college_week_labels = [row["student__college__college_name"] for row in college_week_rows]
+    college_week_data   = [row["count"] for row in college_week_rows]
 
     # ------------------------------------------------------------
     # Category distribution
@@ -1791,8 +1852,12 @@ def video_analytics(request):
 
         "dept_labels": json.dumps(dept_labels),
         "dept_data": json.dumps(dept_data),
+        "dept_week_labels": json.dumps(dept_week_labels),
+        "dept_week_data": json.dumps(dept_week_data),
         "college_labels_chart": json.dumps(college_labels_chart),
         "college_data_chart": json.dumps(college_data_chart),
+        "college_week_labels": json.dumps(college_week_labels),
+        "college_week_data": json.dumps(college_week_data),
         "category_labels": json.dumps(category_labels),
         "category_data": json.dumps(category_data),
         "monthly_labels": json.dumps(monthly_labels),
@@ -1824,8 +1889,6 @@ def profile(request):
     return render(request, 'dashboard/profile.html')
 
 
-def video_edit(request, id):
-    return render(request, "video_edit.html")
 
 
 def video_delete(request, id):
@@ -3102,14 +3165,40 @@ def api_hod_dashboard(request):
         uploaded_at__month=timezone.now().month,
     ).count()
 
+    period = request.GET.get("period", "week")
     engagement_data = []
-    for offset in range(6, -1, -1):
-        day = timezone.now().date() - timedelta(days=offset)
-        day_count = watched_videos.filter(watched_at__date=day).values("student").distinct().count()
-        engagement_data.append({
-            "day": day.strftime("%a"),
-            "value": day_count,
-        })
+
+    if period == "month":
+        # 4 Weeks breakdown for the month
+        for i in range(3, -1, -1):
+            start_d = timezone.now().date() - timedelta(days=(i + 1) * 7 - 1)
+            end_d = timezone.now().date() - timedelta(days=i * 7)
+            count = (
+                watched_videos.filter(watched_at__date__range=(start_d, end_d))
+                .values("student")
+                .distinct()
+                .count()
+            )
+            pct = int(round((count / max(total_students, 1)) * 100)) if total_students else 0
+            engagement_data.append({
+                "day": f"W{4 - i}",
+                "value": min(100, pct),
+            })
+    else:
+        # 7 Days breakdown for the week
+        for offset in range(6, -1, -1):
+            day = timezone.now().date() - timedelta(days=offset)
+            day_count = (
+                watched_videos.filter(watched_at__date=day)
+                .values("student")
+                .distinct()
+                .count()
+            )
+            pct = int(round((day_count / max(total_students, 1)) * 100)) if total_students else 0
+            engagement_data.append({
+                "day": day.strftime("%a"),
+                "value": min(100, pct),
+            })
 
     top_students_qs = students.annotate(
         watched_videos=Count("watch_history", distinct=True),

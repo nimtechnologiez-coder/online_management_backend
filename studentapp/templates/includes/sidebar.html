@@ -30,7 +30,7 @@
     <!-- Navigation Menu -->
     <nav class="sidebar-nav">
         <ul class="nav-list">
-            
+
             <li class="nav-section-title">MAIN NAVIGATION</li>
 
             <!-- Dashboard -->
@@ -51,7 +51,8 @@
                     class="nav-link {% if request.resolver_match.url_name == 'collegemanagement' %}active{% endif %}">
                     <i class="fas fa-university nav-icon"></i>
                     <span class="nav-text">Colleges</span>
-                    {% if request.resolver_match.url_name == 'collegemanagement' %}<span class="active-indicator"></span>{% endif %}
+                    {% if request.resolver_match.url_name == 'collegemanagement' %}<span
+                        class="active-indicator"></span>{% endif %}
                 </a>
             </li>
 
@@ -61,7 +62,8 @@
                     class="nav-link {% if request.resolver_match.url_name == 'department_management' %}active{% endif %}">
                     <i class="fas fa-sitemap nav-icon"></i>
                     <span class="nav-text">Departments</span>
-                    {% if request.resolver_match.url_name == 'department_management' %}<span class="active-indicator"></span>{% endif %}
+                    {% if request.resolver_match.url_name == 'department_management' %}<span
+                        class="active-indicator"></span>{% endif %}
                 </a>
             </li>
 
@@ -71,7 +73,8 @@
                     class="nav-link {% if request.resolver_match.url_name == 'principal_management' %}active{% endif %}">
                     <i class="fas fa-user-tie nav-icon"></i>
                     <span class="nav-text">Principals</span>
-                    {% if request.resolver_match.url_name == 'principal_management' %}<span class="active-indicator"></span>{% endif %}
+                    {% if request.resolver_match.url_name == 'principal_management' %}<span
+                        class="active-indicator"></span>{% endif %}
                 </a>
             </li>
 
@@ -81,7 +84,8 @@
                     class="nav-link {% if request.resolver_match.url_name == 'student_management' %}active{% endif %}">
                     <i class="fas fa-user-graduate nav-icon"></i>
                     <span class="nav-text">Students</span>
-                    {% if request.resolver_match.url_name == 'student_management' %}<span class="active-indicator"></span>{% endif %}
+                    {% if request.resolver_match.url_name == 'student_management' %}<span
+                        class="active-indicator"></span>{% endif %}
                 </a>
             </li>
 
@@ -93,7 +97,8 @@
                     class="nav-link {% if request.resolver_match.url_name == 'video_management' %}active{% endif %}">
                     <i class="fas fa-video nav-icon"></i>
                     <span class="nav-text">Video Catalog</span>
-                    {% if request.resolver_match.url_name == 'video_management' %}<span class="active-indicator"></span>{% endif %}
+                    {% if request.resolver_match.url_name == 'video_management' %}<span
+                        class="active-indicator"></span>{% endif %}
                 </a>
             </li>
 
@@ -103,17 +108,8 @@
                     class="nav-link {% if request.resolver_match.url_name == 'video_analytics' %}active{% endif %}">
                     <i class="fas fa-chart-line nav-icon"></i>
                     <span class="nav-text">Video Analytics</span>
-                    {% if request.resolver_match.url_name == 'video_analytics' %}<span class="active-indicator"></span>{% endif %}
-                </a>
-            </li>
-
-            <!-- Reports -->
-            <li class="nav-item">
-                <a href="{% url 'reports' %}"
-                    class="nav-link {% if request.resolver_match.url_name == 'reports' %}active{% endif %}">
-                    <i class="fas fa-file-invoice nav-icon"></i>
-                    <span class="nav-text">Reports</span>
-                    {% if request.resolver_match.url_name == 'reports' %}<span class="active-indicator"></span>{% endif %}
+                    {% if request.resolver_match.url_name == 'video_analytics' %}<span
+                        class="active-indicator"></span>{% endif %}
                 </a>
             </li>
 

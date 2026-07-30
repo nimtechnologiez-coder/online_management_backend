@@ -95,12 +95,64 @@
 .va-filter--pdf i { color: #d92d20; }
 .va-filter--icon { padding: .55rem .7rem; color: var(--va-text-sub); }
 
-/* ── Stat Cards Grid (6 Cards Symmetrical Layout) ───────────── */
+/* ── Stat Cards Grid (5 Cards Symmetrical Layout) ───────────── */
 .va-stats-grid {
     display: grid;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: var(--va-gap-md);
     margin-bottom: var(--va-gap-lg);
+}
+.va-trends-single {
+    margin-bottom: var(--va-gap-lg);
+}
+
+/* ── Row 2: Views Over Time (2/3) + Activity Summary (1/3) ── */
+.va-row2-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: var(--va-gap-lg);
+    align-items: stretch;
+    margin-bottom: var(--va-gap-lg);
+}
+
+/* ── Tag badges (replaces inline card-header-tag styles) ────── */
+.va-tag {
+    display: inline-flex; align-items: center;
+    padding: .2rem .6rem;
+    border-radius: 6px;
+    font-size: .72rem; font-weight: 700;
+    white-space: nowrap; flex-shrink: 0;
+}
+.va-tag--blue   { background: rgba(59,130,246,0.12);  color: #3b82f6; border: 1px solid rgba(59,130,246,0.25); }
+.va-tag--green  { background: rgba(16,185,129,0.1);   color: #10b981; border: 1px solid rgba(16,185,129,0.2); }
+.va-tag--purple { background: rgba(139,92,246,0.1);   color: #8b5cf6; border: 1px solid rgba(139,92,246,0.2); }
+.va-tag--amber  { background: rgba(245,158,11,0.1);   color: #f59e0b; border: 1px solid rgba(245,158,11,0.2); }
+.va-tag--gray   { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
+
+/* ── Period tab switcher (Monthly / Weekly) ─────────────────── */
+.va-chart-period-tabs {
+    display: inline-flex; gap: .25rem;
+    background: var(--va-bg);
+    border: 1px solid var(--va-border);
+    border-radius: 8px;
+    padding: .2rem;
+    flex-shrink: 0;
+}
+.va-period-tab {
+    padding: .25rem .65rem;
+    border-radius: 6px;
+    font-size: .72rem; font-weight: 600;
+    border: none; background: transparent;
+    color: var(--va-text-muted);
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease;
+    font-family: 'Inter', sans-serif;
+}
+.va-period-tab:hover { color: var(--va-text-sub); }
+.va-period-tab.active {
+    background: #fff;
+    color: var(--va-primary);
+    box-shadow: 0 1px 4px rgba(13,17,49,.08);
 }
 .va-stat-card {
     background: var(--va-card);
@@ -161,10 +213,17 @@
 }
 .va-breakdown-grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--va-gap-lg);
     margin-bottom: var(--va-gap-lg);
     align-items: stretch;
+}
+
+.va-activity-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--va-gap-md);
+    flex: 1;
 }
 
 .va-chart-card {
@@ -189,8 +248,9 @@
 }
 .va-info-icon { font-size: .72rem; color: var(--va-text-muted); flex-shrink: 0; }
 .va-chart-body { position: relative; flex: 1; }
-.va-chart-body--sm { min-height: 150px; }
-.va-chart-body--md { min-height: 210px; }
+.va-chart-body--sm  { min-height: 150px; }
+.va-chart-body--md  { min-height: 210px; }
+.va-chart-body--lg  { min-height: 260px; }
 .va-chart-body--donut { display: flex; align-items: center; justify-content: center; }
 
 .va-select-sm {
@@ -320,6 +380,19 @@
     color: var(--va-text-muted); font-size: .8rem; white-space: normal;
 }
 
+/* Empty state overlay inside a chart body (canvas stays in DOM) */
+.va-chart-empty {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--va-text-muted);
+    font-size: .82rem;
+    font-weight: 500;
+    pointer-events: none;
+}
+
 /* ── Mini card groups (Student Activity / Quick Insights) ─────── */
 .va-mini-card-group {
     background: var(--va-card);
@@ -355,25 +428,28 @@
 
 /* ── Responsive ───────────────────────────────────────────── */
 @media (max-width: 1600px) {
-    .va-stats-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .va-breakdown-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .va-stats-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 }
 @media (max-width: 1400px) {
-    .va-trends-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .va-tables-row { grid-template-columns: 1fr; }
-    .va-bottom-grid { grid-template-columns: 1fr; }
+    .va-tables-row  { grid-template-columns: 1fr; }
+    .va-row2-grid   { grid-template-columns: 1fr; }
+}
+@media (max-width: 1100px) {
+    .va-stats-grid     { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .va-breakdown-grid { grid-template-columns: 1fr; }
+    .va-row2-grid      { grid-template-columns: 1fr; }
 }
 @media (max-width: 1000px) {
     .va-main { margin-left: 0; }
-    .va-stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 768px) {
     .va-main { padding: 1.1rem; }
     .va-topbar { flex-direction: column; }
     .va-topbar__filters { width: 100%; }
-    .va-trends-grid, .va-breakdown-grid { grid-template-columns: 1fr; }
-    .va-mini-grid { grid-template-columns: 1fr; }
+    .va-stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .va-activity-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 480px) {
-    .va-stats-grid { grid-template-columns: 1fr; }
+    .va-stats-grid    { grid-template-columns: 1fr; }
+    .va-activity-grid { grid-template-columns: 1fr; }
 }
