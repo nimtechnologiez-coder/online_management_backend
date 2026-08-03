@@ -87,5 +87,12 @@ urlpatterns = [
     path("api/hod/students/", views.api_hod_students, name="api_hod_students"),
     path("api/hod/videos/", views.api_hod_videos, name="api_hod_videos"),
     path("api/hod/performance/", views.api_hod_performance, name="api_hod_performance"),
+    path("api/hod/profile/", views.api_hod_profile, name="api_hod_profile"),
+    path("api/hod/videos/upload/", views.api_hod_video_upload, name="api_hod_video_upload"),
+    path(
+    "api/hod/videos/upload/<int:video_id>/",
+    views.api_hod_video_delete,
+    name="api_hod_video_delete",
 
+),
 ]

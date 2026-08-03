@@ -28,7 +28,6 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-
     "studentapp",
 ]
 
@@ -224,6 +223,10 @@ SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_SECURE = False
 
 CSRF_COOKIE_SAMESITE = "Lax"
+
+# Allow large JSON payload uploads (e.g., base64 profile pictures & cover photos)
+DATA_UPLOAD_MAX_MEMORY_SIZE = 15728640  # 15MB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 15728640  # 15MB
 
 
 

@@ -272,6 +272,10 @@ class Principal(models.Model):
         blank=True
     )
 
+    bio = models.TextField(null=True, blank=True)
+    avatar = models.TextField(null=True, blank=True)
+    cover_photo = models.TextField(null=True, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -323,6 +327,10 @@ class Department(models.Model):
         choices=STATUS,
         default="active"
     )
+
+    bio = models.TextField(null=True, blank=True)
+    avatar = models.TextField(null=True, blank=True)
+    cover_photo = models.TextField(null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -436,39 +444,27 @@ class Video(models.Model):
     )
 
     title = models.CharField(max_length=250)
-
-    category = models.CharField(
-        max_length=100,
-        choices=CATEGORY
-    )
-
+    category = models.CharField(max_length=100, choices=CATEGORY)
     duration = models.CharField(max_length=20)
-
     description = models.TextField(blank=True)
 
-    video_file = models.FileField(
-        upload_to="videos/"
+    video_file = models.FileField(upload_to="videos/")
+    thumbnail = models.ImageField(upload_to="thumbnails/")
+
+    status = models.CharField(max_length=20, choices=STATUS, default="Published")
+
+    uploaded_by_hod = models.ForeignKey(
+        Department,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="videos"
     )
 
-    thumbnail = models.ImageField(
-        upload_to="thumbnails/"
-    )
-
-    status = models.CharField(
-        max_length=20,
-        choices=STATUS,
-        default="Published"
-    )
+    is_admin_video = models.BooleanField(default=False)
 
     uploaded_at = models.DateTimeField(auto_now_add=True)
-
     views = models.PositiveIntegerField(default=0)
-
-    def __str__(self):
-        return self.title
-
-    class Meta:
-        ordering = ["-uploaded_at"]
 
 
 # ==========================================
