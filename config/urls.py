@@ -21,8 +21,8 @@ from django.conf.urls.static import static
 from django.views.static import serve
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
     path('', include('studentapp.urls')),
+    path('django-admin/', admin.site.urls),
 ]
 
 if settings.DEBUG:

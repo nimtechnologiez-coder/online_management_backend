@@ -346,8 +346,10 @@ class Department(models.Model):
 # ==========================================
 class Student(models.Model):
     STATUS = (
+        ("pending_approval", "Pending Approval"),
         ("active", "Active"),
         ("inactive", "Inactive"),
+        ("rejected", "Rejected"),
         ("expired", "Expired"),
     )
 
@@ -416,6 +418,21 @@ class Student(models.Model):
         default="active"
     )
 
+    is_verified = models.BooleanField(
+        default=False
+    )
+
+    otp_code = models.CharField(
+        max_length=6,
+        blank=True,
+        null=True
+    )
+
+    otp_created_at = models.DateTimeField(
+        blank=True,
+        null=True
+    )
+
     created_at = models.DateTimeField(
         auto_now_add=True
     )
@@ -433,6 +450,8 @@ class Student(models.Model):
 class Video(models.Model):
     STATUS = (
         ("Published", "Published"),
+        ("Pending", "Pending"),
+        ("Rejected", "Rejected"),
         ("Draft", "Draft"),
     )
 
@@ -448,10 +467,10 @@ class Video(models.Model):
     duration = models.CharField(max_length=20)
     description = models.TextField(blank=True)
 
-    video_file = models.FileField(upload_to="videos/")
-    thumbnail = models.ImageField(upload_to="thumbnails/")
+    video_file = models.FileField(upload_to="videos/", blank=True, null=True)
+    thumbnail = models.ImageField(upload_to="thumbnails/", blank=True, null=True)
 
-    status = models.CharField(max_length=20, choices=STATUS, default="Published")
+    status = models.CharField(max_length=20, choices=STATUS, default="Pending")
 
     uploaded_by_hod = models.ForeignKey(
         Department,

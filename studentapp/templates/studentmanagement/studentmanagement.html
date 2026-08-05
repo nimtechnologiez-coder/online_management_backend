@@ -39,11 +39,8 @@
         <div class="sm-page-header">
             <div>
                 <h1 class="sm-page-title">Student Management</h1>
-                <p class="sm-page-subtitle">Manage student records, enrollment and credentials.</p>
+                <p class="sm-page-subtitle">View and manage registered student accounts and records.</p>
             </div>
-            <a href="{% url 'student_add' %}" class="sm-btn sm-btn--primary">
-                <i class="fas fa-user-plus"></i> Add Student
-            </a>
         </div>
 
         <!-- Stats Cards -->
@@ -110,8 +107,10 @@
                 </select>
                 <select name="status" class="sm-select sm-select--sm" onchange="this.form.submit()">
                     <option value="">All Status</option>
+                    <option value="pending_approval" {% if selected_status == 'pending_approval' %}selected{% endif %}>Pending Approval</option>
                     <option value="active" {% if selected_status == 'active' %}selected{% endif %}>Active</option>
                     <option value="inactive" {% if selected_status == 'inactive' %}selected{% endif %}>Inactive</option>
+                    <option value="rejected" {% if selected_status == 'rejected' %}selected{% endif %}>Rejected</option>
                 </select>
             </div>
             <a href="{% url 'student_management' %}" class="sm-btn sm-btn--ghost" id="resetBtn" title="Reset filters" style="text-decoration:none;">
@@ -128,7 +127,6 @@
                             <th>#</th>
                             <th>Student</th>
                             <th>Username</th>
-                            <th>Password</th>
                             <th>College</th>
                             <th>Dept</th>
                             <th>Year</th>
@@ -159,7 +157,6 @@
                             <td>{{ forloop.counter0|add:page_obj.start_index }}</td>
                             <td>{{ s.full_name }}</td>
                             <td>{{ s.username }}</td>
-                            <td>{{ s.password }}</td>
                             <td>{{ s.college.college_name }}</td>
                             <td>{{ s.department.dept_name }}</td>
                             <td>{{ s.year }}</td>
@@ -319,8 +316,10 @@
                 <div class="sm-form-group">
                     <label>Status</label>
                     <select id="editStatus" class="sm-select">
+                        <option value="pending_approval">Pending Approval</option>
                         <option value="active">Active</option>
                         <option value="inactive">Inactive</option>
+                        <option value="rejected">Rejected</option>
                     </select>
                 </div>
             </form>
@@ -338,14 +337,15 @@
                 <i class="fas fa-times"></i>
             </button>
             <div class="delete-modal__icon" aria-hidden="true">
-                <i class="fas fa-trash-alt"></i>
+                <i class="fas fa-exclamation-triangle"></i>
             </div>
             <h3 id="deleteModalTitle" class="delete-modal__title">Delete Student</h3>
-            <p class="delete-modal__warning">This action cannot be undone.</p>
-            <p id="deleteModalDesc" class="delete-modal__message">Are you sure you want to permanently delete <strong id="deleteName"></strong> from your dashboard?</p>
+            <p id="deleteModalDesc" class="delete-modal__message">Are you sure you want to delete <strong id="deleteName">this student</strong>? This action cannot be undone.</p>
             <div class="delete-modal__actions">
-                <button type="button" onclick="closeModal('deleteModal')" class="sm-btn sm-btn--ghost delete-modal__cancel">Cancel</button>
-                <button type="button" onclick="confirmDelete()" class="sm-btn sm-btn--danger delete-modal__confirm" id="deleteConfirmBtn">Delete Permanently</button>
+                <button type="button" onclick="closeModal('deleteModal')" class="delete-modal__cancel">Cancel</button>
+                <button type="button" onclick="confirmDelete()" class="delete-modal__confirm" id="deleteConfirmBtn">
+                    <span id="deleteBtnText">Delete Student</span>
+                </button>
             </div>
         </div>
     </div>
@@ -564,6 +564,48 @@
             });
         }
 
+        function approveStudentDirect(studentId) {
+            if (!confirm('Are you sure you want to approve this student registration?')) return;
+            const formData = new FormData();
+            formData.append('status', 'active');
+            fetch(`/students/update/${studentId}/`, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': CSRF_TOKEN },
+                body: formData
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showToast('Student approved successfully.');
+                    goToPage(pageState.currentPage);
+                } else {
+                    alert('Error: ' + (data.message || 'Could not approve student.'));
+                }
+            })
+            .catch(() => alert('Network error. Please try again.'));
+        }
+
+        function rejectStudentDirect(studentId) {
+            if (!confirm('Are you sure you want to reject this student registration?')) return;
+            const formData = new FormData();
+            formData.append('status', 'rejected');
+            fetch(`/students/update/${studentId}/`, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': CSRF_TOKEN },
+                body: formData
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showToast('Student registration rejected.');
+                    goToPage(pageState.currentPage);
+                } else {
+                    alert('Error: ' + (data.message || 'Could not reject student.'));
+                }
+            })
+            .catch(() => alert('Network error. Please try again.'));
+        }
+
         let _deleteRow = null;
         function openDeleteModal(btn) {
             _deleteRow = btn.closest('tr');
@@ -576,8 +618,14 @@
             const studentId = _deleteRow.dataset.id;
             const studentName = _deleteRow.dataset.name || 'Student';
             const confirmBtn = document.getElementById('deleteConfirmBtn');
+            const btnText = document.getElementById('deleteBtnText');
+            
             confirmBtn.disabled = true;
-            confirmBtn.textContent = 'Deleting...';
+            if (btnText) {
+                btnText.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+            } else {
+                confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+            }
 
             fetch(`/students/delete/${studentId}/`, {
                 method: 'POST',
@@ -589,11 +637,19 @@
             })
             .then(r => r.json())
             .then(data => {
+                confirmBtn.disabled = false;
+                if (btnText) {
+                    btnText.textContent = 'Delete Student';
+                } else {
+                    confirmBtn.textContent = 'Delete Student';
+                }
+
                 if (data.status === 'success') {
                     _deleteRow.remove();
                     closeModal('deleteModal');
-                    showToast(`${studentName} has been deleted successfully.`);
+                    showToast(`${studentName} deleted successfully.`);
                     _deleteRow = null;
+                    goToPage(pageState.currentPage);
                 } else {
                     showToast(data.message || 'Could not delete student.', true);
                 }
@@ -601,7 +657,7 @@
             .catch(() => showToast('Network error. Please try again.', true))
             .finally(() => {
                 confirmBtn.disabled = false;
-                confirmBtn.textContent = 'Delete Permanently';
+                if (btnText) btnText.textContent = 'Delete Student';
             });
         }
 

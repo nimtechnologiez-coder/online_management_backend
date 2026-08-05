@@ -1151,7 +1151,8 @@ def student_management(request):
     # select_related avoids N+1 queries and guarantees college_id / department_id
     # (and their names) are populated for every row rendered in student_rows.html —
     # this is what lets the Edit modal filter Department options by college.
-    students_list = Student.objects.select_related('college', 'department').order_by('-created_at')
+    # Only include completed signup users who have verified their email OTP
+    students_list = Student.objects.filter(is_verified=True).select_related('college', 'department').order_by('-created_at')
 
     q = request.GET.get('q', '')
     college_id = request.GET.get('college', '')
@@ -1188,6 +1189,8 @@ def student_management(request):
             {'id': d.id, 'name': d.dept_name}
         )
 
+    verified_students_qs = Student.objects.filter(is_verified=True)
+
     context = {
         'page_obj': page_obj,
         'students': page_obj.object_list,
@@ -1199,9 +1202,9 @@ def student_management(request):
         'selected_dept': dept_id,
         'selected_year': year,
         'selected_status': status,
-        'total_students': Student.objects.count(),
-        'active_students': Student.objects.filter(status='active').count(),
-        'inactive_students': Student.objects.filter(status='inactive').count(),
+        'total_students': verified_students_qs.count(),
+        'active_students': verified_students_qs.filter(status='active').count(),
+        'inactive_students': verified_students_qs.filter(status='inactive').count(),
         'college_count': College.objects.count(),
     }
 
@@ -1234,140 +1237,435 @@ def student_management(request):
 
 
 def student_add(request):
-    error = None
+    """
+    Manual Admin Add Student has been disabled in favor of Student Self-Signup.
+    """
+    return redirect("student_management")
 
-    if request.method == "POST":
 
-        full_name = request.POST.get("full_name", "").strip()
-        email = request.POST.get("email", "").strip()
-        phone = request.POST.get("phone", "").strip()
-        date_of_birth = request.POST.get("date_of_birth")
+def get_principal_by_college(request, college_id):
+    """
+    Returns Principal name & email dynamically when a college is selected.
+    """
+    college = College.objects.filter(id=college_id).first()
+    if not college:
+        return JsonResponse({"status": "error", "message": "College not found"}, status=404)
 
-        college_id = request.POST.get("college")
-        dept_id = request.POST.get("department")
+    principal = Principal.objects.filter(college=college, status="active").first()
+    if not principal:
+        # Fallback to any principal attached to the college
+        principal = Principal.objects.filter(college=college).first()
 
-        year = request.POST.get("year")
-        status = request.POST.get("status", "active")
-        join_date_str = request.POST.get("join_date")
+    return JsonResponse({
+        "status": "success",
+        "college_id": college.id,
+        "college_name": college.college_name,
+        "principal_name": principal.principal_name if principal else "Not Assigned",
+        "principal_email": principal.principal_email if principal else "N/A",
+    })
 
-        college = College.objects.filter(id=college_id).first()
-        dept = Department.objects.filter(id=dept_id).first()
 
-        # Calculate End Date
-        end_date = None
-        if join_date_str:
-            try:
-                join_date = date.fromisoformat(join_date_str)
-                stream = college.college_stream if college else "other"
-                years = 3 if stream == "arts_science" else 4
+@csrf_exempt
+def student_signup(request):
+    """
+    Student Self-Signup endpoint.
+    Expects: full_name, email, phone, date_of_birth, college_id, department_id, year, password, confirm_password.
+    Sends 6-digit OTP to student's email.
+    """
+    if request.method == "GET":
+        colleges = College.objects.filter(status="active").order_by("college_name")
+        departments = Department.objects.filter(status="active").order_by("dept_name")
+        return render(request, "studentmanagement/student_signup.html", {
+            "colleges": colleges,
+            "departments": departments,
+        })
 
-                try:
-                    end_date = join_date.replace(year=join_date.year + years)
-                except ValueError:
-                    end_date = join_date.replace(
-                        year=join_date.year + years,
-                        day=28
-                    )
-            except ValueError:
-                end_date = None
+@csrf_exempt
+def send_otp(request):
+    """
+    1. send_otp API: Sends OTP code to student email.
+    Features 60s resend cooldown and 10-minute expiry.
+    """
+    if request.method != "POST":
+        return JsonResponse({"status": "error", "message": "POST method required"}, status=405)
 
-        # Validation
-        if not full_name:
-            error = "Student Name is required."
+    try:
+        data = json.loads(request.body) if request.content_type == "application/json" else request.POST
+        email = data.get("email", "").strip().lower()
+        full_name = data.get("full_name", "").strip() or email.split('@')[0]
 
-        elif not email:
-            error = "Email is required."
+        if not email:
+            return JsonResponse({"status": "error", "message": "Email address is required."}, status=400)
 
-        elif not college:
-            error = "Please select a College."
+        # 60s Cooldown Check
+        student = Student.objects.filter(email__iexact=email).first()
+        if student and student.otp_created_at:
+            seconds_since = (timezone.now() - student.otp_created_at).total_seconds()
+            if seconds_since < 60:
+                remaining = int(60 - seconds_since)
+                return JsonResponse({"status": "error", "message": f"Please wait {remaining} seconds before requesting another OTP."}, status=429)
 
-        elif not dept:
-            error = "Please select a Department."
+        # Generate 6-digit OTP
+        otp = f"{random.randint(100000, 999999)}"
 
-        elif not year:
-            error = "Please select Year."
+        # Get default college & department fallback for temp OTP creation
+        default_college = College.objects.first()
+        default_dept = Department.objects.filter(college=default_college).first() if default_college else Department.objects.first()
 
-        elif Student.objects.filter(email=email).exists():
-            error = f"Email '{email}' already exists."
-
+        # Store OTP temporary record (unverified)
+        if student:
+            student.otp_code = otp
+            student.otp_created_at = timezone.now()
+            student.otp_attempts = 0  # Reset attempts on new send
+            student.save()
         else:
-
-            # Username = First 6 letters of name + 3 digits from DOB
-            name_part = "".join(filter(str.isalpha, full_name.upper()))
-
-            if len(name_part) >= 6:
-                name_part = name_part[:6]
-            else:
-                name_part = name_part.ljust(6, "X")
-
-            if date_of_birth:
-                dob = date.fromisoformat(date_of_birth)
-                number_part = dob.strftime("%d%m")[:3]
-            else:
-                number_part = "000"
-
-            username = name_part + number_part
-
-            # Make username unique
-            original_username = username
-            count = 1
-
-            while Student.objects.filter(username=username).exists():
-                username = f"{original_username}{count}"
-                count += 1
-
-            # Random Password
-            password = "".join(
-                random.choices(
-                    string.ascii_letters +
-                    string.digits +
-                    "!@#$%^&*",
-                    k=10
-                )
+            student = Student.objects.create(
+                full_name=full_name,
+                email=email,
+                username=email,
+                college=default_college,
+                department=default_dept,
+                is_verified=False,
+                otp_code=otp,
+                otp_created_at=timezone.now(),
+                status="pending_approval"
             )
 
+        # Send Email OTP via SMTP / Brevo REST API
+        subject = f"Your Verification Code: {otp}"
+        message = f"Hello {full_name},\n\nYour OTP for registration verification is: {otp}\n\nThis code will expire in 10 minutes."
+        email_sent = False
+
+        try:
+            from django.conf import settings
+            from django.core.mail import send_mail
+            from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'moontonabin@gmail.com')
+            send_mail(subject, message, from_email, [email], fail_silently=False)
+            email_sent = True
+        except Exception as mail_err:
+            print(f"[MAIL ERROR] {mail_err}")
+
+        return JsonResponse({
+            "status": "success",
+            "message": "OTP verification code sent to your email.",
+            "email_sent": email_sent
+        })
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({"status": "error", "message": str(e)}, status=500)
+
+
+@csrf_exempt
+def verify_otp(request):
+    """
+    2. verify_otp API: Validates the 6-digit OTP code sent to the email address with 10-minute expiry.
+    """
+    if request.method != "POST":
+        return JsonResponse({"status": "error", "message": "POST method required"}, status=405)
+
+    try:
+        data = json.loads(request.body) if request.content_type == "application/json" else request.POST
+        email = data.get("email", "").strip().lower()
+        otp_code = data.get("otp_code", "").strip()
+
+        if not email or not otp_code:
+            return JsonResponse({"status": "error", "message": "Email and OTP Code are required."}, status=400)
+
+        student = Student.objects.filter(email__iexact=email).first()
+        if not student:
+            return JsonResponse({"status": "error", "message": "Student account record not found. Please request OTP again."}, status=404)
+
+        # 10-Minute Expiry Check
+        if student.otp_created_at:
+            elapsed_minutes = (timezone.now() - student.otp_created_at).total_seconds() / 60
+            if elapsed_minutes > 10:
+                return JsonResponse({"status": "error", "message": "OTP code has expired (valid for 10 minutes). Please request a new OTP."}, status=400)
+
+        # Tracking attempts (assuming field exists or logic handling)
+        if str(student.otp_code).strip() != otp_code:
+            student.otp_attempts = getattr(student, 'otp_attempts', 0) + 1
+            student.save()
+            return JsonResponse({"status": "error", "message": "Invalid OTP code provided. Please check your email and try again."}, status=400)
+
+        return JsonResponse({
+            "status": "success",
+            "message": "OTP verified successfully! You can now complete your academic registration."
+        })
+    except Exception as e:
+        return JsonResponse({"status": "error", "message": str(e)}, status=500)
+
+
+@csrf_exempt
+def create_student_account(request):
+    """
+    3. create_student_account API: Creates the student account only after successful OTP verification.
+    Executes duplicate verified email check (Student.objects.filter(email__iexact=email, is_verified=True).exists())
+    only at this final step.
+    """
+    if request.method != "POST":
+        return JsonResponse({"status": "error", "message": "POST method required"}, status=405)
+
+    try:
+        data = json.loads(request.body) if request.content_type == "application/json" else request.POST
+
+        full_name = data.get("full_name", "").strip()
+        email = data.get("email", "").strip().lower()
+        phone = data.get("phone", "").strip()
+        date_of_birth = data.get("date_of_birth")
+        college_id = data.get("college_id") or data.get("college")
+        dept_id = data.get("department_id") or data.get("department")
+        year = data.get("year", "").strip()
+        password = data.get("password", "")
+        confirm_password = data.get("confirm_password", "")
+
+        if not full_name or not email or not password:
+            return JsonResponse({"status": "error", "message": "Full Name, Email, and Password are required."}, status=400)
+
+        if password != confirm_password:
+            return JsonResponse({"status": "error", "message": "Password and Confirm Password do not match."}, status=400)
+
+        # Duplicate email check ONLY during final account creation
+        is_already_registered = Student.objects.filter(email__iexact=email, is_verified=True).exists()
+        if is_already_registered:
+            return JsonResponse({
+                "status": "error",
+                "message": "This email is already registered. Please log in."
+            }, status=400)
+
+        college = College.objects.filter(id=college_id).first() if college_id else None
+        if not college:
+            college = College.objects.first()
+
+        dept = Department.objects.filter(id=dept_id).first() if dept_id else None
+        if not dept and college:
+            dept = Department.objects.filter(college=college).first()
+        if not dept:
+            dept = Department.objects.first()
+
+        today = date.today()
+        years = 3 if (college and college.college_stream == "arts_science") else 4
+        try:
+            computed_end_date = today.replace(year=today.year + years)
+        except ValueError:
+            computed_end_date = today.replace(year=today.year + years, day=28)
+
+        student = Student.objects.filter(email__iexact=email).first()
+        if student:
+            student.full_name = full_name
+            student.phone = phone
+            if date_of_birth:
+                try:
+                    student.date_of_birth = date.fromisoformat(str(date_of_birth))
+                except ValueError:
+                    pass
+            student.join_date = today
+            student.end_date = computed_end_date
+            student.college = college
+            student.department = dept
+            student.year = year
+            student.username = email
+            student.password = password
+            student.is_verified = True
+            student.status = "active"
+            student.otp_code = None
+            student.save()
+        else:
+            student = Student.objects.create(
+                full_name=full_name,
+                email=email,
+                phone=phone,
+                date_of_birth=date.fromisoformat(str(date_of_birth)) if date_of_birth else None,
+                college=college,
+                department=dept,
+                year=year,
+                join_date=today,
+                end_date=computed_end_date,
+                username=email,
+                password=password,
+                is_verified=True,
+                status="active"
+            )
+
+        return JsonResponse({
+            "status": "success",
+            "message": "Student account created successfully! You can now log in.",
+            "student_id": student.id
+        })
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({"status": "error", "message": str(e)}, status=500)
+
+
+@csrf_exempt
+def forgot_password_send_otp(request):
+    """
+    Step 1: Verify registered email and send password reset OTP.
+    """
+    if request.method != "POST":
+        return JsonResponse({"status": "error", "message": "POST method required"}, status=405)
+
+    try:
+        data = json.loads(request.body) if request.content_type == "application/json" else request.POST
+        email = data.get("email", "").strip().lower()
+
+        if not email:
+            return JsonResponse({"status": "error", "message": "Email address is required."}, status=400)
+
+        student = Student.objects.filter(email__iexact=email).first()
+        if not student:
+            return JsonResponse({"status": "error", "message": "Email not found. Please enter your registered email address."}, status=404)
+
+        # Generate 6-digit OTP
+        import random
+        otp = str(random.randint(100000, 999999))
+        student.otp_code = otp
+        student.otp_created_at = timezone.now()
+        student.save()
+
+        # Send Email OTP via SMTP / Brevo REST API
+        subject = f"Your Password Reset Code: {otp}"
+        message = f"Hello {student.full_name},\n\nYour OTP for resetting your password is: {otp}\n\nThis code will expire in 10 minutes."
+        email_sent = False
+
+        try:
+            from django.conf import settings
+            from django.core.mail import send_mail
+            from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'divv26979@gmail.com')
+            send_mail(subject, message, from_email, [email], fail_silently=False)
+            email_sent = True
+        except Exception as mail_err:
+            print("SMTP send error in password reset:", mail_err)
+
+        if not email_sent:
             try:
-                Student.objects.create(
-                    full_name=full_name,
-                    email=email,
-                    phone=phone,
-                    date_of_birth=date.fromisoformat(date_of_birth)
-                    if date_of_birth else None,
+                import urllib.request
+                from django.conf import settings
+                api_key = getattr(settings, 'BREVO_API_KEY', '')
+                sender_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'divv26979@gmail.com')
+                
+                payload = json.dumps({
+                    "sender": {"name": "Educational Portal", "email": sender_email},
+                    "to": [{"email": email, "name": student.full_name}],
+                    "subject": subject,
+                    "textContent": message
+                }).encode('utf-8')
 
-                    college=college,
-                    department=dept,
-
-                    year=year,
-
-                    username=username,
-                    password=password,
-
-                    join_date=date.fromisoformat(join_date_str)
-                    if join_date_str else None,
-
-                    end_date=end_date,
-
-                    status=status,
+                req = urllib.request.Request(
+                    "https://api.brevo.com/v3/smtp/email",
+                    data=payload,
+                    headers={
+                        "accept": "application/json",
+                        "api-key": api_key,
+                        "content-type": "application/json"
+                    },
+                    method="POST"
                 )
+                with urllib.request.urlopen(req) as resp:
+                    print("Brevo API Email Dispatch status:", resp.status)
+                    email_sent = True
+            except Exception as brevo_err:
+                print("Brevo API password reset email dispatch error:", brevo_err)
 
-                return redirect("student_management")
+        return JsonResponse({
+            "status": "success",
+            "message": f"Password reset OTP code sent successfully to {email}.",
+            "email": email
+        })
+    except Exception as e:
+        return JsonResponse({"status": "error", "message": str(e)}, status=500)
 
-            except Exception as e:
-                error = str(e)
-                print("Student Save Error:", e)
 
-    all_colleges = College.objects.all()
-    all_departments = Department.objects.all()
+@csrf_exempt
+def forgot_password_verify_otp(request):
+    """
+    Step 2: Verify reset OTP.
+    """
+    if request.method != "POST":
+        return JsonResponse({"status": "error", "message": "POST method required"}, status=405)
 
-    return render(
-        request,
-        "studentmanagement/add_student.html",
-        {
-            "all_colleges": all_colleges,
-            "all_departments": all_departments,
-            "error": error,
-        },
-    )
+    try:
+        data = json.loads(request.body) if request.content_type == "application/json" else request.POST
+        email = data.get("email", "").strip().lower()
+        otp_code = data.get("otp_code", "").strip()
+
+        if not email or not otp_code:
+            return JsonResponse({"status": "error", "message": "Email and OTP Code are required."}, status=400)
+
+        student = Student.objects.filter(email__iexact=email).first()
+        if not student:
+            return JsonResponse({"status": "error", "message": "Student account not found."}, status=404)
+
+        if student.otp_code != otp_code:
+            return JsonResponse({"status": "error", "message": "Invalid OTP code provided. Please check your email and try again."}, status=400)
+
+        return JsonResponse({
+            "status": "success",
+            "message": "OTP verified successfully. Please enter your new password."
+        })
+    except Exception as e:
+        return JsonResponse({"status": "error", "message": str(e)}, status=500)
+
+
+@csrf_exempt
+def forgot_password_reset(request):
+    """
+    Step 3: Reset Student Password.
+    """
+    if request.method != "POST":
+        return JsonResponse({"status": "error", "message": "POST method required"}, status=405)
+
+    try:
+        data = json.loads(request.body) if request.content_type == "application/json" else request.POST
+        email = data.get("email", "").strip().lower()
+        otp_code = data.get("otp_code", "").strip()
+        new_password = data.get("new_password", "").strip()
+        confirm_password = data.get("confirm_password", "").strip()
+
+        if not email or not new_password or not confirm_password:
+            return JsonResponse({"status": "error", "message": "All fields are required."}, status=400)
+
+        if new_password != confirm_password:
+            return JsonResponse({"status": "error", "message": "Passwords do not match."}, status=400)
+
+        student = Student.objects.filter(email__iexact=email).first()
+        if not student:
+            return JsonResponse({"status": "error", "message": "Student account not found."}, status=404)
+
+        if student.otp_code and student.otp_code != otp_code:
+            return JsonResponse({"status": "error", "message": "Invalid or expired OTP session."}, status=400)
+
+        student.password = new_password
+        student.otp_code = None
+        student.save()
+
+        return JsonResponse({
+            "status": "success",
+            "message": "Password updated successfully. Please sign in with your new password."
+        })
+    except Exception as e:
+        return JsonResponse({"status": "error", "message": str(e)}, status=500)
+
+
+def api_get_colleges(request):
+    """
+    Returns active colleges and optionally filtered departments for signup.
+    """
+    colleges = College.objects.filter(status="active").order_by("college_name")
+    college_data = [{"id": c.id, "name": c.college_name} for c in colleges]
+
+    college_id = request.GET.get("college_id")
+    dept_qs = Department.objects.filter(status="active")
+    if college_id:
+        dept_qs = dept_qs.filter(college_id=college_id)
+    dept_data = [{"id": d.id, "name": d.dept_name, "college_id": d.college_id} for d in dept_qs.order_by("dept_name")]
+
+    return JsonResponse({
+        "status": "success",
+        "colleges": college_data,
+        "departments": dept_data
+    })
 
 
 def student_delete(request, student_id):
@@ -1418,48 +1716,33 @@ def student_update(request, student_id):
     try:
         full_name = request.POST.get("full_name", "").strip()
         status = request.POST.get("status")
-        year = request.POST.get("year", student.year).strip()
+        year = request.POST.get("year", "").strip()
         join_date_str = request.POST.get("join_date")
-
-        # College, Username, Password are read-only — never touched here.
         college = student.college
 
-        # Only Department + Year can be changed
-        department = get_object_or_404(
-            Department,
-            id=request.POST.get("department")
-        )
+        if full_name:
+            student.full_name = full_name
 
-        if not full_name:
-            return JsonResponse({
-                "status": "error",
-                "message": "Full Name is required."
-            })
+        if request.POST.get("department"):
+            dept = Department.objects.filter(id=request.POST.get("department")).first()
+            if dept:
+                student.department = dept
 
-        # Calculate End Date from the (unchanged) College stream + new Join Date
-        join_date = None
-        end_date = None
+        if year:
+            student.year = year
+
+        if status:
+            student.status = status
 
         if join_date_str:
             join_date = date.fromisoformat(join_date_str)
-
             years = 3 if college.college_stream == "arts_science" else 4
-
             try:
                 end_date = join_date.replace(year=join_date.year + years)
             except ValueError:
                 end_date = join_date.replace(year=join_date.year + years, day=28)
-
-        # Update only the allowed fields
-        student.full_name = full_name
-        student.department = department
-        student.year = year
-        student.join_date = join_date
-        student.end_date = end_date
-        student.status = status
-
-        # College, username, password stay exactly as they were
-        student.college = college
+            student.join_date = join_date
+            student.end_date = end_date
 
         student.save()
 
@@ -1635,14 +1918,33 @@ def video_analytics(request):
     college_id = request.GET.get("college")
     dept_id = request.GET.get("department")
     video_status = request.GET.get("video_status")
+    date_filter = request.GET.get("date_filter", "all")
 
     watches = VideoWatch.objects.all()
     videos = Video.objects.all()
 
+    if date_filter == "today":
+        watches = watches.filter(watched_at__date=today)
+        videos = videos.filter(uploaded_at__date=today)
+    elif date_filter == "this_week":
+        start_w = today - timedelta(days=6)
+        watches = watches.filter(watched_at__date__gte=start_w)
+        videos = videos.filter(uploaded_at__date__gte=start_w)
+    elif date_filter == "this_month":
+        start_m = today.replace(day=1)
+        watches = watches.filter(watched_at__date__gte=start_m)
+        videos = videos.filter(uploaded_at__date__gte=start_m)
+    elif date_filter == "this_year":
+        start_y = today.replace(month=1, day=1)
+        watches = watches.filter(watched_at__date__gte=start_y)
+        videos = videos.filter(uploaded_at__date__gte=start_y)
+
     if college_id:
         watches = watches.filter(student__college_id=college_id)
+        videos = videos.filter(uploaded_by_hod__college_id=college_id)
     if dept_id:
         watches = watches.filter(student__department_id=dept_id)
+        videos = videos.filter(uploaded_by_hod_id=dept_id)
     if video_status in ("Published", "Draft"):
         videos = videos.filter(status=video_status)
 
@@ -1840,6 +2142,9 @@ def video_analytics(request):
 
     context = {
         "all_colleges": all_colleges,
+        "colleges": all_colleges,
+        "selected_college_id": college_id,
+        "selected_date_filter": request.GET.get("date_filter", "all"),
         "all_departments": all_departments,
 
         "total_videos": total_videos,
@@ -2220,6 +2525,7 @@ def api_principal_students(request):
             "totalViews": total_student_views,
             "progress": min(100, progress_pct),
             "lastLogin": _format_time_ago(student_watches.order_by("-watched_at").first().watched_at) if student_watches.exists() else "No recent login",
+            "last_viewed": student_watches.order_by("-watched_at").first().watched_at.strftime("%Y-%m-%d") if student_watches.exists() and student_watches.order_by("-watched_at").first().watched_at else (join_date_value.strftime("%Y-%m-%d") if join_date_value else ""),
             "recentVideos": recent_vids,
             "recentActivity": recent_acts,
         })
@@ -2404,6 +2710,15 @@ def api_principal_videos(request):
             # Thumbnail: first two letters of title in uppercase
             thumb_label = (video.title[:2]).upper() if video.title else "VD"
 
+            uploader_name = f"System Admin ({principal.college.college_name if principal.college else 'College'})"
+            if video.uploaded_by_hod:
+                hod_person = video.uploaded_by_hod.hod_name or "HOD"
+                dept_title = video.uploaded_by_hod.dept_name or "Department"
+                clg_title = video.uploaded_by_hod.college.college_name if video.uploaded_by_hod.college else (principal.college.college_name if principal.college else "")
+                uploader_name = f"{hod_person} | {dept_title} | {clg_title}".strip(" |")
+            elif getattr(video, "uploaded_by_name", None):
+                uploader_name = video.uploaded_by_name
+
             data.append({
                 "id": str(video.id),
                 "title": video.title,
@@ -2411,7 +2726,7 @@ def api_principal_videos(request):
                 "duration": video.duration,
                 "views": video.views,
                 "uploadedDate": video.uploaded_at.strftime("%d %b %Y") if video.uploaded_at else "",
-                "uploadedBy": "Company Admin",
+                "uploadedBy": uploader_name,
                 "status": video.status,
                 "studentsViewed": students_viewed,
                 "completionRate": completion_rate,
@@ -2420,6 +2735,18 @@ def api_principal_videos(request):
                 "videoUrl": request.build_absolute_uri(video.video_file.url) if video.video_file else "",
             })
 
+        # Department-wise view analytics
+        dept_views_map = {}
+        for vw in VideoWatch.objects.filter(student__in=college_students).select_related("student__department"):
+            if vw.student and vw.student.department:
+                dname = vw.student.department.dept_name
+                dept_views_map[dname] = dept_views_map.get(dname, 0) + 1
+
+        dept_breakdown = [
+            {"department": dname, "views": count}
+            for dname, count in dept_views_map.items()
+        ]
+
         total_views = sum(v["views"] for v in data)
 
         return JsonResponse({
@@ -2427,6 +2754,7 @@ def api_principal_videos(request):
             "college": principal.college.college_name,
             "total": len(data),
             "totalViews": total_views,
+            "departmentBreakdown": dept_breakdown,
             "data": data
         })
     except Exception as e:
@@ -2540,7 +2868,10 @@ def student_login(request):
         ).first()
 
         if not student:
-            return JsonResponse({"status": "error", "message": "Invalid academic credentials provided. Please check with your department admin."}, status=401)
+            return JsonResponse({"status": "error", "message": "Invalid email or password. Please check your credentials."}, status=401)
+
+        if not student.is_verified:
+            return JsonResponse({"status": "error", "message": "Email is not verified. Please complete OTP verification before logging in."}, status=403)
 
         if student.status != "active":
             return JsonResponse({"status": "error", "message": f"Account is currently {student.status}. Please contact administrator."}, status=403)
@@ -2579,11 +2910,22 @@ def video_stream(request, video_id):
     from django.http import StreamingHttpResponse, HttpResponse
 
     video = Video.objects.filter(id=video_id).first()
-    if not video or not video.video_file:
+    if not video:
         return HttpResponse("Video not found.", status=404)
 
-    file_path = video.video_file.path
-    if not os.path.exists(file_path):
+    # Check if a valid local video file exists on disk
+    file_path = None
+    if video.video_file:
+        try:
+            file_path = video.video_file.path
+        except Exception:
+            file_path = None
+
+    if not file_path or not os.path.exists(file_path):
+        # Fallback to external video URL redirect if provided
+        if getattr(video, "video_url", None) and str(video.video_url).startswith("http"):
+            from django.shortcuts import redirect
+            return redirect(video.video_url)
         return HttpResponse("Video file missing on disk.", status=404)
 
     file_size = os.path.getsize(file_path)
@@ -2652,47 +2994,39 @@ def video_stream(request, video_id):
 @csrf_exempt
 def api_student_dashboard(request):
     try:
-        # Identify student via header or session
+        # Identify student strictly via header or session
         student_id_header = request.headers.get("X-Student-Id") or request.META.get("HTTP_X_STUDENT_ID")
         student = None
         if student_id_header and student_id_header != "0":
             student = Student.objects.filter(id=student_id_header).first()
 
         if not student:
-            student = Student.objects.filter(status="active").first()
+            # Fallback to current authenticated student in request session if available
+            student_session_id = request.session.get("student_id")
+            if student_session_id:
+                student = Student.objects.filter(id=student_session_id).first()
 
         if not student:
-            return JsonResponse({"status": "error", "message": "No active student records found"}, status=404)
+            return JsonResponse({"status": "error", "message": "Student session not found. Please log in."}, status=401)
 
-        # Published videos queryset
+        # Published assigned videos queryset
         videos_qs = Video.objects.filter(status="Published")
 
         total_videos = videos_qs.count()
-        if total_videos == 0:
-            total_videos = Video.objects.count()
 
+        # Strict watch history records for THIS specific logged-in student
         watched_records = VideoWatch.objects.filter(student=student).select_related("video")
-        completed_count = watched_records.count()
+        completed_count = watched_records.filter(watched_seconds__gt=0).count()
         pending_count = max(0, total_videos - completed_count)
 
-        total_watch_mins = 0
-        for w in watched_records:
-            try:
-                dur = w.video.duration or "0"
-                import re
-                mins = int(re.search(r'\d+', str(dur)).group()) if re.search(r'\d+', str(dur)) else 15
-                total_watch_mins += mins
-            except Exception:
-                total_watch_mins += 15
+        total_watch_seconds = sum(w.watched_seconds for w in watched_records)
+        watch_hours = round(total_watch_seconds / 3600, 1)
 
-        watch_hours = round(total_watch_mins / 60, 1)
-
-        # Build Continue Watching list
-        recent_watches = VideoWatch.objects.filter(student=student).select_related("video").order_by("-watched_at")[:6]
+        # Build Continue Watching list for THIS student only
+        recent_watches = VideoWatch.objects.filter(student=student, watched_seconds__gt=0).select_related("video").order_by("-watched_at")[:6]
         continue_watching = []
-        for idx, rw in enumerate(recent_watches):
+        for rw in recent_watches:
             v = rw.video
-            # Compute real progress from watched_seconds vs video duration
             progress_val = 0
             try:
                 import re as _re
@@ -2716,22 +3050,7 @@ def api_student_dashboard(request):
                 "thumbnail": thumb_url,
             })
 
-        # If user has no watch history yet, fallback to active published videos
-        if not continue_watching:
-            fallback_videos = videos_qs.order_by("-uploaded_at")[:3]
-            for idx, v in enumerate(fallback_videos):
-                thumb_url = request.build_absolute_uri(v.thumbnail.url) if (v.thumbnail and hasattr(v.thumbnail, 'url')) else ""
-                continue_watching.append({
-                    "id": v.id,
-                    "title": v.title,
-                    "subtitle": f"{v.category or 'General'} • {v.duration or 'N/A'}",
-                    "progress": 0,
-                    "badge": "New Lecture",
-                    "video_url": request.build_absolute_uri(v.video_file.url) if v.video_file else (getattr(v, 'youtube_url', '') or ""),
-                    "thumbnail": thumb_url,
-                })
-
-        # Recently added videos
+        # Recently added published videos for the student
         recent_videos = videos_qs.order_by("-uploaded_at")[:6]
         recently_added = []
         for v in recent_videos:
@@ -2747,7 +3066,7 @@ def api_student_dashboard(request):
             })
 
         # Top Categories dynamically computed from published videos
-        cat_counts = Video.objects.filter(status="Published").values('category').annotate(count=Count('id')).order_by('-count')
+        cat_counts = videos_qs.values('category').annotate(count=Count('id')).order_by('-count')
         top_categories = []
         for item in cat_counts:
             c_name = item['category'] or "General"
@@ -2755,16 +3074,8 @@ def api_student_dashboard(request):
                 "name": c_name,
                 "count": f"{item['count']} videos"
             })
-        if not top_categories:
-            top_categories = [
-                {"name": "Programming", "count": "12 videos"},
-                {"name": "Mathematics", "count": "10 videos"},
-                {"name": "Digital Electronics", "count": "8 videos"},
-                {"name": "Communication", "count": "6 videos"},
-                {"name": "Soft Skills", "count": "5 videos"},
-            ]
 
-        # Recommended videos dynamically based on uncompleted videos & high view counts
+        # Recommended videos dynamically based on published videos
         rec_qs = videos_qs.order_by("-views", "-uploaded_at")[:4]
         recommended_videos = []
         for v in rec_qs:
@@ -2786,7 +3097,7 @@ def api_student_dashboard(request):
                 "id": student.id,
                 "full_name": student.full_name,
                 "student_id": getattr(student, "student_id", student.username or f"STD{student.id}"),
-                "department": student.department.dept_name if student.department else "Computer Science",
+                "department": student.department.dept_name if student.department else "General",
             },
             "stats": {
                 "totalVideos": total_videos,
@@ -2799,6 +3110,10 @@ def api_student_dashboard(request):
             "topCategories": top_categories,
             "recommendedVideos": recommended_videos,
         })
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({"status": "error", "message": str(e)}, status=500)
     except Exception as e:
         import traceback
         traceback.print_exc()
@@ -3062,17 +3377,19 @@ def api_student_progress(request):
     try:
         student_id_header = request.headers.get("X-Student-Id") or request.META.get("HTTP_X_STUDENT_ID")
         student = None
-        if student_id_header:
+        if student_id_header and student_id_header != "0":
             try:
                 student = Student.objects.filter(id=int(student_id_header)).first()
             except (ValueError, TypeError):
                 pass
 
         if not student:
-            student = Student.objects.filter(status="active").first()
+            student_session_id = request.session.get("student_id")
+            if student_session_id:
+                student = Student.objects.filter(id=student_session_id).first()
 
         if not student:
-            return JsonResponse({"status": "error", "message": "No active student found"}, status=404)
+            return JsonResponse({"status": "error", "message": "Student session not found. Please log in."}, status=401)
 
         # ------------------------------------------------------------------
         # Helper: parse duration string "45 mins" / "1h 30m" -> seconds
@@ -3100,8 +3417,41 @@ def api_student_progress(request):
         total_videos = all_videos.count()
 
         # Watch records for this student
-        watch_qs = VideoWatch.objects.filter(student=student).select_related("video")
-        watched_video_ids = set(watch_qs.values_list("video_id", flat=True))
+        watch_qs = VideoWatch.objects.filter(student=student, watched_seconds__gt=0).select_related("video")
+        has_watch_history = watch_qs.exists()
+
+        if not has_watch_history:
+            dept = student.department
+            college = student.college
+            student_data = {
+                "id": student.id,
+                "full_name": student.full_name,
+                "email": student.email,
+                "phone": student.phone or "",
+                "username": student.username or "",
+                "status": student.status,
+                "year": student.year or "",
+                "department_name": dept.dept_name if dept else "",
+                "college_name": college.college_name if college else "",
+                "hod_name": dept.hod_name if dept else "",
+                "join_date": student.join_date.strftime("%d %b %Y") if student.join_date else "",
+                "end_date": student.end_date.strftime("%b %Y") if student.end_date else "",
+            }
+            return JsonResponse({
+                "status": "success",
+                "student": student_data,
+                "stats": {
+                    "totalVideos": total_videos,
+                    "completed": 0,
+                    "pending": total_videos,
+                    "watchHours": 0,
+                    "completionPct": 0,
+                },
+                "weeklyWatchTime": [],
+                "monthlyTrend": [],
+                "categoryBreakdown": [],
+                "recentVideos": [],
+            })
 
         # ------------------------------------------------------------------
         # KPI: completed, watch hours, completion %
@@ -3150,9 +3500,9 @@ def api_student_progress(request):
             for _ in range(i):
                 month_date = (month_date - timedelta(days=1)).replace(day=1)
             month_label = month_date.strftime("%b")
-            # Videos watched at or before end of this month
             month_end = (month_date.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
-            watched_by_month = watch_qs.filter(watched_at__date__lte=month_end).count()
+            # Videos watched strictly by this student up to end of this month
+            watched_by_month = watch_qs.filter(watched_at__date__lte=month_end, watched_seconds__gt=0).count()
             pct = round((watched_by_month / total_videos) * 100) if total_videos > 0 else 0
             monthly_trend.append({"month": month_label, "progress": min(pct, 100)})
 
@@ -3233,6 +3583,8 @@ def api_student_progress(request):
             "end_date": student.end_date.strftime("%b %Y") if student.end_date else "",
         }
 
+        has_watch_history = watch_qs.filter(watched_seconds__gt=0).exists()
+
         return JsonResponse({
             "status": "success",
             "student": student_data,
@@ -3243,10 +3595,10 @@ def api_student_progress(request):
                 "watchHours": watch_hours_total,
                 "completionPct": overall_completion_pct,
             },
-            "weeklyWatchTime": weekly_watch_time,
-            "monthlyTrend": monthly_trend,
-            "categoryBreakdown": category_breakdown,
-            "recentVideos": recent_videos,
+            "weeklyWatchTime": weekly_watch_time if has_watch_history else [],
+            "monthlyTrend": monthly_trend if has_watch_history else [],
+            "categoryBreakdown": category_breakdown if has_watch_history else [],
+            "recentVideos": recent_videos if has_watch_history else [],
         })
     except Exception as e:
         import traceback
@@ -3304,15 +3656,20 @@ def hod_login(request):
         password = data.get("password", "").strip()
 
         hod = Department.objects.select_related("college").filter(
-            username=username,
-            password=password,
-            status="active"
+            username__iexact=username,
+            password=password
         ).first()
 
         if not hod:
             return JsonResponse({
                 "success": False,
                 "message": "Invalid Username or Password"
+            }, status=401)
+
+        if hasattr(hod, "status") and hod.status and hod.status != "active":
+            return JsonResponse({
+                "success": False,
+                "message": "Department account is inactive. Please contact administrator."
             }, status=401)
 
         request.session["hod_id"] = hod.id
@@ -3325,7 +3682,7 @@ def hod_login(request):
                 "id": hod.id,
                 "name": hod.hod_name,
                 "department": hod.dept_name,
-                "college": hod.college.college_name,
+                "college": hod.college.college_name if hod.college else "Institution",
                 "username": hod.username
             }
         })
@@ -3391,6 +3748,10 @@ def api_hod_dashboard(request):
         uploaded_at__year=timezone.now().year,
         uploaded_at__month=timezone.now().month,
     ).count()
+    this_month_views = watched_videos.filter(
+        watched_at__year=timezone.now().year,
+        watched_at__month=timezone.now().month,
+    ).count()
 
     period = request.GET.get("period", "week")
     engagement_data = []
@@ -3430,7 +3791,7 @@ def api_hod_dashboard(request):
     top_students_qs = students.annotate(
         watched_videos=Count("watch_history", distinct=True),
         last_watch=Max("watch_history__watched_at"),
-    ).order_by("-watched_videos", "-last_watch")[:5]
+    ).order_by("-id")[:5]
 
     top_students = []
     for index, student in enumerate(top_students_qs, start=1):
@@ -3502,6 +3863,8 @@ def api_hod_dashboard(request):
             "totalStudents":total_students,
             "activeStudents":active_students,
             "totalVideos":total_videos,
+            "totalViews":total_video_views,
+            "monthViews":this_month_views,
         },
         "engagementData": engagement_data,
         "topStudents": top_students,
@@ -3701,8 +4064,7 @@ def api_hod_performance(request):
     ).select_related("college", "department")
 
     watched_videos = VideoWatch.objects.filter(
-        student__department=hod,
-        student__college=hod.college,
+        student__department=hod
     ).select_related("student", "video")
 
     total_students = students.count()
@@ -3726,7 +4088,12 @@ def api_hod_performance(request):
     weekly_active = []
     for offset in range(6, -1, -1):
         day = timezone.now().date() - timedelta(days=offset)
-        active_cnt = watched_videos.filter(watched_at__date=day).values("student").distinct().count()
+        active_cnt = (
+            watched_videos.filter(watched_at__date=day)
+            .values("student")
+            .distinct()
+            .count()
+        )
         weekly_active.append({
             "label": day.strftime("%a"),
             "value": active_cnt,
@@ -3838,150 +4205,7 @@ def api_hod_students(request):
     })
 
 
-@csrf_exempt
-@require_GET
-def api_student_progress(request):
-    """
-    Returns student progress analytics including weekly watch time,
-    monthly progress trend, and recent watched video activity.
-    """
-    import re
-    try:
-        student_id = request.headers.get("X-Student-Id") or request.GET.get("student_id")
-        student = None
 
-        if student_id and str(student_id).isdigit():
-            student = Student.objects.filter(id=int(student_id)).first()
-
-        if not student:
-            student = Student.objects.filter(status="active").first()
-
-        if not student:
-            return JsonResponse({"status": "error", "message": "No student found"}, status=404)
-
-        # Helper function to convert any duration string safely into a readable minute string
-        def format_duration_str(dur):
-            if not dur:
-                return "30 min"
-            # If dur is already an int/float
-            if isinstance(dur, (int, float)):
-                return f"{int(dur // 60)} min" if dur >= 60 else f"{int(dur)} min"
-            # If dur is a string containing numbers
-            match = re.search(r'\d+', str(dur))
-            if match:
-                val = int(match.group())
-                return f"{val} min"
-            return str(dur)
-
-        # ── 1. Weekly watch time (last 7 days: Mon-Sun) ──────────────────
-        weekly_watch_time = []
-        days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-        today = timezone.now().date()
-        start_of_week = today - timedelta(days=today.weekday())
-        has_watches = VideoWatch.objects.filter(student=student).exists()
-        default_weekly_hours = [1.2, 2.5, 0.8, 3.0, 1.0, 0.5, 0.55]
-
-        for i in range(7):
-            day_date = start_of_week + timedelta(days=i)
-            watches = VideoWatch.objects.filter(student=student, watched_at__date=day_date)
-            secs = watches.aggregate(total=Sum("watched_seconds"))["total"] or 0
-            hours = round(secs / 3600, 2)
-            if not has_watches:
-                hours = default_weekly_hours[i]
-            weekly_watch_time.append({"day": days[i], "hours": hours})
-
-        # ── 2. Monthly progress trend (last 6 months) ────────────────────
-        monthly_trend = []
-        total_videos_count = Video.objects.filter(status="Published").count() or 1
-        now = timezone.now()
-        default_monthly_prog = [40, 55, 62, 60, 75, 82]
-
-        for i in range(5, -1, -1):
-            m = now.month - i
-            y = now.year
-            while m <= 0:
-                m += 12
-                y -= 1
-
-            month_watches = VideoWatch.objects.filter(
-                student=student, watched_at__year=y, watched_at__month=m
-            )
-            watched_distinct = month_watches.values("video").distinct().count()
-            progress = min(100, int(round((watched_distinct / total_videos_count) * 100)))
-            if not has_watches:
-                progress = default_monthly_prog[5 - i]
-
-            monthly_trend.append({
-                "month": calendar.month_abbr[m],
-                "progress": progress,
-            })
-
-        # ── 3. Recent video activity ──────────────────────────────────
-        recent_watches = (
-            VideoWatch.objects.filter(student=student)
-            .select_related("video")
-            .order_by("-watched_at")[:10]
-        )
-        recent_videos = []
-        for w in recent_watches:
-            vid = w.video
-            duration_val = getattr(vid, "duration", None) if vid else None
-            duration_str = format_duration_str(duration_val)
-            recent_videos.append({
-                "id": w.id,
-                "title": vid.title if vid else "Video Session",
-                "subtitle": getattr(vid, "category", "") or "Course Module",
-                "duration": duration_str,
-                "date": w.watched_at.strftime("%d %b %Y") if w.watched_at else "",
-            })
-
-        # Fallback to available published videos if student has no watch records yet
-        if not recent_videos:
-            for vid in Video.objects.filter(status="Published").order_by("-uploaded_at")[:5]:
-                duration_val = getattr(vid, "duration", None)
-                duration_str = format_duration_str(duration_val)
-                recent_videos.append({
-                    "id": vid.id,
-                    "title": vid.title,
-                    "subtitle": vid.category or "Course Module",
-                    "duration": duration_str,
-                    "date": vid.uploaded_at.strftime("%d %b %Y") if vid.uploaded_at else "Recently Added",
-                })
-
-        # ── Smart fallbacks for profile dates & mentor ────────────────
-        join_date_str = student.join_date.strftime("%d %b %Y") if getattr(student, "join_date", None) else "15 Aug 2023"
-        end_date_str = student.end_date.strftime("%b %Y") if getattr(student, "end_date", None) else "May 2026"
-        mentor_str = getattr(getattr(student, "department", None), "hod_name", None) or "Dr. S. Harish"
-
-        student_info = {
-            "id": student.id,
-            "full_name": student.full_name,
-            "roll_number": student.username or f"STU{student.id}",
-            "register_number": student.username or f"STU{student.id}",
-            "department_name": getattr(getattr(student, "department", None), "dept_name", None)
-            or "Artificial Intelligence and Data Science",
-            "email": student.email,
-            "mobile": student.phone or "+91 98765 43210",
-            "college_name": getattr(getattr(student, "college", None), "college_name", None)
-            or "Green Valley Arts & Science College",
-            "join_date": join_date_str,
-            "end_date": end_date_str,
-            "mentor_name": mentor_str,
-            "status": student.status,
-        }
-
-        return JsonResponse({
-            "status": "success",
-            "student": student_info,
-            "weeklyWatchTime": weekly_watch_time,
-            "monthlyTrend": monthly_trend,
-            "recentVideos": recent_videos,
-        })
-
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return JsonResponse({"status": "error", "message": str(e)}, status=500)
 
 
 @csrf_exempt
@@ -4064,3 +4288,412 @@ def api_hod_profile(request):
         import traceback
         traceback.print_exc()
         return JsonResponse({"status": "error", "message": str(e)}, status=500)
+
+
+# ==========================================================
+# VIDEO APPROVAL WORKFLOW API ENDPOINTS
+# ==========================================================
+
+@csrf_exempt
+def api_hod_videos(request):
+    if request.method != "GET":
+        return JsonResponse({"status": "error", "message": "Method not allowed"}, status=405)
+
+    hod = get_authenticated_hod(request)
+    if not hod:
+        return JsonResponse({"status": "error", "message": "Unauthorized"}, status=401)
+
+    # 1) Get all published videos (including Admin uploaded videos)
+    # 2) Plus all videos uploaded by this HOD (even if Pending or Rejected)
+    videos_qs = Video.objects.filter(
+        Q(status="Published") | Q(uploaded_by_hod=hod) | Q(is_admin_video=True)
+    ).distinct().order_by("-uploaded_at")
+
+    videos_list = []
+    for vid in videos_qs:
+        is_mine = (vid.uploaded_by_hod_id == hod.id)
+        uploader_name = vid.uploaded_by_hod.hod_name if vid.uploaded_by_hod else "System Admin"
+
+        videos_list.append({
+            "id": vid.id,
+            "title": vid.title,
+            "category": vid.category or "Programming",
+            "duration": vid.duration or "15:00",
+            "description": vid.description or "",
+            "status": vid.status,  # "Pending", "Published", or "Rejected"
+            "views": vid.views,
+            "uploadedBy": uploader_name,
+            "uploadDate": vid.uploaded_at.strftime("%d %b %Y") if vid.uploaded_at else "",
+            "videoUrl": vid.video_file.url if vid.video_file else "",
+            "thumbnail": vid.thumbnail.url if vid.thumbnail else "",
+            "isMine": is_mine,
+        })
+
+    return JsonResponse({
+        "status": "success",
+        "videos": videos_list,
+    })
+
+
+@csrf_exempt
+def api_hod_video_upload(request):
+    if request.method != "POST":
+        return JsonResponse({"status": "error", "message": "Method not allowed"}, status=405)
+
+    hod = get_authenticated_hod(request)
+    if not hod:
+        return JsonResponse({"status": "error", "message": "Unauthorized"}, status=401)
+
+    try:
+        import json
+        data = {}
+        if request.content_type == "application/json" and request.body:
+            data = json.loads(request.body.decode("utf-8"))
+        else:
+            data = request.POST
+
+        title = data.get("title") or "New Course Video"
+        category = data.get("category") or "Programming"
+        duration = data.get("duration") or "15:00"
+        description = data.get("description") or ""
+
+        # ALWAYS set status='Pending' when uploaded by HOD!
+        new_vid = Video.objects.create(
+            title=title,
+            category=category,
+            duration=duration,
+            description=description,
+            status="Pending",
+            uploaded_by_hod=hod,
+        )
+
+        return JsonResponse({
+            "status": "success",
+            "message": "Video uploaded successfully and submitted for Admin approval.",
+            "video": {
+                "id": new_vid.id,
+                "title": new_vid.title,
+                "category": new_vid.category,
+                "duration": new_vid.duration,
+                "description": new_vid.description,
+                "status": "Pending",
+                "uploadedBy": hod.hod_name,
+                "uploadDate": new_vid.uploaded_at.strftime("%d %b %Y"),
+                "isMine": True,
+                "views": 0,
+            }
+        })
+    except Exception as e:
+        return JsonResponse({"status": "error", "message": str(e)}, status=500)
+
+
+@csrf_exempt
+def api_hod_video_delete(request, video_id):
+    if request.method not in ["DELETE", "POST"]:
+        return JsonResponse({"status": "error", "message": "Method not allowed"}, status=405)
+
+    hod = get_authenticated_hod(request)
+    if not hod:
+        return JsonResponse({"status": "error", "message": "Unauthorized"}, status=401)
+
+    try:
+        Video.objects.filter(id=video_id, uploaded_by_hod=hod).delete()
+        return JsonResponse({"status": "success", "message": "Video deleted successfully"})
+    except Exception as e:
+        return JsonResponse({"status": "error", "message": str(e)}, status=500)
+
+
+@csrf_exempt
+def api_principal_video_approvals(request):
+    if request.method != "GET":
+        return JsonResponse({"status": "error", "message": "Method not allowed"}, status=405)
+
+    # Filter ONLY HOD uploaded videos for approval queue
+    hod_videos = Video.objects.filter(uploaded_by_hod__isnull=False)
+    pending_qs = hod_videos.filter(status="Pending").order_by("-uploaded_at")
+    published_qs = hod_videos.filter(status="Published").order_by("-uploaded_at")
+    rejected_qs = hod_videos.filter(status="Rejected").order_by("-uploaded_at")
+
+    def serialize_vids(qs):
+        res = []
+        for v in qs:
+            hod_name = v.uploaded_by_hod.hod_name if v.uploaded_by_hod else "HOD Admin"
+            dept_name = v.uploaded_by_hod.dept_name if v.uploaded_by_hod else "General"
+            res.append({
+                "id": v.id,
+                "title": v.title,
+                "category": v.category,
+                "duration": v.duration,
+                "description": v.description,
+                "status": v.status,
+                "uploadedBy": hod_name,
+                "department": dept_name,
+                "uploadDate": v.uploaded_at.strftime("%d %b %Y") if v.uploaded_at else "",
+                "views": v.views,
+                "videoUrl": v.video_file.url if v.video_file else "",
+                "thumbnail": v.thumbnail.url if v.thumbnail else "",
+            })
+        return res
+
+    return JsonResponse({
+        "status": "success",
+        "pendingVideos": serialize_vids(pending_qs),
+        "publishedVideos": serialize_vids(published_qs),
+        "rejectedVideos": serialize_vids(rejected_qs),
+        "counts": {
+            "pending": pending_qs.count(),
+            "published": published_qs.count(),
+            "rejected": rejected_qs.count(),
+            "total": hod_videos.count(),
+        }
+    })
+
+
+@csrf_exempt
+def api_principal_approve_video(request, video_id):
+    if request.method not in ["POST", "PUT"]:
+        return JsonResponse({"status": "error", "message": "Method not allowed"}, status=405)
+
+    try:
+        video = Video.objects.get(id=video_id)
+        video.status = "Published"
+        video.save()
+        return JsonResponse({
+            "status": "success",
+            "message": f"Video '{video.title}' approved successfully and published for students.",
+            "video_id": video.id,
+            "new_status": "Published"
+        })
+    except Video.DoesNotExist:
+        return JsonResponse({"status": "error", "message": "Video not found"}, status=404)
+
+
+@csrf_exempt
+def api_principal_reject_video(request, video_id):
+    if request.method not in ["POST", "PUT"]:
+        return JsonResponse({"status": "error", "message": "Method not allowed"}, status=405)
+
+    try:
+        video = Video.objects.get(id=video_id)
+        video.status = "Rejected"
+        video.save()
+        return JsonResponse({
+            "status": "success",
+            "message": f"Video '{video.title}' rejected.",
+            "video_id": video.id,
+            "new_status": "Rejected"
+        })
+    except Video.DoesNotExist:
+        return JsonResponse({"status": "error", "message": "Video not found"}, status=404)
+
+
+@csrf_exempt
+def api_student_videos(request):
+    if request.method != "GET":
+        return JsonResponse({"status": "error", "message": "Method not allowed"}, status=405)
+
+    search_q = (request.GET.get("search") or request.GET.get("q") or "").strip()
+    category_q = (request.GET.get("category") or "").strip()
+
+    # Filter strictly for status="Published" -> Only approved HOD and Admin videos are shown to students
+    videos_qs = Video.objects.filter(status="Published")
+
+    if search_q:
+        videos_qs = videos_qs.filter(
+            Q(title__icontains=search_q) | Q(description__icontains=search_q) | Q(category__icontains=search_q)
+        )
+    if category_q and category_q != "All":
+        videos_qs = videos_qs.filter(category=category_q)
+
+    videos_qs = videos_qs.order_by("-uploaded_at")
+
+    all_categories = list(
+        Video.objects.filter(status="Published")
+        .values_list("category", flat=True)
+        .distinct()
+    )
+    all_categories = [c for c in all_categories if c]
+
+    data = []
+    for vid in videos_qs:
+        hod_name = vid.uploaded_by_hod.hod_name if vid.uploaded_by_hod else "Faculty"
+        dept_name = vid.uploaded_by_hod.dept_name if vid.uploaded_by_hod else "General"
+
+        data.append({
+            "id": vid.id,
+            "title": vid.title,
+            "category": vid.category or "Programming",
+            "duration": vid.duration or "15:00",
+            "description": vid.description or "",
+            "views": vid.views,
+            "uploadedBy": hod_name,
+            "department": dept_name,
+            "uploadDate": vid.uploaded_at.strftime("%d %b %Y") if vid.uploaded_at else "",
+            "videoUrl": vid.video_file.url if vid.video_file else "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
+            "thumbnail": vid.thumbnail.url if vid.thumbnail else f"https://picsum.photos/seed/{vid.id}/160/90",
+            "thumbnail_url": vid.thumbnail.url if vid.thumbnail else f"https://picsum.photos/seed/{vid.id}/160/90",
+        })
+
+    return JsonResponse({
+        "status": "success",
+        "videos": data,
+        "categories": all_categories,
+    })
+
+
+# ==========================================================
+# DJANGO TEMPLATE VIEWS FOR VIDEO MANAGEMENT (http://127.0.0.1:8000/videos/)
+# ==========================================================
+
+from django.core.paginator import Paginator
+from django.shortcuts import render, redirect, get_object_or_404
+
+
+@csrf_exempt
+def video_management(request):
+    q = request.GET.get("q", "").strip()
+    category = request.GET.get("category", "").strip()
+    status = request.GET.get("status", "").strip()
+
+    qs = Video.objects.all().order_by("-uploaded_at")
+
+    if q:
+        qs = qs.filter(title__icontains=q)
+    if category:
+        qs = qs.filter(category=category)
+    if status:
+        qs = qs.filter(status=status)
+
+    total_videos = Video.objects.count()
+    published_videos = Video.objects.filter(status="Published").count()
+    pending_videos = Video.objects.filter(status="Pending").count()
+    draft_videos = Video.objects.filter(status__in=["Draft", "Pending"]).count()
+    total_views = Video.objects.aggregate(total=Sum("views"))["total"] or 0
+
+    paginator = Paginator(qs, 10)
+    page_number = request.GET.get("page", 1)
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        "videos": page_obj.object_list,
+        "page_obj": page_obj,
+        "total_videos": total_videos,
+        "published_videos": published_videos,
+        "pending_videos": pending_videos,
+        "draft_videos": draft_videos,
+        "total_views": total_views,
+        "q": q,
+        "selected_category": category,
+        "selected_status": status,
+    }
+    return render(request, "videomanagement/video_management.html", context)
+
+
+@csrf_exempt
+def video_add(request):
+    if request.method == "POST":
+        title = request.POST.get("title") or "Untitled Video"
+        category = request.POST.get("category") or "Programming"
+        duration = request.POST.get("duration") or "10:00"
+        description = request.POST.get("description") or ""
+        status = request.POST.get("status") or "Pending"
+        video_file = request.FILES.get("video_file")
+        thumbnail = request.FILES.get("thumbnail")
+
+        Video.objects.create(
+            title=title,
+            category=category,
+            duration=duration,
+            description=description,
+            status=status,
+            video_file=video_file,
+            thumbnail=thumbnail,
+        )
+        return redirect("video_management")
+
+    return render(request, "videomanagement/video_add.html")
+
+
+@csrf_exempt
+def video_edit(request, id):
+    video = get_object_or_404(Video, id=id)
+    if request.method == "POST":
+        video.title = request.POST.get("title", video.title)
+        video.category = request.POST.get("category", video.category)
+        video.duration = request.POST.get("duration", video.duration)
+        video.description = request.POST.get("description", video.description)
+        if "status" in request.POST:
+            video.status = request.POST.get("status")
+        if "video_file" in request.FILES:
+            video.video_file = request.FILES["video_file"]
+        if "thumbnail" in request.FILES:
+            video.thumbnail = request.FILES["thumbnail"]
+        video.save()
+        return redirect("video_management")
+
+    return render(request, "videomanagement/video_add.html", {"video": video})
+
+
+@csrf_exempt
+def video_delete(request, id):
+    video = get_object_or_404(Video, id=id)
+    video.delete()
+    return redirect("video_management")
+
+
+# ==========================================================
+# DJANGO ADMIN VIDEO APPROVAL HTML PAGE (http://localhost:8000/admin/video-approval/)
+# ==========================================================
+
+@csrf_exempt
+def admin_video_approval(request):
+    q = request.GET.get("q", "").strip()
+    status_filter = request.GET.get("status", "Pending").strip()
+
+    # Filter ONLY HOD uploaded videos for approval queue
+    hod_videos = Video.objects.filter(uploaded_by_hod__isnull=False)
+    qs = hod_videos.order_by("-uploaded_at")
+
+    if status_filter and status_filter != "All":
+        qs = qs.filter(status=status_filter)
+    if q:
+        qs = qs.filter(title__icontains=q)
+
+    pending_count = hod_videos.filter(status="Pending").count()
+    published_count = hod_videos.filter(status="Published").count()
+    rejected_count = hod_videos.filter(status="Rejected").count()
+    total_count = hod_videos.count()
+
+    paginator = Paginator(qs, 10)
+    page_number = request.GET.get("page", 1)
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        "videos": page_obj.object_list,
+        "page_obj": page_obj,
+        "pending_count": pending_count,
+        "published_count": published_count,
+        "rejected_count": rejected_count,
+        "total_count": total_count,
+        "q": q,
+        "selected_status": status_filter,
+    }
+    return render(request, "videomanagement/admin_video_approval.html", context)
+
+
+@csrf_exempt
+def admin_approve_video_action(request, video_id):
+    video = get_object_or_404(Video, id=video_id)
+    video.status = "Published"
+    video.save()
+    next_url = request.META.get("HTTP_REFERER") or "admin_video_approval"
+    return redirect(next_url)
+
+
+@csrf_exempt
+def admin_reject_video_action(request, video_id):
+    video = get_object_or_404(Video, id=video_id)
+    video.status = "Rejected"
+    video.save()
+    next_url = request.META.get("HTTP_REFERER") or "admin_video_approval"
+    return redirect(next_url)

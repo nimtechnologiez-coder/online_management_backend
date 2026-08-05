@@ -1,0 +1,423 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Video Approval | College Portal</title>
+    
+    <!-- Google Fonts & Font Awesome CDN -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <!-- CSS Links -->
+    <link rel="stylesheet" href="{% static 'css/sidebar.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/department.css' %}">
+    <link rel="stylesheet" href="{% static 'css/videomanagement.css' %}">
+
+    <style>
+        .approval-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .approval-stat-card {
+            background: #0f172a;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 14px;
+            padding: 18px 20px;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+        .approval-stat-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(99, 102, 241, 0.4);
+        }
+        .stat-card-val {
+            font-size: 24px;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-top: 4px;
+        }
+        .stat-card-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #94a3b8;
+            letter-spacing: 0.05em;
+        }
+        .stat-card-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+        .icon-amber { background: rgba(245, 158, 11, 0.15); color: #d97706; }
+        .icon-green { background: rgba(34, 197, 94, 0.15); color: #16a34a; }
+        .icon-red { background: rgba(239, 68, 68, 0.15); color: #dc2626; }
+        .icon-blue { background: rgba(59, 130, 246, 0.15); color: #2563eb; }
+
+        .badge-pending { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+        .badge-published { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+        .badge-rejected { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+        
+        .badge-pill {
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap;
+        }
+
+        .btn-approve {
+            background: #dcfce7;
+            color: #15803d;
+            border: 1px solid #86efac;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.15s ease;
+        }
+        .btn-approve:hover {
+            background: #16a34a;
+            color: #ffffff;
+            border-color: #16a34a;
+        }
+
+        .btn-reject {
+            background: #fee2e2;
+            color: #b91c1c;
+            border: 1px solid #fca5a5;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.15s ease;
+        }
+        .btn-reject:hover {
+            background: #dc2626;
+            color: #ffffff;
+            border-color: #dc2626;
+        }
+
+        .btn-view {
+            background: #f1f5f9;
+            color: #334155;
+            border: 1px solid #cbd5e1;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.15s ease;
+        }
+        .btn-view:hover {
+            background: #6366f1;
+            color: #ffffff;
+            border-color: #6366f1;
+        }
+
+        .video-modal-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .video-modal-backdrop.active {
+            display: flex;
+        }
+        .video-modal-card {
+            background: #0f172a;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 16px;
+            width: 100%;
+            max-width: 650px;
+            overflow: hidden;
+            color: #ffffff;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+        }
+        .video-modal-header {
+            padding: 16px 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .video-modal-body {
+            padding: 20px;
+        }
+    </style>
+</head>
+<body class="vm-page">
+
+    <!-- Sidebar -->
+    {% include 'includes/sidebar.html' %}
+
+    <div class="vm-main">
+        <!-- Breadcrumb -->
+        <nav class="vm-breadcrumb" aria-label="Breadcrumb">
+            <a href="{% url 'dashboard' %}"><i class="fas fa-home"></i> Dashboard</a>
+            <span class="vm-breadcrumb__sep">/</span>
+            <span class="vm-breadcrumb__current">Admin Video Approval</span>
+        </nav>
+
+        <!-- Page Header -->
+        <div class="vm-page-header">
+            <div>
+                <h1 class="vm-page-title"><i class="fas fa-shield-halved"></i> Admin Video Approval Portal</h1>
+                <p class="vm-page-subtitle">Review HOD uploaded course videos. Approve videos to publish them to students or reject content.</p>
+            </div>
+        </div>
+
+        <!-- Approval Stats Cards -->
+        <div class="approval-stats">
+            <a href="?status=Pending" class="approval-stat-card">
+                <div>
+                    <div class="stat-card-label">Pending Approval</div>
+                    <div class="stat-card-val">{{ pending_count }}</div>
+                </div>
+                <div class="stat-card-icon icon-amber"><i class="fas fa-clock"></i></div>
+            </a>
+            <a href="?status=Published" class="approval-stat-card">
+                <div>
+                    <div class="stat-card-label">Published Videos</div>
+                    <div class="stat-card-val">{{ published_count }}</div>
+                </div>
+                <div class="stat-card-icon icon-green"><i class="fas fa-circle-check"></i></div>
+            </a>
+            <a href="?status=Rejected" class="approval-stat-card">
+                <div>
+                    <div class="stat-card-label">Rejected Videos</div>
+                    <div class="stat-card-val">{{ rejected_count }}</div>
+                </div>
+                <div class="stat-card-icon icon-red"><i class="fas fa-circle-xmark"></i></div>
+            </a>
+            <a href="?status=All" class="approval-stat-card">
+                <div>
+                    <div class="stat-card-label">Total Uploads</div>
+                    <div class="stat-card-val">{{ total_count }}</div>
+                </div>
+                <div class="stat-card-icon icon-blue"><i class="fas fa-video"></i></div>
+            </a>
+        </div>
+
+        <!-- Toolbar -->
+        <form method="GET" action="{% url 'admin_video_approval' %}" class="vm-toolbar">
+            <div class="vm-toolbar__filters">
+                <div class="vm-search">
+                    <i class="fas fa-search vm-search__icon"></i>
+                    <input type="text" name="q" value="{{ q }}" placeholder="Search video title, HOD..." class="vm-search__input" onchange="this.form.submit()">
+                </div>
+
+                <select name="status" class="vm-select" onchange="this.form.submit()">
+                    <option value="Pending" {% if selected_status == 'Pending' %}selected{% endif %}>Pending Approval Queue</option>
+                    <option value="Published" {% if selected_status == 'Published' %}selected{% endif %}>Published Videos</option>
+                    <option value="Rejected" {% if selected_status == 'Rejected' %}selected{% endif %}>Rejected Videos</option>
+                    <option value="All" {% if selected_status == 'All' %}selected{% endif %}>All Videos</option>
+                </select>
+            </div>
+            <div class="vm-toolbar__actions">
+                <a href="{% url 'admin_video_approval' %}" class="vm-btn vm-btn--ghost">
+                    <i class="fas fa-rotate-right"></i> Reset Filters
+                </a>
+            </div>
+        </form>
+
+        <!-- Video Approval Table Card -->
+        <div class="vm-card">
+            <div class="vm-table-scroll">
+                <table class="vm-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 60px;">S.No</th>
+                            <th style="width: 100px;">Thumbnail</th>
+                            <th>Video Title</th>
+                            <th>Category</th>
+                            <th>Duration</th>
+                            <th>Description</th>
+                            <th>Uploaded By</th>
+                            <th>Uploaded Date</th>
+                            <th style="width: 130px;">Status</th>
+                            <th style="width: 240px; text-align: right;">Admin Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for video in videos %}
+                        <tr>
+                            <td>{{ forloop.counter0|add:page_obj.start_index }}</td>
+                            <td>
+                                <div class="vm-thumb cursor-pointer" onclick="openPreviewModal('{{ video.title|escapejs }}', '{% if video.video_file %}{{ video.video_file.url }}{% else %}https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4{% endif %}', '{% if video.uploaded_by_hod %}{{ video.uploaded_by_hod.dept_name }} (HOD){% else %}System Admin{% endif %}', '{{ video.uploaded_by_hod.dept_name|default:'General' }}', '{{ video.description|escapejs }}')">
+                                    {% if video.thumbnail %}
+                                        <img src="{{ video.thumbnail.url }}" alt="Thumbnail">
+                                    {% else %}
+                                        <img src="https://picsum.photos/seed/{{ video.id }}/160/90" alt="Thumbnail">
+                                    {% endif %}
+                                    <i class="fas fa-play vm-thumb__play"></i>
+                                </div>
+                            </td>
+                            <td style="font-weight: 700; color: #0f172a;">{{ video.title }}</td>
+                            <td><span style="font-weight: 600; color: #6366f1;">{{ video.category }}</span></td>
+                            <td style="font-weight: 600; color: #475569;">{{ video.duration }} min</td>
+                            <td style="max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: #64748b;">
+                                {{ video.description|default:"No description" }}
+                            </td>
+                            <td style="white-space: nowrap;">
+                                <span style="font-weight: 600; color: #1e293b; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;">
+                                    {% if video.uploaded_by_hod %}
+                                        <i class="fas fa-user-tie" style="color: #6366f1;"></i>
+                                        {{ video.uploaded_by_hod.hod_name }} ({{ video.uploaded_by_hod.college.college_name }})
+                                    {% else %}
+                                        <i class="fas fa-user-shield" style="color: #0d9488;"></i>
+                                        System Admin
+                                    {% endif %}
+                                </span>
+                            </td>
+                            <td class="vm-td--muted" style="color: #475569; font-weight: 600;">{{ video.uploaded_at|date:"d M Y" }}</td>
+                            <td>
+                                {% if video.status == 'Pending' %}
+                                    <span class="badge-pill badge-pending"><i class="fas fa-clock"></i> Pending</span>
+                                {% elif video.status == 'Published' %}
+                                    <span class="badge-pill badge-published"><i class="fas fa-circle-check"></i> Published</span>
+                                {% elif video.status == 'Rejected' %}
+                                    <span class="badge-pill badge-rejected"><i class="fas fa-circle-xmark"></i> Rejected</span>
+                                {% else %}
+                                    <span class="badge-pill badge-pending">{{ video.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: right;">
+                                <div style="display: flex; items-center; justify-content: flex-end; gap: 8px;">
+                                    
+                                    <!-- View Button -->
+                                    <button 
+                                        type="button" 
+                                        class="btn-view"
+                                        onclick="openPreviewModal('{{ video.title|escapejs }}', '{% if video.video_file %}{{ video.video_file.url }}{% else %}https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4{% endif %}', '{{ video.uploaded_by_hod.hod_name|default:'HOD' }}', '{{ video.uploaded_by_hod.dept_name|default:'Department' }}', '{{ video.description|escapejs }}')"
+                                    >
+                                        <i class="fas fa-eye"></i> View
+                                    </button>
+
+                                    <!-- Approve Button -->
+                                    {% if video.status != 'Published' %}
+                                    <a href="{% url 'admin_approve_video_action' video.id %}" class="btn-approve" title="Approve Video (Publish)">
+                                        <i class="fas fa-check"></i> Approve
+                                    </a>
+                                    {% endif %}
+
+                                    <!-- Reject Button -->
+                                    {% if video.status != 'Rejected' %}
+                                    <a href="{% url 'admin_reject_video_action' video.id %}" class="btn-reject" title="Reject Video">
+                                        <i class="fas fa-xmark"></i> Reject
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="10" style="text-align: center; padding: 3rem; color: #94a3b8;">
+                                <i class="fas fa-folder-open" style="font-size: 32px; margin-bottom: 10px; display: block; color: #475569;"></i>
+                                No {{ selected_status }} videos found in approval queue.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+            <div class="vm-table-footer">
+                <span class="vm-table-footer__info">
+                    Showing <strong>{{ page_obj.start_index }}</strong>–<strong>{{ page_obj.end_index }}</strong> of <strong>{{ page_obj.paginator.count }}</strong> videos
+                </span>
+                <div class="vm-pagination">
+                    {% if page_obj.has_previous %}
+                        <a href="?page={{ page_obj.previous_page_number }}&status={{ selected_status }}&q={{ q }}" class="vm-pagination__btn">&laquo; Previous</a>
+                    {% endif %}
+                    <span class="vm-pagination__current">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}&status={{ selected_status }}&q={{ q }}" class="vm-pagination__btn">Next &raquo;</a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Video Preview Modal -->
+    <div id="videoPreviewModal" class="video-modal-backdrop" onclick="closePreviewModal()">
+        <div class="video-modal-card" onclick="event.stopPropagation()">
+            <div class="video-modal-header">
+                <h3 id="modalVideoTitle" style="font-size: 15px; font-weight: 700; margin: 0;">Video Preview</h3>
+                <button type="button" onclick="closePreviewModal()" style="background: none; border: none; color: #94a3b8; font-size: 20px; cursor: pointer;">&times;</button>
+            </div>
+            <div class="video-modal-body">
+                <div style="width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 12px; overflow: hidden; margin-bottom: 16px;">
+                    <video id="modalVideoPlayer" controls style="width: 100%; height: 100%; object-fit: contain;"></video>
+                </div>
+                <div style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: 10px; font-size: 12.5px; margin-bottom: 12px;">
+                    <div style="display: flex; gap: 16px; margin-bottom: 6px;">
+                        <span><strong>HOD:</strong> <span id="modalHodName">-</span></span>
+                        <span><strong>Department:</strong> <span id="modalDeptName">-</span></span>
+                    </div>
+                    <p id="modalVideoDesc" style="color: #94a3b8; margin: 0; line-height: 1.4;"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openPreviewModal(title, videoUrl, hodName, deptName, desc) {
+            document.getElementById('modalVideoTitle').innerText = title;
+            document.getElementById('modalHodName').innerText = hodName;
+            document.getElementById('modalDeptName').innerText = deptName;
+            document.getElementById('modalVideoDesc').innerText = desc || 'No description provided.';
+            
+            const player = document.getElementById('modalVideoPlayer');
+            player.src = videoUrl || 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4';
+            player.play();
+
+            document.getElementById('videoPreviewModal').classList.add('active');
+        }
+
+        function closePreviewModal() {
+            const player = document.getElementById('modalVideoPlayer');
+            player.pause();
+            player.src = '';
+            document.getElementById('videoPreviewModal').classList.remove('active');
+        }
+    </script>
+</body>
+</html>

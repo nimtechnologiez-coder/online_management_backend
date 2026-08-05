@@ -146,11 +146,15 @@
                     <!-- 1. Weekly Engagement Chart -->
                     <div class="dashboard-card">
                         <div class="card-header">
-                            <h3><i class="fas fa-chart-line" style="color:var(--db-primary);"></i> Weekly Engagement</h3>
+                            <h3><i class="fas fa-chart-line" style="color:var(--db-primary);"></i> Weekly Engagement
+                            </h3>
                             <select id="weeklyPeriodSelect" class="period-select-custom">
-                                <option value="week" {% if selected_period == "week" %}selected{% endif %}>This Week</option>
-                                <option value="3months" {% if selected_period == "3months" %}selected{% endif %}>Last 3 Months</option>
-                                <option value="6months" {% if selected_period == "6months" %}selected{% endif %}>Last 6 Months</option>
+                                <option value="week" {% if selected_period == 'week' %}selected{% endif %}>This Week
+                                </option>
+                                <option value="3months" {% if selected_period == '3months' %}selected{% endif %}>Last 3
+                                    Months</option>
+                                <option value="6months" {% if selected_period == '6months' %}selected{% endif %}>Last 6
+                                    Months</option>
                             </select>
                         </div>
                         <div class="chart-container">
@@ -161,8 +165,10 @@
                     <!-- 2. Monthly Analytics Chart -->
                     <div class="dashboard-card">
                         <div class="card-header">
-                            <h3><i class="fas fa-chart-area" style="color:var(--db-success);"></i> Monthly Analytics</h3>
-                            <span class="card-header-tag" style="background:rgba(16,185,129,0.12);color:#10b981;border:1px solid rgba(16,185,129,0.25);">
+                            <h3><i class="fas fa-chart-area" style="color:var(--db-success);"></i> Monthly Analytics
+                            </h3>
+                            <span class="card-header-tag"
+                                style="background:rgba(16,185,129,0.12);color:#10b981;border:1px solid rgba(16,185,129,0.25);">
                                 <i class="fas fa-calendar-alt" style="font-size:0.65rem;"></i> This Month
                             </span>
                         </div>
@@ -203,7 +209,8 @@
                             <h3><i class="fas fa-trophy" style="color:var(--db-warning);"></i> Top Performing Colleges
                             </h3>
                             <div style="display:flex;align-items:center;gap:0.4rem;flex-shrink:0;">
-                                <span class="card-header-tag" style="background:rgba(245,158,11,0.12);color:#f59e0b;border:1px solid rgba(245,158,11,0.25);">
+                                <span class="card-header-tag"
+                                    style="background:rgba(245,158,11,0.12);color:#f59e0b;border:1px solid rgba(245,158,11,0.25);">
                                     <i class="fas fa-calendar-week"></i> This Week
                                 </span>
                                 <span class="card-header-tag">Top 5</span>
@@ -245,7 +252,8 @@
                         <div class="card-header">
                             <h3><i class="fas fa-fire" style="color:#ef4444;"></i> Most Watched Videos</h3>
                             <div style="display:flex;align-items:center;gap:0.4rem;flex-shrink:0;">
-                                <span class="card-header-tag" style="background:rgba(239,68,68,0.12);color:#ef4444;border:1px solid rgba(239,68,68,0.25);">
+                                <span class="card-header-tag"
+                                    style="background:rgba(239,68,68,0.12);color:#ef4444;border:1px solid rgba(239,68,68,0.25);">
                                     <i class="fas fa-calendar-week"></i> This Week
                                 </span>
                                 <span class="card-header-tag">Top 5</span>
@@ -384,7 +392,8 @@
                     <!-- 3. Department Breakdown -->
                     <div class="dashboard-card">
                         <div class="card-header">
-                            <h3><i class="fas fa-layer-group" style="color:var(--db-indigo);"></i> Department Breakdown</h3>
+                            <h3><i class="fas fa-layer-group" style="color:var(--db-indigo);"></i> Department Breakdown
+                            </h3>
                             <span class="card-header-tag">Top 5</span>
                         </div>
                         {% if dept_distribution %}
@@ -462,12 +471,12 @@
         Chart.defaults.font.size = 11;
 
         // Backend Dynamic Data
-        const backendLabels = {{ chart_labels|safe }};
-        const backendData = {{ chart_data|safe }};
-        const backendMonthlyLabels = {{ monthly_labels|safe }};
-        const backendMonthlyData = {{ monthly_data|safe }};
-        const backendCollegeLabels = {{ college_labels|safe }};
-        const backendCollegeData = {{ college_data|safe }};
+        const backendLabels = {{ chart_labels| safe }};
+        const backendData = {{ chart_data| safe }};
+        const backendMonthlyLabels = {{ monthly_labels| safe }};
+        const backendMonthlyData = {{ monthly_data| safe }};
+        const backendCollegeLabels = {{ college_labels| safe }};
+        const backendCollegeData = {{ college_data| safe }};
 
         const weekLabels = (backendLabels && backendLabels.length > 0) ? backendLabels : ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
         const weekData = (backendData && backendData.length > 0) ? backendData : [45, 65, 55, 75];
@@ -518,18 +527,18 @@
                 fetch(`?period=${selectedPeriod}`, {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 })
-                .then(res => res.text())
-                .then(html => {
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(html, 'text/html');
-                    const scriptMatch = doc.querySelector('script:not([src])');
-                    // Fast update url state cleanly
-                    history.pushState(null, '', `?period=${selectedPeriod}`);
-                    window.location.reload();
-                })
-                .catch(() => {
-                    window.location.href = `?period=${selectedPeriod}`;
-                });
+                    .then(res => res.text())
+                    .then(html => {
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+                        const scriptMatch = doc.querySelector('script:not([src])');
+                        // Fast update url state cleanly
+                        history.pushState(null, '', `?period=${selectedPeriod}`);
+                        window.location.reload();
+                    })
+                    .catch(() => {
+                        window.location.href = `?period=${selectedPeriod}`;
+                    });
             });
         }
 

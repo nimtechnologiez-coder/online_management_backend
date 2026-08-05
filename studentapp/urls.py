@@ -29,6 +29,16 @@ urlpatterns = [
     path('students/add/', views.student_add, name='student_add'),
     path('students/delete/<int:student_id>/', views.student_delete, name='student_delete'),
     path('students/update/<int:student_id>/', views.student_update, name='student_update'),
+    path('student/signup/', views.student_signup, name='student_signup'),
+    path('api/student/signup/', views.student_signup, name='api_student_signup'),
+    path('api/student/send-otp/', views.send_otp, name='api_send_otp'),
+    path('api/student/verify-otp/', views.verify_otp, name='api_verify_otp'),
+    path('api/student/create-account/', views.create_student_account, name='api_create_student_account'),
+    path('api/student/forgot-password/send-otp/', views.forgot_password_send_otp, name='api_forgot_password_send_otp'),
+    path('api/student/forgot-password/verify-otp/', views.forgot_password_verify_otp, name='api_forgot_password_verify_otp'),
+    path('api/student/forgot-password/reset/', views.forgot_password_reset, name='api_forgot_password_reset'),
+    path('api/get-principal-by-college/<int:college_id>/', views.get_principal_by_college, name='get_principal_by_college'),
+    path('api/get-colleges/', views.api_get_colleges, name='api_get_colleges'),
 
     # ================= VIDEO =================
 
@@ -89,10 +99,16 @@ urlpatterns = [
     path("api/hod/performance/", views.api_hod_performance, name="api_hod_performance"),
     path("api/hod/profile/", views.api_hod_profile, name="api_hod_profile"),
     path("api/hod/videos/upload/", views.api_hod_video_upload, name="api_hod_video_upload"),
-    path(
-    "api/hod/videos/upload/<int:video_id>/",
-    views.api_hod_video_delete,
-    name="api_hod_video_delete",
+    path("api/hod/videos/upload/<int:video_id>/", views.api_hod_video_delete, name="api_hod_video_delete"),
 
-),
+    # ================= PRINCIPAL / ADMIN APPROVAL API =================
+    path("api/principal/video-approvals/", views.api_principal_video_approvals, name="api_principal_video_approvals"),
+    path("api/principal/videos/<int:video_id>/approve/", views.api_principal_approve_video, name="api_principal_approve_video"),
+    path("api/principal/videos/<int:video_id>/reject/", views.api_principal_reject_video, name="api_principal_reject_video"),
+
+    # ================= DJANGO ADMIN VIDEO APPROVAL HTML PAGE =================
+    path("video-approval/", views.admin_video_approval, name="admin_video_approval"),
+    path("admin-approval/", views.admin_video_approval),
+    path("video-approval/<int:video_id>/approve/", views.admin_approve_video_action, name="admin_approve_video_action"),
+    path("video-approval/<int:video_id>/reject/", views.admin_reject_video_action, name="admin_reject_video_action"),
 ]

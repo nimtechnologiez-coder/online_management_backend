@@ -102,6 +102,17 @@
                 </a>
             </li>
 
+            <!-- Video Approvals -->
+            <li class="nav-item">
+                <a href="{% url 'admin_video_approval' %}"
+                    class="nav-link {% if request.resolver_match.url_name == 'admin_video_approval' %}active{% endif %}">
+                    <i class="fas fa-shield-halved nav-icon"></i>
+                    <span class="nav-text">Video Approvals</span>
+                    {% if request.resolver_match.url_name == 'admin_video_approval' %}<span
+                        class="active-indicator"></span>{% endif %}
+                </a>
+            </li>
+
             <!-- Video Analytics -->
             <li class="nav-item">
                 <a href="{% url 'video_analytics' %}"

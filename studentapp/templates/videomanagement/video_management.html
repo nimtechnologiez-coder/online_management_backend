@@ -120,6 +120,8 @@
                             <th>Category</th>
                             <th style="width: 100px;">Duration</th>
                             <th>Description</th>
+                            <th>Uploaded By</th>
+                            <th>College Name</th>
                             <th style="width: 130px;">Uploaded Date</th>
                             <th style="width: 120px;">Status</th>
                             <th style="width: 150px;">Actions</th>
@@ -231,14 +233,19 @@
     </div>
 
     <!-- Delete Modal -->
-    <div id="deleteModal" class="vm-modal-overlay">
-        <div class="vm-modal">
-            <div class="vm-modal__icon"><i class="fas fa-exclamation-triangle"></i></div>
-            <h3 class="vm-modal__title">Delete Video?</h3>
-            <p class="vm-modal__desc">Are you sure you want to delete <strong id="deleteTitle"></strong>? This cannot be undone.</p>
-            <div class="vm-modal__actions">
-                <button onclick="closeModal('deleteModal')" class="vm-btn vm-btn--ghost">Cancel</button>
-                <button onclick="confirmDelete()" class="vm-btn vm-btn--danger">Yes, Delete</button>
+    <div id="deleteModal" class="vm-modal-overlay delete-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle" aria-describedby="deleteModalDesc">
+        <div class="vm-modal delete-modal">
+            <button type="button" class="delete-modal__close" onclick="closeModal('deleteModal')" aria-label="Close delete confirmation">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="delete-modal__icon" aria-hidden="true">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h3 id="deleteModalTitle" class="delete-modal__title">Delete Video</h3>
+            <p id="deleteModalDesc" class="delete-modal__message">Are you sure you want to delete <strong id="deleteTitle">this video</strong>? This action cannot be undone.</p>
+            <div class="delete-modal__actions">
+                <button type="button" onclick="closeModal('deleteModal')" class="delete-modal__cancel">Cancel</button>
+                <button type="button" onclick="confirmDelete()" class="delete-modal__confirm">Delete Video</button>
             </div>
         </div>
     </div>

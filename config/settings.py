@@ -14,7 +14,6 @@ ALLOWED_HOSTS = [
     "127.0.0.1",
     "localhost",
 ]
-
 # ==================================================
 # Applications
 # ==================================================
@@ -225,9 +224,10 @@ CSRF_COOKIE_SECURE = False
 CSRF_COOKIE_SAMESITE = "Lax"
 
 # Allow large JSON payload uploads (e.g., base64 profile pictures & cover photos)
-DATA_UPLOAD_MAX_MEMORY_SIZE = 15728640  # 15MB
-FILE_UPLOAD_MAX_MEMORY_SIZE = 15728640  # 15MB
+# ==================================================
+# EMAIL & SMTP CONFIGURATION (Brevo)
+# ==================================================
 
 
-
-
+EMAIL_HOST_PASSWORD = ""
+BREVO_API_KEY = ""

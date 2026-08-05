@@ -77,6 +77,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .main-content {
     flex: 1 1 auto;
     min-width: 0;
+    max-width: calc(100vw - 264px);
     display: flex;
     flex-direction: column;
     background: var(--db-bg);
@@ -181,7 +182,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .dropdown-icon { font-size: 0.7rem; color: var(--db-text-muted); margin-left: 0.2rem; }
 
 /* ── Dashboard Layout & Padding ────────────────────────────── */
-.dashboard-content { flex: 1 1 auto; padding: 1.5rem 2rem 3rem; }
+.dashboard-content { flex: 1 1 auto; min-width: 0; padding: 1.5rem 2rem 3rem; }
 
 /* ── Stat Cards Grid (7 Cards Horizontal / Responsive Grid) ─ */
 .stats-grid {
@@ -342,6 +343,12 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .legend-pct { font-weight: 700; color: var(--db-text); margin-left: 0.5rem; }
 
 /* ── 3-Column Layout Grids ─────────────────────────────────── */
+.charts-grid, .three-col-grid {
+    min-width: 0;
+}
+.dashboard-card {
+    min-width: 0;
+}
 .three-col-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -353,8 +360,13 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
     display: flex;
     flex-direction: column;
 }
-@media (max-width: 1200px) {
+@media (max-width: 1400px) {
+    .three-col-grid { grid-template-columns: repeat(2, 1fr); }
+    .charts-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 1024px) {
     .three-col-grid { grid-template-columns: 1fr; }
+    .charts-grid { grid-template-columns: 1fr; }
 }
 
 /* ── Top Performing Colleges ───────────────────────────────── */

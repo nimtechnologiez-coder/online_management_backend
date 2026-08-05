@@ -29,6 +29,31 @@
             {{ video.description|truncatechars:60 }}
         </span>
     </td>
+    <td style="white-space: nowrap;">
+        {% if video.uploaded_by_hod %}
+            <span style="font-weight: 600; color: #1e293b; font-size: 12px; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;">
+                <i class="fas fa-user-tie" style="color: #6366f1;"></i>
+                {{ video.uploaded_by_hod.hod_name }}
+            </span>
+        {% else %}
+            <span style="font-weight: 600; color: #0d9488; font-size: 12px; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;">
+                <i class="fas fa-user-shield"></i>
+                System Admin
+            </span>
+        {% endif %}
+    </td>
+    <td style="white-space: nowrap;">
+        {% if video.uploaded_by_hod and video.uploaded_by_hod.college %}
+            <span style="font-weight: 500; color: #475569; font-size: 12px; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;">
+                <i class="fas fa-building" style="color: #64748b;"></i>
+                {{ video.uploaded_by_hod.college.college_name }}
+            </span>
+        {% else %}
+            <span style="font-weight: 500; color: #64748b; font-size: 12px; white-space: nowrap;">
+                All Colleges
+            </span>
+        {% endif %}
+    </td>
     <td class="vm-td--muted">{{ video.uploaded_at|date:"Y-m-d" }}</td>
     <td>
         <span class="vm-badge {% if video.status == 'Published' %}vm-badge--active{% else %}vm-badge--inactive{% endif %}">
@@ -44,6 +69,6 @@
 </tr>
 {% empty %}
 <tr>
-    <td colspan="9" style="text-align: center; padding: 2rem;">No videos found.</td>
+    <td colspan="11" style="text-align: center; padding: 2rem;">No videos found.</td>
 </tr>
 {% endfor %}
