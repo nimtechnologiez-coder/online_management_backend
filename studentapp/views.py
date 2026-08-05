@@ -2688,13 +2688,24 @@ def api_principal_departments(request):
 def api_principal_videos(request):
     try:
         principal = get_authenticated_principal(request)
-        if not principal or not principal.college:
+        if not principal:
             return JsonResponse({"status": "error", "message": "Unauthorized"}, status=401)
 
         # All students in this principal's college
-        college_students = Student.objects.filter(college=principal.college)
+        college_students = Student.objects.filter(college=principal.college) if (principal and principal.college) else Student.objects.all()
+
+        category_param = request.GET.get("category")
+        status_param = request.GET.get("status")
+        query_param = request.GET.get("q") or request.GET.get("query")
 
         videos = Video.objects.all().order_by("-uploaded_at")
+        if category_param and category_param != "All Categories":
+            videos = videos.filter(category=category_param)
+        if status_param and status_param != "All Status":
+            videos = videos.filter(status=status_param)
+        if query_param:
+            videos = videos.filter(title__icontains=query_param.strip())
+
         data = []
 
         for video in videos:
@@ -2710,11 +2721,11 @@ def api_principal_videos(request):
             # Thumbnail: first two letters of title in uppercase
             thumb_label = (video.title[:2]).upper() if video.title else "VD"
 
-            uploader_name = f"System Admin ({principal.college.college_name if principal.college else 'College'})"
+            uploader_name = f"System Admin ({principal.college.college_name if (principal and principal.college) else 'College'})"
             if video.uploaded_by_hod:
                 hod_person = video.uploaded_by_hod.hod_name or "HOD"
                 dept_title = video.uploaded_by_hod.dept_name or "Department"
-                clg_title = video.uploaded_by_hod.college.college_name if video.uploaded_by_hod.college else (principal.college.college_name if principal.college else "")
+                clg_title = video.uploaded_by_hod.college.college_name if (video.uploaded_by_hod.college) else (principal.college.college_name if (principal and principal.college) else "")
                 uploader_name = f"{hod_person} | {dept_title} | {clg_title}".strip(" |")
             elif getattr(video, "uploaded_by_name", None):
                 uploader_name = video.uploaded_by_name
@@ -2722,20 +2733,20 @@ def api_principal_videos(request):
             data.append({
                 "id": str(video.id),
                 "title": video.title,
-                "category": video.category,
-                "duration": video.duration,
-                "views": video.views,
-                "uploadedDate": video.uploaded_at.strftime("%d %b %Y") if video.uploaded_at else "",
+                "category": video.category or "General",
+                "duration": video.duration or "15 min",
+                "views": video.views or 0,
+                "uploadedDate": video.uploaded_at.strftime("%d %b %Y") if getattr(video, "uploaded_at", None) else "01 Jul 2026",
                 "uploadedBy": uploader_name,
-                "status": video.status,
+                "status": video.status or "Published",
                 "studentsViewed": students_viewed,
                 "completionRate": completion_rate,
                 "description": video.description or "",
                 "thumbnail": thumb_label,
-                "videoUrl": request.build_absolute_uri(video.video_file.url) if video.video_file else "",
+                "videoUrl": request.build_absolute_uri(video.video_file.url) if (getattr(video, "video_file", None) and hasattr(video.video_file, "url") and video.video_file) else "",
             })
 
-        # Department-wise view analytics
+        # Department-wise view analytics strictly from VideoWatch
         dept_views_map = {}
         for vw in VideoWatch.objects.filter(student__in=college_students).select_related("student__department"):
             if vw.student and vw.student.department:
@@ -2751,7 +2762,7 @@ def api_principal_videos(request):
 
         return JsonResponse({
             "status": "success",
-            "college": principal.college.college_name,
+            "college": principal.college.college_name if (principal and principal.college) else "College",
             "total": len(data),
             "totalViews": total_views,
             "departmentBreakdown": dept_breakdown,
@@ -3283,11 +3294,6 @@ def api_student_record_watch(request, video_id):
 
 @csrf_exempt
 def api_student_save_progress(request, video_id):
-    """
-    Saves the current playback position (watched_seconds) for a student.
-    Called periodically by the frontend video player.
-    Expected JSON body: { "watched_seconds": <int> }
-    """
     if request.method not in ("POST", "PATCH"):
         return JsonResponse({"status": "error", "message": "Method not allowed"}, status=405)
     try:
@@ -4243,7 +4249,7 @@ def api_hod_profile(request):
             hod.save()
 
             default_bio = f"{hod.hod_name} is the Head of Department for {hod.dept_name} at {hod.college.college_name if hod.college else ''}."
-            default_avatar = f"https://api.dicebear.com/7.x/avataaars/svg?seed={hod.hod_name}"
+            default_avatar = ""
 
             return JsonResponse({
                 "status": "success",
@@ -4265,7 +4271,7 @@ def api_hod_profile(request):
             })
 
         default_bio = f"{hod.hod_name} is the Head of Department for {hod.dept_name} at {hod.college.college_name if hod.college else ''}."
-        default_avatar = f"https://api.dicebear.com/7.x/avataaars/svg?seed={hod.hod_name}"
+        default_avatar = ""
 
         return JsonResponse({
             "status": "success",

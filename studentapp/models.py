@@ -379,18 +379,24 @@ class Student(models.Model):
     college = models.ForeignKey(
         College,
         on_delete=models.CASCADE,
-        related_name="students"
+        related_name="students",
+        null=True,
+        blank=True
     )
 
     department = models.ForeignKey(
         Department,
         on_delete=models.CASCADE,
-        related_name="students"
+        related_name="students",
+        null=True,
+        blank=True
     )
 
     year = models.CharField(
         max_length=10,
-        choices=YEAR
+        choices=YEAR,
+        blank=True,
+        null=True
     )
 
     username = models.CharField(
