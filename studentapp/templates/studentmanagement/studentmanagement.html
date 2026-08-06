@@ -84,36 +84,41 @@
             <div class="sm-toolbar__filters">
                 <div class="sm-search">
                     <i class="fas fa-search sm-search__icon"></i>
-                    <input type="text" name="q" value="{{ q }}" placeholder="Search by name, username…" class="sm-search__input" onkeydown="if(event.key==='Enter'){this.form.submit();}">
+                    <input type="text" name="q" value="{{ q }}" placeholder="Search by name, username…"
+                        class="sm-search__input" onkeydown="if(event.key==='Enter'){this.form.submit();}">
                 </div>
                 <select name="college" class="sm-select" onchange="this.form.submit()">
                     <option value="">All Colleges</option>
                     {% for c in all_colleges %}
-                    <option value="{{ c.id }}" {% if selected_college == c.id|stringformat:"s" %}selected{% endif %}>{{ c.college_name }}</option>
+                    <option value="{{ c.id }}" {% if selected_college==c.id|stringformat:"s" %}selected{% endif %}>{{
+                        c.college_name }}</option>
                     {% endfor %}
                 </select>
                 <select name="department" class="sm-select" onchange="this.form.submit()">
                     <option value="">All Departments</option>
                     {% for d in all_departments %}
-                    <option value="{{ d.id }}" {% if selected_dept == d.id|stringformat:"s" %}selected{% endif %}>{{ d.dept_name }}</option>
+                    <option value="{{ d.id }}" {% if selected_dept==d.id|stringformat:"s" %}selected{% endif %}>{{
+                        d.dept_name }}</option>
                     {% endfor %}
                 </select>
                 <select name="year" class="sm-select sm-select--sm" onchange="this.form.submit()">
                     <option value="">All Years</option>
-                    <option value="I" {% if selected_year == 'I' %}selected{% endif %}>Year I</option>
-                    <option value="II" {% if selected_year == 'II' %}selected{% endif %}>Year II</option>
-                    <option value="III" {% if selected_year == 'III' %}selected{% endif %}>Year III</option>
-                    <option value="IV" {% if selected_year == 'IV' %}selected{% endif %}>Year IV</option>
+                    <option value="I" {% if selected_year=='I' %}selected{% endif %}>Year I</option>
+                    <option value="II" {% if selected_year=='II' %}selected{% endif %}>Year II</option>
+                    <option value="III" {% if selected_year=='III' %}selected{% endif %}>Year III</option>
+                    <option value="IV" {% if selected_year=='IV' %}selected{% endif %}>Year IV</option>
                 </select>
                 <select name="status" class="sm-select sm-select--sm" onchange="this.form.submit()">
                     <option value="">All Status</option>
-                    <option value="pending_approval" {% if selected_status == 'pending_approval' %}selected{% endif %}>Pending Approval</option>
-                    <option value="active" {% if selected_status == 'active' %}selected{% endif %}>Active</option>
-                    <option value="inactive" {% if selected_status == 'inactive' %}selected{% endif %}>Inactive</option>
-                    <option value="rejected" {% if selected_status == 'rejected' %}selected{% endif %}>Rejected</option>
+                    <option value="pending_approval" {% if selected_status=='pending_approval' %}selected{% endif %}>
+                        Pending Approval</option>
+                    <option value="active" {% if selected_status=='active' %}selected{% endif %}>Active</option>
+                    <option value="inactive" {% if selected_status=='inactive' %}selected{% endif %}>Inactive</option>
+                    <option value="rejected" {% if selected_status=='rejected' %}selected{% endif %}>Rejected</option>
                 </select>
             </div>
-            <a href="{% url 'student_management' %}" class="sm-btn sm-btn--ghost" id="resetBtn" title="Reset filters" style="text-decoration:none;">
+            <a href="{% url 'student_management' %}" class="sm-btn sm-btn--ghost" id="resetBtn" title="Reset filters"
+                style="text-decoration:none;">
                 Reset
             </a>
         </form>
@@ -139,21 +144,12 @@
                     <tbody id="tableBody">
                         <!-- ── Rows inlined directly (student_rows.html merged in) ────────── -->
                         {% for s in students %}
-                        <tr
-                            data-id="{{ s.id }}"
-                            data-name="{{ s.full_name }}"
-                            data-email="{{ s.email }}"
-                            data-user="{{ s.username }}"
-                            data-pass="{{ s.password }}"
-                            data-college="{{ s.college.college_name }}"
-                            data-college-id="{{ s.college_id }}"
-                            data-dept="{{ s.department.dept_name }}"
-                            data-dept-id="{{ s.department_id }}"
-                            data-year="{{ s.year }}"
-                            data-join="{{ s.join_date|date:'Y-m-d' }}"
-                            data-end="{{ s.end_date|date:'Y-m-d' }}"
-                            data-status="{{ s.status }}"
-                        >
+                        <tr data-id="{{ s.id }}" data-name="{{ s.full_name }}" data-email="{{ s.email }}"
+                            data-user="{{ s.username }}" data-pass="{{ s.password }}"
+                            data-college="{{ s.college.college_name }}" data-college-id="{{ s.college_id }}"
+                            data-dept="{{ s.department.dept_name }}" data-dept-id="{{ s.department_id }}"
+                            data-year="{{ s.year }}" data-join="{{ s.join_date|date:'Y-m-d' }}"
+                            data-end="{{ s.end_date|date:'Y-m-d' }}" data-status="{{ s.status }}">
                             <td>{{ forloop.counter0|add:page_obj.start_index }}</td>
                             <td>{{ s.full_name }}</td>
                             <td>{{ s.username }}</td>
@@ -163,12 +159,16 @@
                             <td>{{ s.join_date|date:'M d, Y' }}</td>
                             <td>{{ s.end_date|date:'M d, Y' }}</td>
                             <td>
-                                <span class="sm-badge sm-badge--{{ s.status|lower }}">{{ s.get_status_display|default:s.status }}</span>
+                                <span class="sm-badge sm-badge--{{ s.status|lower }}">{{
+                                    s.get_status_display|default:s.status }}</span>
                             </td>
                             <td class="sm-table-actions">
-                                <button class="sm-icon-btn" title="View" onclick="openViewModal(this)"><i class="fas fa-eye"></i></button>
-                                <button class="sm-icon-btn" title="Edit" onclick="openEditModal(this)"><i class="fas fa-pen"></i></button>
-                                <button class="sm-icon-btn sm-icon-btn--danger" title="Delete" onclick="openDeleteModal(this)"><i class="fas fa-trash"></i></button>
+                                <button class="sm-icon-btn" title="View" onclick="openViewModal(this)"><i
+                                        class="fas fa-eye"></i></button>
+                                <button class="sm-icon-btn" title="Edit" onclick="openEditModal(this)"><i
+                                        class="fas fa-pen"></i></button>
+                                <button class="sm-icon-btn sm-icon-btn--danger" title="Delete"
+                                    onclick="openDeleteModal(this)"><i class="fas fa-trash"></i></button>
                             </td>
                         </tr>
                         {% empty %}
@@ -182,7 +182,9 @@
 
             <div class="sm-table-footer">
                 <span class="sm-table-footer__info" id="pageInfo">
-                    Showing <strong id="infoStart">{{ page_obj.start_index|default:0 }}</strong>–<strong id="infoEnd">{{ page_obj.end_index|default:0 }}</strong> of <strong id="infoTotal">{{ page_obj.paginator.count }}</strong> students
+                    Showing <strong id="infoStart">{{ page_obj.start_index|default:0 }}</strong>–<strong id="infoEnd">{{
+                        page_obj.end_index|default:0 }}</strong> of <strong id="infoTotal">{{ page_obj.paginator.count
+                        }}</strong> students
                 </span>
                 <div class="sm-pagination" id="paginationContainer">
                     <!-- Rendered by JS -->
@@ -265,10 +267,7 @@
                     <input type="text" id="editPass" readonly disabled class="sm-input--readonly">
                 </div>
 
-                <!-- READ-ONLY -->
-                <!-- Visible field just shows the college name as text (matches the View modal).
-                     The real <select> below is hidden and only used internally to look up
-                     the college's stream for the End Date calculation. -->
+
                 <div class="sm-form-group">
                     <label>College <small>(read-only)</small></label>
                     <input type="text" id="editCollegeDisplay" readonly disabled class="sm-input--readonly">
@@ -321,17 +320,17 @@
                         <option value="inactive">Inactive</option>
                         <option value="rejected">Rejected</option>
                     </select>
+                <div class="sm-modal__actions">
+                    <button onclick="closeModal('editModal')" class="sm-btn sm-btn--ghost">Cancel</button>
+                    <button onclick="confirmEdit()" class="sm-btn sm-btn--primary" id="saveEditBtn">Save Changes</button>
                 </div>
             </form>
-            <div class="sm-modal__actions">
-                <button onclick="closeModal('editModal')" class="sm-btn sm-btn--ghost">Cancel</button>
-                <button onclick="confirmEdit()" class="sm-btn sm-btn--primary" id="saveEditBtn">Save Changes</button>
-            </div>
         </div>
     </div>
 
     <!-- ── DELETE MODAL ────────────────────────────────────── -->
-    <div id="deleteModal" class="sm-modal-overlay delete-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle" aria-describedby="deleteModalDesc" aria-hidden="true">
+    <div id="deleteModal" class="sm-modal-overlay delete-modal-overlay" role="dialog" aria-modal="true"
+        aria-labelledby="deleteModalTitle" aria-describedby="deleteModalDesc" aria-hidden="true">
         <div class="sm-modal delete-modal">
             <button type="button" class="delete-modal__close" onclick="closeModal('deleteModal')" aria-label="Close">
                 <i class="fas fa-times"></i>
@@ -340,7 +339,8 @@
                 <i class="fas fa-exclamation-triangle"></i>
             </div>
             <h3 id="deleteModalTitle" class="delete-modal__title">Delete Student</h3>
-            <p id="deleteModalDesc" class="delete-modal__message">Are you sure you want to delete <strong id="deleteName">this student</strong>? This action cannot be undone.</p>
+            <p id="deleteModalDesc" class="delete-modal__message">Are you sure you want to delete <strong
+                    id="deleteName">this student</strong>? This action cannot be undone.</p>
             <div class="delete-modal__actions">
                 <button type="button" onclick="closeModal('deleteModal')" class="delete-modal__cancel">Cancel</button>
                 <button type="button" onclick="confirmDelete()" class="delete-modal__confirm" id="deleteConfirmBtn">
@@ -401,16 +401,16 @@
         });
         function openViewModal(btn) {
             const row = btn.closest('tr');
-            document.getElementById('viewName').textContent    = row.dataset.name;
-            document.getElementById('viewEmail').textContent   = row.dataset.email;
-            document.getElementById('viewUser').textContent    = row.dataset.user;
-            document.getElementById('viewPass').textContent    = row.dataset.pass;
+            document.getElementById('viewName').textContent = row.dataset.name;
+            document.getElementById('viewEmail').textContent = row.dataset.email;
+            document.getElementById('viewUser').textContent = row.dataset.user;
+            document.getElementById('viewPass').textContent = row.dataset.pass;
             document.getElementById('viewCollege').textContent = row.dataset.college;
-            document.getElementById('viewDept').textContent    = row.dataset.dept;
-            document.getElementById('viewYear').textContent    = row.dataset.year;
-            document.getElementById('viewJoin').textContent    = row.dataset.join;
-            document.getElementById('viewEnd').textContent     = row.dataset.end;
-            document.getElementById('viewStatus').textContent  = row.dataset.status;
+            document.getElementById('viewDept').textContent = row.dataset.dept;
+            document.getElementById('viewYear').textContent = row.dataset.year;
+            document.getElementById('viewJoin').textContent = row.dataset.join;
+            document.getElementById('viewEnd').textContent = row.dataset.end;
+            document.getElementById('viewStatus').textContent = row.dataset.status;
             document.getElementById('viewModal').classList.add('active');
         }
 
@@ -494,12 +494,12 @@
         function openEditModal(btn) {
             const row = btn.closest('tr');
 
-            document.getElementById('editId').value    = row.dataset.id;
-            document.getElementById('editName').value  = row.dataset.name;
-            document.getElementById('editUser').value  = row.dataset.user;
-            document.getElementById('editPass').value  = row.dataset.pass;
-            document.getElementById('editYear').value  = row.dataset.year;
-            document.getElementById('editJoin').value  = row.dataset.join;
+            document.getElementById('editId').value = row.dataset.id;
+            document.getElementById('editName').value = row.dataset.name;
+            document.getElementById('editUser').value = row.dataset.user;
+            document.getElementById('editPass').value = row.dataset.pass;
+            document.getElementById('editYear').value = row.dataset.year;
+            document.getElementById('editJoin').value = row.dataset.join;
             document.getElementById('editStatus').value = (row.dataset.status || '').toLowerCase();
 
             // College is read-only. Show the plain name (same source as the View
@@ -548,20 +548,20 @@
                 headers: { 'X-CSRFToken': CSRF_TOKEN },
                 body: formData
             })
-            .then(r => r.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    closeModal('editModal');
-                    goToPage(pageState.currentPage); // refresh current page rows
-                } else {
-                    alert('Error: ' + (data.message || 'Could not update student.'));
-                }
-            })
-            .catch(() => alert('Network error. Please try again.'))
-            .finally(() => {
-                saveBtn.disabled = false;
-                saveBtn.textContent = 'Save Changes';
-            });
+                .then(r => r.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        closeModal('editModal');
+                        goToPage(pageState.currentPage); // refresh current page rows
+                    } else {
+                        alert('Error: ' + (data.message || 'Could not update student.'));
+                    }
+                })
+                .catch(() => alert('Network error. Please try again.'))
+                .finally(() => {
+                    saveBtn.disabled = false;
+                    saveBtn.textContent = 'Save Changes';
+                });
         }
 
         function approveStudentDirect(studentId) {
@@ -573,16 +573,16 @@
                 headers: { 'X-CSRFToken': CSRF_TOKEN },
                 body: formData
             })
-            .then(r => r.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    showToast('Student approved successfully.');
-                    goToPage(pageState.currentPage);
-                } else {
-                    alert('Error: ' + (data.message || 'Could not approve student.'));
-                }
-            })
-            .catch(() => alert('Network error. Please try again.'));
+                .then(r => r.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        showToast('Student approved successfully.');
+                        goToPage(pageState.currentPage);
+                    } else {
+                        alert('Error: ' + (data.message || 'Could not approve student.'));
+                    }
+                })
+                .catch(() => alert('Network error. Please try again.'));
         }
 
         function rejectStudentDirect(studentId) {
@@ -594,16 +594,16 @@
                 headers: { 'X-CSRFToken': CSRF_TOKEN },
                 body: formData
             })
-            .then(r => r.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    showToast('Student registration rejected.');
-                    goToPage(pageState.currentPage);
-                } else {
-                    alert('Error: ' + (data.message || 'Could not reject student.'));
-                }
-            })
-            .catch(() => alert('Network error. Please try again.'));
+                .then(r => r.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        showToast('Student registration rejected.');
+                        goToPage(pageState.currentPage);
+                    } else {
+                        alert('Error: ' + (data.message || 'Could not reject student.'));
+                    }
+                })
+                .catch(() => alert('Network error. Please try again.'));
         }
 
         let _deleteRow = null;
@@ -619,7 +619,7 @@
             const studentName = _deleteRow.dataset.name || 'Student';
             const confirmBtn = document.getElementById('deleteConfirmBtn');
             const btnText = document.getElementById('deleteBtnText');
-            
+
             confirmBtn.disabled = true;
             if (btnText) {
                 btnText.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
@@ -635,37 +635,37 @@
                     'Content-Type': 'application/json'
                 }
             })
-            .then(r => r.json())
-            .then(data => {
-                confirmBtn.disabled = false;
-                if (btnText) {
-                    btnText.textContent = 'Delete Student';
-                } else {
-                    confirmBtn.textContent = 'Delete Student';
-                }
+                .then(r => r.json())
+                .then(data => {
+                    confirmBtn.disabled = false;
+                    if (btnText) {
+                        btnText.textContent = 'Delete Student';
+                    } else {
+                        confirmBtn.textContent = 'Delete Student';
+                    }
 
-                if (data.status === 'success') {
-                    _deleteRow.remove();
-                    closeModal('deleteModal');
-                    showToast(`${studentName} deleted successfully.`);
-                    _deleteRow = null;
-                    goToPage(pageState.currentPage);
-                } else {
-                    showToast(data.message || 'Could not delete student.', true);
-                }
-            })
-            .catch(() => showToast('Network error. Please try again.', true))
-            .finally(() => {
-                confirmBtn.disabled = false;
-                if (btnText) btnText.textContent = 'Delete Student';
-            });
+                    if (data.status === 'success') {
+                        _deleteRow.remove();
+                        closeModal('deleteModal');
+                        showToast(`${studentName} deleted successfully.`);
+                        _deleteRow = null;
+                        goToPage(pageState.currentPage);
+                    } else {
+                        showToast(data.message || 'Could not delete student.', true);
+                    }
+                })
+                .catch(() => showToast('Network error. Please try again.', true))
+                .finally(() => {
+                    confirmBtn.disabled = false;
+                    if (btnText) btnText.textContent = 'Delete Student';
+                });
         }
 
         /* ─── AJAX Pagination ─────────────────────────────────────── */
-        const tbody    = document.getElementById('tableBody');
-        const pagCont  = document.getElementById('paginationContainer');
+        const tbody = document.getElementById('tableBody');
+        const pagCont = document.getElementById('paginationContainer');
         const infoStart = document.getElementById('infoStart');
-        const infoEnd   = document.getElementById('infoEnd');
+        const infoEnd = document.getElementById('infoEnd');
         const infoTotal = document.getElementById('infoTotal');
 
         // Bootstrap from server-rendered JSON island
@@ -753,17 +753,17 @@
 
                     // Update info text
                     infoStart.textContent = data.start_index;
-                    infoEnd.textContent   = data.end_index;
+                    infoEnd.textContent = data.end_index;
                     infoTotal.textContent = data.total;
 
                     // Update state and re-render pagination
                     pageState = {
-                        currentPage:  data.current_page,
-                        numPages:     data.num_pages,
-                        hasPrevious:  data.has_previous,
-                        hasNext:      data.has_next,
+                        currentPage: data.current_page,
+                        numPages: data.num_pages,
+                        hasPrevious: data.has_previous,
+                        hasNext: data.has_next,
                         previousPage: data.previous_page,
-                        nextPage:     data.next_page,
+                        nextPage: data.next_page,
                     };
                     renderPagination(pageState);
 
@@ -788,12 +788,13 @@
         // Keyboard navigation (← →)
         document.addEventListener('keydown', e => {
             if (document.querySelector('.sm-modal-overlay.active')) return; // skip when modal open
-            if (e.key === 'ArrowLeft'  && pageState.hasPrevious) goToPage(pageState.previousPage);
-            if (e.key === 'ArrowRight' && pageState.hasNext)     goToPage(pageState.nextPage);
+            if (e.key === 'ArrowLeft' && pageState.hasPrevious) goToPage(pageState.previousPage);
+            if (e.key === 'ArrowRight' && pageState.hasNext) goToPage(pageState.nextPage);
         });
 
         // Browser back/forward – reload page properly
         window.addEventListener('popstate', () => location.reload());
     </script>
 </body>
+
 </html>
