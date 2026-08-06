@@ -2,9 +2,13 @@
 Django settings for config project.
 """
 
+import os
 from pathlib import Path
+from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+load_dotenv(BASE_DIR / ".env")
 
 SECRET_KEY = "django-insecure-5in&y=pb2rqbxmn7!p^y#q))w3+41h2z@t*!&amr+i&1)c4g_="
 
@@ -65,7 +69,7 @@ ROOT_URLCONF = "config.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR.parent / "templates"],
+        "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -249,10 +253,7 @@ DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL")
 BREVO_API_KEY = os.getenv("BREVO_API_KEY")
 
 
-# import os
-# from dotenv import load_dotenv
 
-# load_dotenv()
 
 DATABASES = {
     "default": {
