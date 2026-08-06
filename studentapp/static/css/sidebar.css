@@ -292,9 +292,44 @@
     font-weight: 500;
 }
 
-/* ── Responsive Mobile ─────────────────────────────────────── */
+/* ── Universal Responsive Layout System (Laptop, PC, Tablet & Mobile) ──────────────── */
+@media (min-width: 1440px) {
+    .main-content, .cm-main, .dm-main, .pm-main, .sm-main, .vm-main, .va-main, .rm-main, .um-main, .form-page-container {
+        margin-left: 260px;
+        padding-left: 2.25rem;
+        padding-right: 2.25rem;
+    }
+}
+
+@media (max-width: 1280px) and (min-width: 1025px) {
+    .main-content, .cm-main, .dm-main, .pm-main, .sm-main, .vm-main, .va-main, .rm-main, .um-main, .form-page-container {
+        margin-left: 260px;
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
+    }
+}
+
+@media (max-width: 1024px) and (min-width: 769px) {
+    .main-content, .cm-main, .dm-main, .pm-main, .sm-main, .vm-main, .va-main, .rm-main, .um-main, .form-page-container {
+        margin-left: 260px;
+        padding-left: 1.25rem;
+        padding-right: 1.25rem;
+    }
+}
+
 @media (max-width: 768px) {
-    .mobile-toggle { display: block; }
+    .mobile-toggle { display: flex; align-items: center; justify-content: center; }
     .sidebar { transform: translateX(-100%); }
     .sidebar.show { transform: translateX(0); }
+    
+    .main-content, .cm-main, .dm-main, .pm-main, .sm-main, .vm-main, .va-main, .rm-main, .um-main, .form-page-container {
+        margin-left: 0 !important;
+        max-width: 100vw !important;
+        width: 100% !important;
+        padding: 4.5rem 1rem 2.5rem 1rem !important;
+    }
+
+    .top-header {
+        padding: 0 1rem;
+    }
 }
