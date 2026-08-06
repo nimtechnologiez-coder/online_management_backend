@@ -571,15 +571,19 @@
             }
         });
 
-        /* ── 3. College Distribution Donut Chart (backend data only, no dummy fallback) ─ */
+        /* ── 3. College Distribution Donut Chart ─────────────────── */
         const dLabels = (backendCollegeLabels && backendCollegeLabels.length > 0) ? backendCollegeLabels : [];
         const dData = (backendCollegeData && backendCollegeData.length > 0) ? backendCollegeData : [];
 
-        const hasDonutData = dLabels.length > 0 && dData.length > 0 && dData.some(val => Number(val) > 0);
-        const donutChartLabels = hasDonutData ? dLabels : ['No data yet'];
-        const donutChartValues = hasDonutData ? dData : [1];
+        const hasDonutColleges = dLabels.length > 0;
+        const hasEngagementData = hasDonutColleges && dData.some(val => Number(val) > 0);
+
+        const donutChartLabels = hasDonutColleges ? dLabels : ['No colleges created yet'];
+        const donutChartValues = hasEngagementData 
+            ? dData 
+            : (hasDonutColleges ? dLabels.map(() => 1) : [1]);
+
         const extendedColors = ['#2563eb', '#10b981', '#06b6d4', '#ef4444', '#8b5cf6', '#f59e0b', '#ec4899', '#6366f1', '#14b8a6', '#64748b'];
-        const noDataColor = ['#e2e8f0'];
 
         new Chart(document.getElementById('collegeDistributionChart'), {
             type: 'doughnut',
@@ -587,12 +591,12 @@
                 labels: donutChartLabels,
                 datasets: [{
                     data: donutChartValues,
-                    backgroundColor: hasDonutData
+                    backgroundColor: hasDonutColleges
                         ? donutChartLabels.map((_, i) => extendedColors[i % extendedColors.length])
-                        : noDataColor,
+                        : ['#e2e8f0'],
                     borderWidth: 2,
                     borderColor: '#ffffff',
-                    hoverOffset: hasDonutData ? 6 : 0
+                    hoverOffset: hasDonutColleges ? 6 : 0
                 }]
             },
             options: {
@@ -601,11 +605,11 @@
                 plugins: {
                     legend: { display: false },
                     tooltip: {
-                        enabled: hasDonutData,
+                        enabled: hasDonutColleges,
                         callbacks: {
                             label: ctx => {
-                                const actualVal = donutChartValues[ctx.dataIndex] !== undefined ? donutChartValues[ctx.dataIndex] : 0;
-                                return ctx.label + ' : ' + actualVal + '%';
+                                const actualVal = dData[ctx.dataIndex] !== undefined ? dData[ctx.dataIndex] : 0;
+                                return ' ' + ctx.label + ' : ' + actualVal + '% engagement';
                             }
                         }
                     }
@@ -617,9 +621,9 @@
         const legendContainer = document.getElementById('customDonutLegend');
         if (legendContainer) {
             legendContainer.innerHTML = '';
-            if (hasDonutData) {
+            if (hasDonutColleges) {
                 donutChartLabels.forEach((label, idx) => {
-                    const val = donutChartValues[idx] !== undefined ? donutChartValues[idx] : 0;
+                    const val = dData[idx] !== undefined ? dData[idx] : 0;
                     const color = extendedColors[idx % extendedColors.length];
                     const item = document.createElement('div');
                     item.className = 'donut-legend-item';
@@ -638,7 +642,7 @@
                 item.innerHTML = `
                 <div class="donut-legend-left">
                     <span class="legend-dot" style="background:#e2e8f0;"></span>
-                    <span class="legend-name">No colleges with engagement data yet</span>
+                    <span class="legend-name">No colleges created yet</span>
                 </div>
             `;
                 legendContainer.appendChild(item);

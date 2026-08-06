@@ -346,8 +346,9 @@ def dashboard(request):
         .count()
     )
 
-    for college in College.objects.all():
+    all_colleges = College.objects.all().order_by("college_name")
 
+    for college in all_colleges:
         active_students = (
             VideoWatch.objects.filter(
                 student__college=college
@@ -366,13 +367,8 @@ def dashboard(request):
             else 0
         )
 
-        college_labels.append(
-            college.college_name
-        )
-
-        college_data.append(
-            percentage
-        )
+        college_labels.append(college.college_name)
+        college_data.append(percentage)
 
     # ==========================================
     # Dynamic Recent Activity Logic
