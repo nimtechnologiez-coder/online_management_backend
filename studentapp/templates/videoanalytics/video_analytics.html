@@ -803,6 +803,22 @@
                         legend: {
                             position: 'right',
                             labels: { usePointStyle: true, pointStyle: 'circle', padding: 10, font: fontStyle, color: '#475569' }
+                        },
+                        tooltip: {
+                            backgroundColor: '#0f172a',
+                            titleFont: { family: 'Inter', size: 12, weight: '700' },
+                            bodyFont: { family: 'Inter', size: 12 },
+                            padding: 10,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed !== undefined ? context.parsed : (context.raw || 0);
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const pct = total > 0 ? ((value / total) * 100).toFixed(1) + '%' : '0%';
+                                    return ' ' + label + ': ' + value.toLocaleString() + ' videos (' + pct + ')';
+                                }
+                            }
                         }
                     }
                 }
