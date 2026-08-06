@@ -562,11 +562,16 @@ def admin_login(request):
     if request.method == "POST":
         username = request.POST.get("username")
         password = request.POST.get("password")
+        remember = request.POST.get("remember")
 
         user = authenticate(request, username=username, password=password)
         if user is not None:
             if user.is_superuser or user.is_staff:
                 login(request, user)
+                if remember:
+                    request.session.set_expiry(1209600)  # Keep session active for 2 weeks
+                else:
+                    request.session.set_expiry(1209600)  # Keep session active across browser restarts
                 return redirect("dashboard")
             else:
                 messages.error(request, "Only Admin can login.")
