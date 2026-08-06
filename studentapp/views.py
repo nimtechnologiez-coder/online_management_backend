@@ -1934,11 +1934,17 @@ def video_edit(request, id):
     return JsonResponse({'status': 'error', 'message': 'Method not allowed.'}, status=405)
 
 
+@csrf_exempt
 def video_delete(request, id):
-    video = get_object_or_404(Video, id=id)
-    if request.method == "POST":
-        video.delete()
-        return JsonResponse({'status': 'success', 'message': 'Video deleted successfully.'})
+    if request.method in ["POST", "DELETE"]:
+        try:
+            video = Video.objects.get(id=id)
+            video.delete()
+            return JsonResponse({'status': 'success', 'message': 'Video deleted successfully.'})
+        except Video.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Video not found or already deleted.'}, status=404)
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
     return JsonResponse({'status': 'error', 'message': 'Method not allowed.'}, status=405)
 
 
@@ -2282,8 +2288,7 @@ def profile(request):
 
 
 
-def video_delete(request, id):
-    return render(request, "video_delete.html")
+
 
 from django.contrib.auth import logout as auth_logout
 
@@ -4727,11 +4732,7 @@ def video_edit(request, id):
     return render(request, "videomanagement/video_add.html", {"video": video})
 
 
-@csrf_exempt
-def video_delete(request, id):
-    video = get_object_or_404(Video, id=id)
-    video.delete()
-    return redirect("video_management")
+
 
 
 # ==========================================================
