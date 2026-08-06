@@ -40,6 +40,7 @@ MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
 
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
 
     "django.contrib.sessions.middleware.SessionMiddleware",
 
@@ -135,11 +136,16 @@ USE_TZ = True
 # Static Files
 # ==================================================
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
-STATICFILES_DIRS = [
-    BASE_DIR.parent / "static",
-]
+STATICFILES_DIRS = []
+if (BASE_DIR / "static").exists():
+    STATICFILES_DIRS.append(BASE_DIR / "static")
+if (BASE_DIR.parent / "static").exists():
+    STATICFILES_DIRS.append(BASE_DIR.parent / "static")
+
+STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
 
 # ==================================================
 # Media Files
