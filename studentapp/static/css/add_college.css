@@ -14,14 +14,14 @@
 
     --ac-bg:             #f1f3f9;
     --ac-card-bg:        #ffffff;
-    --ac-border:         #e2e8f0;
+    --ac-border:         #D1D5DB;
     
     --ac-text:           #0f172a;
     --ac-text-sub:       #475569;
     --ac-text-muted:     #94a3b8;
 
     --ac-radius-sm:      8px;
-    --ac-radius-md:      12px;
+    --ac-radius-md:      16px;
     --ac-radius-lg:      16px;
 
     --font-display:      'Plus Jakarta Sans', sans-serif;

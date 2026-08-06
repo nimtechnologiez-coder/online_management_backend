@@ -20,14 +20,14 @@
 
     --rm-bg:             #f1f3f9;
     --rm-card:           #ffffff;
-    --rm-border:         #e4e7f2;
+    --rm-border:         #D1D5DB;
     
     --rm-text:           #0d1131;
     --rm-text-sub:       #4b5580;
     --rm-text-muted:     #8b93b8;
 
     --rm-radius-sm:      8px;
-    --rm-radius-md:      12px;
+    --rm-radius-md:      16px;
     --rm-radius-lg:      16px;
 
     --rm-shadow-sm:      0 2px 8px rgba(13,17,49,.04);

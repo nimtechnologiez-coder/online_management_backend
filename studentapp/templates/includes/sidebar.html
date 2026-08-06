@@ -168,4 +168,11 @@
             sidebarOverlay.addEventListener('click', toggleSidebar);
         }
     });
+
+    // Security: Prevent browser back button from displaying cached admin pages after logout
+    window.addEventListener('pageshow', function (event) {
+        if (event.persisted || (performance && performance.navigation && performance.navigation.type === 2)) {
+            window.location.reload();
+        }
+    });
 </script>

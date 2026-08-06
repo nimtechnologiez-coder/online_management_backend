@@ -50,6 +50,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
 
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "studentapp.middleware.NoCacheMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -238,3 +239,23 @@ EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL")
 BREVO_API_KEY = os.getenv("BREVO_API_KEY")
+
+
+# import os
+# from dotenv import load_dotenv
+
+# load_dotenv()
+
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.postgresql",
+#         "NAME": os.getenv("DB_NAME"),
+#         "USER": os.getenv("DB_USER"),
+#         "PASSWORD": os.getenv("DB_PASSWORD"),
+#         "HOST": os.getenv("DB_HOST"),
+#         "PORT": os.getenv("DB_PORT"),
+#         "OPTIONS": {
+#             "sslmode": "require",
+#         },
+#     }
+# }

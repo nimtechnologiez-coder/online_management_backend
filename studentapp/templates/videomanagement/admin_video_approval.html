@@ -23,48 +23,6 @@
             gap: 16px;
             margin-bottom: 24px;
         }
-        .approval-stat-card {
-            background: #0f172a;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 14px;
-            padding: 18px 20px;
-            color: #ffffff;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            text-decoration: none;
-            transition: all 0.2s ease;
-        }
-        .approval-stat-card:hover {
-            transform: translateY(-2px);
-            border-color: rgba(99, 102, 241, 0.4);
-        }
-        .stat-card-val {
-            font-size: 24px;
-            font-weight: 800;
-            line-height: 1.1;
-            margin-top: 4px;
-        }
-        .stat-card-label {
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            color: #94a3b8;
-            letter-spacing: 0.05em;
-        }
-        .stat-card-icon {
-            width: 44px;
-            height: 44px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-        }
-        .icon-amber { background: rgba(245, 158, 11, 0.15); color: #d97706; }
-        .icon-green { background: rgba(34, 197, 94, 0.15); color: #16a34a; }
-        .icon-red { background: rgba(239, 68, 68, 0.15); color: #dc2626; }
-        .icon-blue { background: rgba(59, 130, 246, 0.15); color: #2563eb; }
 
         .badge-pending { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
         .badge-published { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
@@ -203,33 +161,33 @@
 
         <!-- Approval Stats Cards -->
         <div class="approval-stats">
-            <a href="?status=Pending" class="approval-stat-card">
-                <div>
-                    <div class="stat-card-label">Pending Approval</div>
-                    <div class="stat-card-val">{{ pending_count }}</div>
+            <a href="?status=Pending" class="vm-stat vm-stat--orange" style="text-decoration: none;">
+                <div class="vm-stat__icon"><i class="fas fa-clock"></i></div>
+                <div class="vm-stat__body">
+                    <span class="vm-stat__label">Pending Approval</span>
+                    <span class="vm-stat__value">{{ pending_count }}</span>
                 </div>
-                <div class="stat-card-icon icon-amber"><i class="fas fa-clock"></i></div>
             </a>
-            <a href="?status=Published" class="approval-stat-card">
-                <div>
-                    <div class="stat-card-label">Published Videos</div>
-                    <div class="stat-card-val">{{ published_count }}</div>
+            <a href="?status=Published" class="vm-stat vm-stat--green" style="text-decoration: none;">
+                <div class="vm-stat__icon"><i class="fas fa-circle-check"></i></div>
+                <div class="vm-stat__body">
+                    <span class="vm-stat__label">Published Videos</span>
+                    <span class="vm-stat__value">{{ published_count }}</span>
                 </div>
-                <div class="stat-card-icon icon-green"><i class="fas fa-circle-check"></i></div>
             </a>
-            <a href="?status=Rejected" class="approval-stat-card">
-                <div>
-                    <div class="stat-card-label">Rejected Videos</div>
-                    <div class="stat-card-val">{{ rejected_count }}</div>
+            <a href="?status=Rejected" class="vm-stat vm-stat--red" style="text-decoration: none;">
+                <div class="vm-stat__icon"><i class="fas fa-circle-xmark"></i></div>
+                <div class="vm-stat__body">
+                    <span class="vm-stat__label">Rejected Videos</span>
+                    <span class="vm-stat__value">{{ rejected_count }}</span>
                 </div>
-                <div class="stat-card-icon icon-red"><i class="fas fa-circle-xmark"></i></div>
             </a>
-            <a href="?status=All" class="approval-stat-card">
-                <div>
-                    <div class="stat-card-label">Total Uploads</div>
-                    <div class="stat-card-val">{{ total_count }}</div>
+            <a href="?status=All" class="vm-stat vm-stat--pink" style="text-decoration: none;">
+                <div class="vm-stat__icon"><i class="fas fa-video"></i></div>
+                <div class="vm-stat__body">
+                    <span class="vm-stat__label">Total Uploads</span>
+                    <span class="vm-stat__value">{{ total_count }}</span>
                 </div>
-                <div class="stat-card-icon icon-blue"><i class="fas fa-video"></i></div>
             </a>
         </div>
 

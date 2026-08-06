@@ -4,6 +4,8 @@ from . import views
 urlpatterns = [
 
     path('', views.admin_login, name='home'),
+    path('admin/login/', views.admin_login, name='admin_login'),
+    path('api/admin/login/', views.api_admin_login, name='api_admin_login'),
 
     path('dashboard/', views.dashboard, name='dashboard'),
 
@@ -55,6 +57,7 @@ urlpatterns = [
     path('settings/', views.system_settings, name='system_settings'),
     path('profile/', views.profile, name='profile'),
     path('logout/', views.user_logout, name='logout'),
+    path('api/admin/logout/', views.api_admin_logout, name='api_admin_logout'),
     path('search/', views.global_search, name='global_search'),
 
     # ================= PRINCIPAL API =================
