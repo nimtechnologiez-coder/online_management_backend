@@ -124,15 +124,32 @@
                 </table>
             </div>
 
-            <!-- ── Modern Table Footer / Pagination ──────────────── -->
-            <div class="pm-table-footer">
-                <span class="pm-table-footer__info" id="pageInfo">
-                    Showing <strong id="infoStart">{{ page_obj.start_index }}</strong>–<strong id="infoEnd">{{ page_obj.end_index }}</strong>
-                    of <strong id="infoTotal">{{ page_obj.paginator.count }}</strong> principals
-                </span>
+            <!-- Table Footer -->
+            <div class="pagination-bar">
+                <p class="pagination-info">
+                    Showing <strong id="infoStart">{{ page_obj.start_index }}–{{ page_obj.end_index }}</strong> of
+                    <strong id="infoTotal">{{ page_obj.paginator.count }}</strong> Principals
+                </p>
+                <div class="pagination-controls">
+                    {% if page_obj.has_previous %}
+                        <a class="page-btn" href="?q={{ q|urlencode }}&college={{ selected_college|urlencode }}&status={{ selected_status|urlencode }}&page={{ page_obj.previous_page_number }}">Prev</a>
+                    {% else %}
+                        <button type="button" class="page-btn" disabled>Prev</button>
+                    {% endif %}
 
-                <div class="pm-pagination" id="paginationContainer">
-                    <!-- Rendered by JS on load / after each AJAX page change -->
+                    {% for num in page_range %}
+                        {% if num == page_obj.number %}
+                            <button type="button" class="page-btn active">{{ num }}</button>
+                        {% else %}
+                            <a class="page-btn" href="?q={{ q|urlencode }}&college={{ selected_college|urlencode }}&status={{ selected_status|urlencode }}&page={{ num }}">{{ num }}</a>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                        <a class="page-btn" href="?q={{ q|urlencode }}&college={{ selected_college|urlencode }}&status={{ selected_status|urlencode }}&page={{ page_obj.next_page_number }}">Next</a>
+                    {% else %}
+                        <button type="button" class="page-btn" disabled>Next</button>
+                    {% endif %}
                 </div>
             </div>
 
@@ -328,29 +345,29 @@
         }
 
         function renderPagination(state) {
+            if (!pagCont) return;
             const { currentPage, numPages, hasPrevious, hasNext, previousPage, nextPage } = state;
-            if (numPages <= 1) { pagCont.innerHTML = ''; return; }
 
             let html = '';
 
             // Prev
             html += hasPrevious
-                ? `<button class="pm-page-nav" onclick="goToPage(${previousPage})">Prev</button>`
-                : `<button class="pm-page-nav" disabled>Prev</button>`;
+                ? `<button type="button" class="page-btn" onclick="goToPage(${previousPage})">Prev</button>`
+                : `<button type="button" class="page-btn" disabled>Prev</button>`;
 
             // Numbered pages with ellipsis
-            getPageRange(currentPage, numPages).forEach(p => {
+            getPageRange(currentPage, numPages || 1).forEach(p => {
                 if (p === '...') {
-                    html += `<span class="pm-page-ellipsis">…</span>`;
+                    html += `<span class="page-btn" style="border:none;background:transparent;cursor:default;">…</span>`;
                 } else {
-                    html += `<button class="pm-page-btn${p === currentPage ? ' pm-page-btn--active' : ''}" onclick="goToPage(${p})">${p}</button>`;
+                    html += `<button type="button" class="page-btn${p === currentPage ? ' active' : ''}" onclick="goToPage(${p})">${p}</button>`;
                 }
             });
 
             // Next
             html += hasNext
-                ? `<button class="pm-page-nav" onclick="goToPage(${nextPage})">Next</button>`
-                : `<button class="pm-page-nav" disabled>Next</button>`;
+                ? `<button type="button" class="page-btn" onclick="goToPage(${nextPage})">Next</button>`
+                : `<button type="button" class="page-btn" disabled>Next</button>`;
 
             pagCont.innerHTML = html;
         }

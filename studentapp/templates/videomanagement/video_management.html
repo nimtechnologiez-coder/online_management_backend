@@ -133,14 +133,33 @@
                 </table>
             </div>
 
-            <div class="vm-table-footer">
-                <span class="vm-table-footer__info" id="pageInfo">
-                    Showing <strong id="infoStart">{{ page_obj.start_index|default:0 }}</strong>–<strong id="infoEnd">{{ page_obj.end_index|default:0 }}</strong> of <strong id="infoTotal">{{ page_obj.paginator.count }}</strong> videos
-                </span>
-                <div class="vm-pagination" id="paginationContainer">
-                    <!-- Rendered by JS -->
+            <div class="pagination-bar">
+                <p class="pagination-info">
+                    Showing <strong id="infoStart">{{ page_obj.start_index|default:0 }}–{{ page_obj.end_index|default:0 }}</strong> of
+                    <strong id="infoTotal">{{ page_obj.paginator.count|default:0 }}</strong> Videos
+                </p>
+                <div class="pagination-controls" id="paginationContainer">
+                    {% if page_obj.has_previous %}
+                        <a class="page-btn" href="?q={{ q|urlencode }}&category={{ selected_category|urlencode }}&status={{ selected_status|urlencode }}&page={{ page_obj.previous_page_number }}">Prev</a>
+                    {% else %}
+                        <button type="button" class="page-btn" disabled>Prev</button>
+                    {% endif %}
+
+                    {% for num in page_range %}
+                        {% if num == page_obj.number %}
+                            <button type="button" class="page-btn active">{{ num }}</button>
+                        {% else %}
+                            <a class="page-btn" href="?q={{ q|urlencode }}&category={{ selected_category|urlencode }}&status={{ selected_status|urlencode }}&page={{ num }}">{{ num }}</a>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                        <a class="page-btn" href="?q={{ q|urlencode }}&category={{ selected_category|urlencode }}&status={{ selected_status|urlencode }}&page={{ page_obj.next_page_number }}">Next</a>
+                    {% else %}
+                        <button type="button" class="page-btn" disabled>Next</button>
+                    {% endif %}
                 </div>
-                
+            </div>
 
             <!-- Hidden data for JS bootstrap -->
             <script id="pageData" type="application/json">
@@ -353,26 +372,26 @@
         }
 
         function renderPagination(state) {
+            if (!pagCont) return;
             const { currentPage, numPages, hasPrevious, hasNext, previousPage, nextPage } = state;
-            if (numPages <= 1) { pagCont.innerHTML = ''; return; }
 
             let html = '';
             html += hasPrevious
-                ? `<button class="vm-page-nav" onclick="goToPage(${previousPage})">Prev</button>`
-                : `<button class="vm-page-nav" disabled>Prev</button>`;
+                ? `<button type="button" class="page-btn" onclick="goToPage(${previousPage})">Prev</button>`
+                : `<button type="button" class="page-btn" disabled>Prev</button>`;
 
-            const pages = getPageRange(currentPage, numPages);
+            const pages = getPageRange(currentPage, numPages || 1);
             pages.forEach(p => {
                 if (p === '...') {
-                    html += `<span class="vm-page-ellipsis">…</span>`;
+                    html += `<span class="page-btn" style="border:none;background:transparent;cursor:default;">…</span>`;
                 } else {
-                    html += `<button class="vm-page-btn${p === currentPage ? ' vm-page-btn--active' : ''}" onclick="goToPage(${p})">${p}</button>`;
+                    html += `<button type="button" class="page-btn${p === currentPage ? ' active' : ''}" onclick="goToPage(${p})">${p}</button>`;
                 }
             });
 
             html += hasNext
-                ? `<button class="vm-page-nav" onclick="goToPage(${nextPage})">Next</button>`
-                : `<button class="vm-page-nav" disabled>Next</button>`;
+                ? `<button type="button" class="page-btn" onclick="goToPage(${nextPage})">Next</button>`
+                : `<button type="button" class="page-btn" disabled>Next</button>`;
 
             pagCont.innerHTML = html;
         }

@@ -814,7 +814,9 @@ def department_management(request):
     # Context
     # -----------------------------
     context = {
+        "page_obj": departments,
         "departments": departments,
+        "page_range": list(paginator.get_elided_page_range(departments.number)),
         "colleges": College.objects.order_by("college_name"),
 
         "search_query": search_query,
@@ -825,12 +827,6 @@ def department_management(request):
         "active_count": active_count,
         "inactive_count": inactive_count,
         "college_count": college_count,
-
-        "elided_page_range": paginator.get_elided_page_range(
-            number=departments.number,
-            on_each_side=1,
-            on_ends=1,
-        ),
     }
 
     return render(
@@ -1076,8 +1072,11 @@ def principal_management(request):
     page_obj = paginator.get_page(page_number)
     all_colleges = College.objects.all()
 
+    page_range = list(paginator.get_elided_page_range(page_obj.number))
+
     context = {
         'page_obj': page_obj,
+        'page_range': page_range,
         'principals': page_obj.object_list,
         'all_colleges': all_colleges,
         'colleges': all_colleges,
@@ -1253,8 +1252,11 @@ def student_management(request):
 
     verified_students_qs = Student.objects.filter(is_verified=True)
 
+    page_range = list(paginator.get_elided_page_range(page_obj.number))
+
     context = {
         'page_obj': page_obj,
+        'page_range': page_range,
         'students': page_obj.object_list,
         'all_colleges': all_colleges,
         'all_departments': all_departments,
@@ -1840,8 +1842,11 @@ def video_management(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
+    page_range = list(paginator.get_elided_page_range(page_obj.number))
+
     context = {
         'page_obj': page_obj,
+        'page_range': page_range,
         'videos': page_obj.object_list,
         'q': q,
         'selected_category': category,
@@ -2264,6 +2269,14 @@ def video_analytics(request):
         "month_active": month_active,
         "avg_videos_per_student": avg_videos_per_student,
     }
+
+    analytics_paginator = Paginator(videos, 10)
+    analytics_page_number = request.GET.get("page", 1)
+    analytics_page_obj = analytics_paginator.get_page(analytics_page_number)
+    analytics_page_range = list(analytics_paginator.get_elided_page_range(analytics_page_obj.number))
+
+    context["page_obj"] = analytics_page_obj
+    context["page_range"] = analytics_page_range
 
     return render(request, "videoanalytics/video_analytics.html", context)
 
@@ -4756,10 +4769,12 @@ def admin_video_approval(request):
     paginator = Paginator(qs, 10)
     page_number = request.GET.get("page", 1)
     page_obj = paginator.get_page(page_number)
+    page_range = list(paginator.get_elided_page_range(page_obj.number))
 
     context = {
         "videos": page_obj.object_list,
         "page_obj": page_obj,
+        "page_range": page_range,
         "pending_count": pending_count,
         "published_count": published_count,
         "rejected_count": rejected_count,

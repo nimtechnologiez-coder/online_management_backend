@@ -314,23 +314,34 @@
                 </table>
             </div>
 
-            <!-- Pagination -->
-            {% if page_obj.has_other_pages %}
-            <div class="vm-table-footer">
-                <span class="vm-table-footer__info">
-                    Showing <strong>{{ page_obj.start_index }}</strong>–<strong>{{ page_obj.end_index }}</strong> of <strong>{{ page_obj.paginator.count }}</strong> videos
-                </span>
-                <div class="vm-pagination">
+            <!-- Table Footer -->
+            <div class="pagination-bar">
+                <p class="pagination-info">
+                    Showing <strong id="showingCount">{{ page_obj.start_index }}–{{ page_obj.end_index }}</strong> of
+                    <strong id="totalCount">{{ page_obj.paginator.count }}</strong> Videos
+                </p>
+                <div class="pagination-controls">
                     {% if page_obj.has_previous %}
-                        <a href="?page={{ page_obj.previous_page_number }}&status={{ selected_status }}&q={{ q }}" class="vm-pagination__btn">&laquo; Previous</a>
+                        <a class="page-btn" href="?q={{ q|urlencode }}&status={{ selected_status|urlencode }}&page={{ page_obj.previous_page_number }}">Prev</a>
+                    {% else %}
+                        <button type="button" class="page-btn" disabled>Prev</button>
                     {% endif %}
-                    <span class="vm-pagination__current">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+
+                    {% for num in page_range %}
+                        {% if num == page_obj.number %}
+                            <button type="button" class="page-btn active">{{ num }}</button>
+                        {% else %}
+                            <a class="page-btn" href="?q={{ q|urlencode }}&status={{ selected_status|urlencode }}&page={{ num }}">{{ num }}</a>
+                        {% endif %}
+                    {% endfor %}
+
                     {% if page_obj.has_next %}
-                        <a href="?page={{ page_obj.next_page_number }}&status={{ selected_status }}&q={{ q }}" class="vm-pagination__btn">Next &raquo;</a>
+                        <a class="page-btn" href="?q={{ q|urlencode }}&status={{ selected_status|urlencode }}&page={{ page_obj.next_page_number }}">Next</a>
+                    {% else %}
+                        <button type="button" class="page-btn" disabled>Next</button>
                     {% endif %}
                 </div>
             </div>
-            {% endif %}
         </div>
     </div>
 

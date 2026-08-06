@@ -278,34 +278,30 @@
             </div>
 
             <!-- Table Footer -->
-            <div class="dm-table-footer">
-                <span class="dm-table-footer__info">
-                    Showing <strong id="showingCount">{{ departments.start_index }}–{{ departments.end_index }}</strong>
-                    of <strong id="totalCount">{{ departments.paginator.count }}</strong> departments
-                </span>
-
-                <div class="dm-pagination" id="pagination">
-                    {% if departments.has_previous %}
-                    <a class="dm-page-nav" href="?q={{ search_query|urlencode }}&college={{ college_filter|urlencode }}&status={{ status_filter|urlencode }}&page={{ departments.previous_page_number }}">Prev</a>
+            <div class="pagination-bar">
+                <p class="pagination-info">
+                    Showing <strong id="showingCount">{{ page_obj.start_index }}–{{ page_obj.end_index }}</strong> of
+                    <strong id="totalCount">{{ page_obj.paginator.count }}</strong> Departments
+                </p>
+                <div class="pagination-controls">
+                    {% if page_obj.has_previous %}
+                        <a class="page-btn" href="?q={{ search_query|urlencode }}&college={{ college_filter|urlencode }}&status={{ status_filter|urlencode }}&page={{ page_obj.previous_page_number }}">Prev</a>
                     {% else %}
-                    <span class="dm-page-nav dm-page-nav--disabled">Prev</span>
+                        <button type="button" class="page-btn" disabled>Prev</button>
                     {% endif %}
 
-                    <div class="dm-pagination__pages">
-                        {% for p in elided_page_range %}
-                            {% if p == departments.paginator.ELLIPSIS %}
-                                <span class="dm-page-ellipsis">…</span>
-                            {% else %}
-                                <a class="dm-page-btn{% if p == departments.number %} dm-page-btn--active{% endif %}"
-                                   href="?q={{ search_query|urlencode }}&college={{ college_filter|urlencode }}&status={{ status_filter|urlencode }}&page={{ p }}">{{ p }}</a>
-                            {% endif %}
-                        {% endfor %}
-                    </div>
+                    {% for num in page_range %}
+                        {% if num == page_obj.number %}
+                            <button type="button" class="page-btn active">{{ num }}</button>
+                        {% else %}
+                            <a class="page-btn" href="?q={{ search_query|urlencode }}&college={{ college_filter|urlencode }}&status={{ status_filter|urlencode }}&page={{ num }}">{{ num }}</a>
+                        {% endif %}
+                    {% endfor %}
 
-                    {% if departments.has_next %}
-                    <a class="dm-page-nav" href="?q={{ search_query|urlencode }}&college={{ college_filter|urlencode }}&status={{ status_filter|urlencode }}&page={{ departments.next_page_number }}">Next</a>
+                    {% if page_obj.has_next %}
+                        <a class="page-btn" href="?q={{ search_query|urlencode }}&college={{ college_filter|urlencode }}&status={{ status_filter|urlencode }}&page={{ page_obj.next_page_number }}">Next</a>
                     {% else %}
-                    <span class="dm-page-nav dm-page-nav--disabled">Next</span>
+                        <button type="button" class="page-btn" disabled>Next</button>
                     {% endif %}
                 </div>
             </div>

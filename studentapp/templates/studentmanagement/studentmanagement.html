@@ -90,31 +90,28 @@
                 <select name="college" class="sm-select" onchange="this.form.submit()">
                     <option value="">All Colleges</option>
                     {% for c in all_colleges %}
-                    <option value="{{ c.id }}" {% if selected_college==c.id|stringformat:"s" %}selected{% endif %}>{{
-                        c.college_name }}</option>
+                    <option value="{{ c.id }}" {% if selected_college == c.id|stringformat:"s" %}selected{% endif %}>{{ c.college_name }}</option>
                     {% endfor %}
                 </select>
                 <select name="department" class="sm-select" onchange="this.form.submit()">
                     <option value="">All Departments</option>
                     {% for d in all_departments %}
-                    <option value="{{ d.id }}" {% if selected_dept==d.id|stringformat:"s" %}selected{% endif %}>{{
-                        d.dept_name }}</option>
+                    <option value="{{ d.id }}" {% if selected_dept == d.id|stringformat:"s" %}selected{% endif %}>{{ d.dept_name }}</option>
                     {% endfor %}
                 </select>
                 <select name="year" class="sm-select sm-select--sm" onchange="this.form.submit()">
                     <option value="">All Years</option>
-                    <option value="I" {% if selected_year=='I' %}selected{% endif %}>Year I</option>
-                    <option value="II" {% if selected_year=='II' %}selected{% endif %}>Year II</option>
-                    <option value="III" {% if selected_year=='III' %}selected{% endif %}>Year III</option>
-                    <option value="IV" {% if selected_year=='IV' %}selected{% endif %}>Year IV</option>
+                    <option value="I" {% if selected_year == 'I' %}selected{% endif %}>Year I</option>
+                    <option value="II" {% if selected_year == 'II' %}selected{% endif %}>Year II</option>
+                    <option value="III" {% if selected_year == 'III' %}selected{% endif %}>Year III</option>
+                    <option value="IV" {% if selected_year == 'IV' %}selected{% endif %}>Year IV</option>
                 </select>
                 <select name="status" class="sm-select sm-select--sm" onchange="this.form.submit()">
                     <option value="">All Status</option>
-                    <option value="pending_approval" {% if selected_status=='pending_approval' %}selected{% endif %}>
-                        Pending Approval</option>
-                    <option value="active" {% if selected_status=='active' %}selected{% endif %}>Active</option>
-                    <option value="inactive" {% if selected_status=='inactive' %}selected{% endif %}>Inactive</option>
-                    <option value="rejected" {% if selected_status=='rejected' %}selected{% endif %}>Rejected</option>
+                    <option value="pending_approval" {% if selected_status == 'pending_approval' %}selected{% endif %}>Pending Approval</option>
+                    <option value="active" {% if selected_status == 'active' %}selected{% endif %}>Active</option>
+                    <option value="inactive" {% if selected_status == 'inactive' %}selected{% endif %}>Inactive</option>
+                    <option value="rejected" {% if selected_status == 'rejected' %}selected{% endif %}>Rejected</option>
                 </select>
             </div>
             <a href="{% url 'student_management' %}" class="sm-btn sm-btn--ghost" id="resetBtn" title="Reset filters"
@@ -159,8 +156,7 @@
                             <td>{{ s.join_date|date:'M d, Y' }}</td>
                             <td>{{ s.end_date|date:'M d, Y' }}</td>
                             <td>
-                                <span class="sm-badge sm-badge--{{ s.status|lower }}">{{
-                                    s.get_status_display|default:s.status }}</span>
+                                <span class="sm-badge sm-badge--{{ s.status|lower }}">{{ s.get_status_display|default:s.status }}</span>
                             </td>
                             <td class="sm-table-actions">
                                 <button class="sm-icon-btn" title="View" onclick="openViewModal(this)"><i
@@ -180,14 +176,31 @@
                 </table>
             </div>
 
-            <div class="sm-table-footer">
-                <span class="sm-table-footer__info" id="pageInfo">
-                    Showing <strong id="infoStart">{{ page_obj.start_index|default:0 }}</strong>–<strong id="infoEnd">{{
-                        page_obj.end_index|default:0 }}</strong> of <strong id="infoTotal">{{ page_obj.paginator.count
-                        }}</strong> students
-                </span>
-                <div class="sm-pagination" id="paginationContainer">
-                    <!-- Rendered by JS -->
+            <div class="pagination-bar">
+                <p class="pagination-info">
+                    Showing <strong id="infoStart">{{ page_obj.start_index|default:0 }}–{{ page_obj.end_index|default:0 }}</strong> of
+                    <strong id="infoTotal">{{ page_obj.paginator.count|default:0 }}</strong> Students
+                </p>
+                <div class="pagination-controls">
+                    {% if page_obj.has_previous %}
+                        <a class="page-btn" href="?q={{ q|urlencode }}&college={{ selected_college|urlencode }}&department={{ selected_dept|urlencode }}&year={{ selected_year|urlencode }}&status={{ selected_status|urlencode }}&page={{ page_obj.previous_page_number }}">Prev</a>
+                    {% else %}
+                        <button type="button" class="page-btn" disabled>Prev</button>
+                    {% endif %}
+
+                    {% for num in page_range %}
+                        {% if num == page_obj.number %}
+                            <button type="button" class="page-btn active">{{ num }}</button>
+                        {% else %}
+                            <a class="page-btn" href="?q={{ q|urlencode }}&college={{ selected_college|urlencode }}&department={{ selected_dept|urlencode }}&year={{ selected_year|urlencode }}&status={{ selected_status|urlencode }}&page={{ num }}">{{ num }}</a>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                        <a class="page-btn" href="?q={{ q|urlencode }}&college={{ selected_college|urlencode }}&department={{ selected_dept|urlencode }}&year={{ selected_year|urlencode }}&status={{ selected_status|urlencode }}&page={{ page_obj.next_page_number }}">Next</a>
+                    {% else %}
+                        <button type="button" class="page-btn" disabled>Next</button>
+                    {% endif %}
                 </div>
             </div>
 
@@ -681,30 +694,30 @@
 
         // Render pagination buttons
         function renderPagination(state) {
+            if (!pagCont) return;
             const { currentPage, numPages, hasPrevious, hasNext, previousPage, nextPage } = state;
-            if (numPages <= 1) { pagCont.innerHTML = ''; return; }
 
             let html = '';
 
             // Prev
             html += hasPrevious
-                ? `<button class="sm-page-nav" onclick="goToPage(${previousPage})">Prev</button>`
-                : `<button class="sm-page-nav" disabled>Prev</button>`;
+                ? `<button type="button" class="page-btn" onclick="goToPage(${previousPage})">Prev</button>`
+                : `<button type="button" class="page-btn" disabled>Prev</button>`;
 
             // Page numbers with smart ellipsis
-            const pages = getPageRange(currentPage, numPages);
+            const pages = getPageRange(currentPage, numPages || 1);
             pages.forEach(p => {
                 if (p === '...') {
-                    html += `<span class="sm-page-ellipsis">…</span>`;
+                    html += `<span class="page-btn" style="border:none;background:transparent;cursor:default;">…</span>`;
                 } else {
-                    html += `<button class="sm-page-btn${p === currentPage ? ' sm-page-btn--active' : ''}" onclick="goToPage(${p})">${p}</button>`;
+                    html += `<button type="button" class="page-btn${p === currentPage ? ' active' : ''}" onclick="goToPage(${p})">${p}</button>`;
                 }
             });
 
             // Next
             html += hasNext
-                ? `<button class="sm-page-nav" onclick="goToPage(${nextPage})">Next</button>`
-                : `<button class="sm-page-nav" disabled>Next</button>`;
+                ? `<button type="button" class="page-btn" onclick="goToPage(${nextPage})">Next</button>`
+                : `<button type="button" class="page-btn" disabled>Next</button>`;
 
             pagCont.innerHTML = html;
         }
