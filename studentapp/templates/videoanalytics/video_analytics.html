@@ -329,6 +329,9 @@
                 <h2 class="text-sm font-bold text-slate-900 mb-4 truncate">Video Category Distribution</h2>
                 <div class="relative w-full h-52 flex items-center justify-center">
                     <canvas id="categoryDonutChart"></canvas>
+                    <div id="categoryEmpty" class="hidden absolute inset-0 items-center justify-center text-slate-400 text-xs font-medium">
+                        No video category data available
+                    </div>
                 </div>
             </div>
         </div>
@@ -778,51 +781,64 @@
             }
         };
 
-        /* 4. Category Donut Chart */
-        const finalCatLabels = (catLabels && catLabels.length) ? catLabels : ['Core Engineering', 'Soft Skills', 'Lab Tutorials', 'General Studies'];
-        const finalCatData = (catData && catData.length) ? catData : [15, 8, 6, 4];
-        
+        /* 4. Category Donut Chart (Real backend data only, no dummy fallback) */
         const catCanvas = document.getElementById('categoryDonutChart');
+        const catEmpty = document.getElementById('categoryEmpty');
+        const hasCatData = catLabels && catLabels.length > 0 && catData && catData.length > 0 && catData.some(val => Number(val) > 0);
+
         if (catCanvas) {
-            new Chart(catCanvas.getContext('2d'), {
-                type: 'doughnut',
-                data: {
-                    labels: finalCatLabels,
-                    datasets: [{
-                        data: finalCatData,
-                        backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'],
-                        borderWidth: 0,
-                        hoverOffset: 4,
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '60%',
-                    plugins: {
-                        legend: {
-                            position: 'right',
-                            labels: { usePointStyle: true, pointStyle: 'circle', padding: 10, font: fontStyle, color: '#475569' }
-                        },
-                        tooltip: {
-                            backgroundColor: '#0f172a',
-                            titleFont: { family: 'Inter', size: 12, weight: '700' },
-                            bodyFont: { family: 'Inter', size: 12 },
-                            padding: 10,
-                            cornerRadius: 8,
-                            callbacks: {
-                                label: function(context) {
-                                    const label = context.label || '';
-                                    const value = context.parsed !== undefined ? context.parsed : (context.raw || 0);
-                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                    const pct = total > 0 ? ((value / total) * 100).toFixed(1) + '%' : '0%';
-                                    return ' ' + label + ': ' + value.toLocaleString() + ' videos (' + pct + ')';
+            if (!hasCatData) {
+                catCanvas.style.display = 'none';
+                if (catEmpty) {
+                    catEmpty.classList.remove('hidden');
+                    catEmpty.style.display = 'flex';
+                }
+            } else {
+                if (catEmpty) {
+                    catEmpty.classList.add('hidden');
+                    catEmpty.style.display = 'none';
+                }
+                catCanvas.style.display = 'block';
+                new Chart(catCanvas.getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: catLabels,
+                        datasets: [{
+                            data: catData,
+                            backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#3b82f6', '#14b8a6'],
+                            borderWidth: 0,
+                            hoverOffset: 4,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '60%',
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                                labels: { usePointStyle: true, pointStyle: 'circle', padding: 10, font: fontStyle, color: '#475569' }
+                            },
+                            tooltip: {
+                                backgroundColor: '#0f172a',
+                                titleFont: { family: 'Inter', size: 12, weight: '700' },
+                                bodyFont: { family: 'Inter', size: 12 },
+                                padding: 10,
+                                cornerRadius: 8,
+                                callbacks: {
+                                    label: function(context) {
+                                        const label = context.label || '';
+                                        const value = context.parsed !== undefined ? context.parsed : (context.raw || 0);
+                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                        const pct = total > 0 ? ((value / total) * 100).toFixed(1) + '%' : '0%';
+                                        return ' ' + label + ': ' + value.toLocaleString() + ' videos (' + pct + ')';
+                                    }
                                 }
                             }
                         }
                     }
-                }
-            });
+                });
+            }
         }
 
         /* Export Utilities */

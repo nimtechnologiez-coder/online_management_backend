@@ -2158,8 +2158,8 @@ def video_analytics(request):
             category_labels = list(cat_counts.keys())
             category_data = list(cat_counts.values())
         else:
-            category_labels = ["Core Engineering", "Soft Skills", "Lab Tutorials", "General Studies"]
-            category_data = [15, 8, 6, 4]
+            category_labels = []
+            category_data = []
 
     # ------------------------------------------------------------
     # Monthly upload trend (this calendar year)
