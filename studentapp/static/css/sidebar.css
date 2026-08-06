@@ -415,3 +415,230 @@
   cursor: default !important;
   pointer-events: none !important;
 }
+
+/* ============================================================
+   UNIFIED PIXEL-PERFECT STATISTIC CARDS (GLOBAL DASHBOARD MATCH)
+   ============================================================ */
+
+/* ── 4-Column Stat Grid Container ──────────────────────────── */
+.stats-grid,
+.dm-stats,
+.pm-stats,
+.sm-stats,
+.vm-stats,
+.approval-stats,
+.rm-stats,
+.um-stats,
+.va-stats-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 1.1rem !important;
+    margin-bottom: 1.5rem !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+@media (max-width: 1100px) {
+    .stats-grid,
+    .dm-stats,
+    .pm-stats,
+    .sm-stats,
+    .vm-stats,
+    .approval-stats,
+    .rm-stats,
+    .um-stats,
+    .va-stats-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+@media (max-width: 640px) {
+    .stats-grid,
+    .dm-stats,
+    .pm-stats,
+    .sm-stats,
+    .vm-stats,
+    .approval-stats,
+    .rm-stats,
+    .um-stats,
+    .va-stats-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* ── Hide Background Watermarks ────────────────────────────── */
+.dm-stat__bg-icon,
+.pm-stat__bg-icon,
+.sm-stat__bg-icon,
+.vm-stat__bg-icon,
+.rm-stat__bg-icon,
+.um-stat__bg-icon {
+    display: none !important;
+}
+
+/* ── Stat Card Base (Borderless 20px Rounded Floating Cards) ── */
+.stat-card,
+.dm-stat,
+.pm-stat,
+.sm-stat,
+.vm-stat,
+.rm-stat,
+.um-stat {
+    position: relative !important;
+    overflow: hidden !important;
+    border: none !important;
+    border-radius: 20px !important;
+    padding: 1.35rem 1.4rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 1.1rem !important;
+    box-shadow: 0 8px 24px -4px rgba(15, 23, 42, 0.12), 0 4px 12px -2px rgba(15, 23, 42, 0.06) !important;
+    color: #ffffff !important;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    min-height: 108px !important;
+    box-sizing: border-box !important;
+}
+
+.stat-card:hover,
+.dm-stat:hover,
+.pm-stat:hover,
+.sm-stat:hover,
+.vm-stat:hover,
+.rm-stat:hover,
+.um-stat:hover {
+    transform: translateY(-4px) !important;
+    box-shadow: 0 14px 28px -4px rgba(15, 23, 42, 0.18), 0 6px 16px -2px rgba(15, 23, 42, 0.1) !important;
+}
+
+/* ── Translucent Circular Icon Container ───────────────────── */
+.stat-icon,
+.dm-stat__icon,
+.pm-stat__icon,
+.sm-stat__icon,
+.vm-stat__icon,
+.rm-stat__icon,
+.um-stat__icon {
+    width: 48px !important;
+    height: 48px !important;
+    min-width: 48px !important;
+    min-height: 48px !important;
+    border-radius: 50% !important;
+    background: rgba(255, 255, 255, 0.24) !important;
+    backdrop-filter: blur(4px) !important;
+    -webkit-backdrop-filter: blur(4px) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 1.25rem !important;
+    color: #ffffff !important;
+    flex-shrink: 0 !important;
+}
+
+/* ── Details Column ────────────────────────────────────────── */
+.stat-details,
+.dm-stat__body,
+.pm-stat__body,
+.sm-stat__body,
+.vm-stat__body,
+.rm-stat__body,
+.um-stat__body {
+    display: flex !important;
+    flex-direction: column !important;
+    position: relative !important;
+    z-index: 1 !important;
+    min-width: 0 !important;
+}
+
+/* ── Small Uppercase Title ─────────────────────────────────── */
+.stat-details h3,
+.stat-label,
+.dm-stat__label,
+.pm-stat__label,
+.sm-stat__label,
+.vm-stat__label,
+.rm-stat__label,
+.um-stat__label {
+    font-size: 0.72rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.04em !important;
+    color: rgba(255, 255, 255, 0.92) !important;
+    margin: 0 0 0.2rem 0 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    line-height: 1.2 !important;
+}
+
+/* ── Large Bold Number ─────────────────────────────────────── */
+.stat-number,
+.stat-value,
+.dm-stat__value,
+.pm-stat__value,
+.sm-stat__value,
+.vm-stat__value,
+.rm-stat__value,
+.um-stat__value {
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    font-size: 2.1rem !important;
+    font-weight: 800 !important;
+    line-height: 1 !important;
+    color: #ffffff !important;
+    margin: 0 !important;
+}
+
+/* ── Subtitle Text ─────────────────────────────────────────── */
+.stat-sub,
+.stat-subtext,
+.dm-stat__sub,
+.pm-stat__sub,
+.sm-stat__sub,
+.vm-stat__sub,
+.rm-stat__sub,
+.um-stat__sub {
+    font-size: 0.73rem !important;
+    color: rgba(255, 255, 255, 0.85) !important;
+    margin-top: 0.35rem !important;
+    font-weight: 500 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+/* ── Gradient Variants (Matching Dashboard Palette) ────────── */
+.stat-card-purple, .stat-purple, .icon-purple-card, .dm-stat--purple, .pm-stat--purple, .sm-stat--purple, .vm-stat--purple, .rm-stat--purple, .um-stat--purple {
+    background: linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%) !important;
+}
+
+.stat-card-green, .stat-green, .icon-green-card, .dm-stat--green, .pm-stat--green, .sm-stat--green, .vm-stat--green, .rm-stat--green, .um-stat--green {
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%) !important;
+}
+
+.stat-card-orange, .stat-orange, .icon-orange-card, .dm-stat--orange, .pm-stat--orange, .sm-stat--orange, .vm-stat--orange, .rm-stat--orange, .um-stat--orange {
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%) !important;
+}
+
+.stat-card-indigo, .stat-indigo, .icon-indigo-card, .dm-stat--indigo, .pm-stat--indigo, .sm-stat--indigo, .vm-stat--indigo, .rm-stat--indigo, .um-stat--indigo {
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important;
+}
+
+.stat-card-pink, .stat-pink, .icon-pink-card, .dm-stat--pink, .pm-stat--pink, .sm-stat--pink, .vm-stat--pink, .rm-stat--pink, .um-stat--pink {
+    background: linear-gradient(135deg, #ec4899 0%, #db2777 100%) !important;
+}
+
+.stat-card-blue, .stat-blue, .icon-blue-card, .dm-stat--blue, .pm-stat--blue, .sm-stat--blue, .vm-stat--blue, .rm-stat--blue, .um-stat--blue {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+}
+
+.stat-card-cyan, .stat-cyan, .icon-cyan-card, .dm-stat--cyan, .pm-stat--cyan, .sm-stat--cyan, .vm-stat--cyan, .rm-stat--cyan, .um-stat--cyan {
+    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%) !important;
+}
+
+.stat-card-red, .stat-red, .icon-red-card, .dm-stat--red, .pm-stat--red, .sm-stat--red, .vm-stat--red, .rm-stat--red, .um-stat--red {
+    background: linear-gradient(135deg, #dc2626 0%, #f87171 100%) !important;
+}
+
+.stat-card-teal, .stat-teal, .icon-teal-card, .dm-stat--teal, .pm-stat--teal, .sm-stat--teal, .vm-stat--teal, .rm-stat--teal, .um-stat--teal {
+    background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%) !important;
+}

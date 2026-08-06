@@ -123,10 +123,14 @@ body {
    Statistic Cards
    ========================================================================== */
 .stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 1rem;
   margin-bottom: 1.5rem;
+}
+.stats-grid > .stat-card {
+  flex: 1 1 200px;
+  min-width: 180px;
 }
 
 /* ── Unified Premium Gradient Statistic Cards ──────────────── */
