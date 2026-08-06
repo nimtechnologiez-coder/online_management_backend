@@ -87,16 +87,16 @@ WSGI_APPLICATION = "config.wsgi.application"
 #     }
 # }
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.mysql",
-        "NAME": "student_management",
-        "USER": "root",
-        "PASSWORD": "",
-        "HOST": "127.0.0.1",
-        "PORT": "3306",
-    }
-}
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.mysql",
+#         "NAME": "student_management",
+#         "USER": "root",
+#         "PASSWORD": "",
+#         "HOST": "127.0.0.1",
+#         "PORT": "3306",
+#     }
+# }
 
 # ==================================================
 # Password Validation
@@ -246,16 +246,16 @@ BREVO_API_KEY = os.getenv("BREVO_API_KEY")
 
 # load_dotenv()
 
-# DATABASES = {
-#     "default": {
-#         "ENGINE": "django.db.backends.postgresql",
-#         "NAME": os.getenv("DB_NAME"),
-#         "USER": os.getenv("DB_USER"),
-#         "PASSWORD": os.getenv("DB_PASSWORD"),
-#         "HOST": os.getenv("DB_HOST"),
-#         "PORT": os.getenv("DB_PORT"),
-#         "OPTIONS": {
-#             "sslmode": "require",
-#         },
-#     }
-# }
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.getenv("DB_NAME"),
+        "USER": os.getenv("DB_USER"),
+        "PASSWORD": os.getenv("DB_PASSWORD"),
+        "HOST": os.getenv("DB_HOST"),
+        "PORT": os.getenv("DB_PORT"),
+        "OPTIONS": {
+            "sslmode": "require",
+        },
+    }
+}
