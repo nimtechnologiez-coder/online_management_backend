@@ -220,7 +220,7 @@ SESSION_ENGINE = "django.contrib.sessions.backends.db"
 
 SESSION_COOKIE_NAME = "sessionid"
 
-SESSION_COOKIE_AGE = 1209600
+SESSION_COOKIE_AGE = 86400  # 1 day (24 hours)
 
 SESSION_SAVE_EVERY_REQUEST = True
 

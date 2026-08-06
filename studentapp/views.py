@@ -569,9 +569,9 @@ def admin_login(request):
             if user.is_superuser or user.is_staff:
                 login(request, user)
                 if remember:
-                    request.session.set_expiry(1209600)  # Keep session active for 2 weeks
+                    request.session.set_expiry(86400)  # Session automatically expires after 1 day (24 hours)
                 else:
-                    request.session.set_expiry(0)        # Expire session on browser/tab close
+                    request.session.set_expiry(0)      # Expire session on browser/tab close or 1 day max
                 return redirect("dashboard")
             else:
                 messages.error(request, "Only Admin can login.")
