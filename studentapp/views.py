@@ -2433,140 +2433,151 @@ def api_principal_dashboard(request):
     from collections import Counter
     import re
 
-    principal = get_authenticated_principal(request)
+    try:
+        principal = get_authenticated_principal(request)
 
-    if principal is None:
+        if principal is None:
+            return JsonResponse({
+                "status": "error",
+                "message": "Please login"
+            }, status=401)
+
+        college = principal.college
+
+        college_students = Student.objects.filter(college=college)
+        total_students = college_students.count()
+        active_students = college_students.filter(status="active").count()
+        total_videos = Video.objects.count()
+
+        watches_qs = VideoWatch.objects.filter(student__college=college).select_related("student", "video")
+        total_views = watches_qs.count()
+
+        # Calculate real watch hours
+        total_watch_seconds = 0
+        for w in watches_qs:
+            if getattr(w, "watched_seconds", 0) > 0:
+                total_watch_seconds += w.watched_seconds
+            elif w.video and w.video.duration:
+                m = re.search(r'\d+', str(w.video.duration))
+                if m:
+                    total_watch_seconds += int(m.group()) * 60
+
+        watch_hours = round(total_watch_seconds / 3600, 1)
+        watch_time_str = f"{watch_hours} Hours" if watch_hours >= 1 else f"{round(total_watch_seconds / 60)} Mins"
+
+        engagement_rate = round((active_students / total_students) * 100, 1) if total_students > 0 else 0.0
+
+        recent_views_qs = watches_qs.select_related("student__department").order_by("-watched_at")[:10]
+        recent_views_data = [
+            {
+                "student": rw.student.full_name if rw.student else "Student",
+                "department": rw.student.department.dept_name if (rw.student and rw.student.department) else "N/A",
+                "video": rw.video.title if rw.video else "N/A",
+                "watchTime": rw.video.duration if rw.video else "N/A",
+                "lastViewed": _format_time_ago(rw.watched_at) if getattr(rw, 'watched_at', None) else "Recently",
+            }
+            for rw in recent_views_qs
+        ]
+
+        latest_videos_qs = Video.objects.all().order_by("-uploaded_at")[:5]
+        latest_videos_data = [
+            {
+                "title": v.title,
+                "category": v.category or "General",
+                "duration": v.duration or "N/A",
+                "views": v.views or 0,
+                "uploadDate": v.uploaded_at.strftime("%Y-%m-%d") if getattr(v, 'uploaded_at', None) else "Recently",
+                "thumbnail": request.build_absolute_uri(v.thumbnail.url) if getattr(v, 'thumbnail', None) and hasattr(v.thumbnail, 'url') else None,
+            }
+            for v in latest_videos_qs
+        ]
+
+        today = timezone.localdate()
+        daily_views = []
+        for offset in range(6, -1, -1):
+            day = today - timedelta(days=offset)
+            day_start = timezone.make_aware(timezone.datetime.combine(day, timezone.datetime.min.time()))
+            day_end = day_start + timedelta(days=1)
+            count = watches_qs.filter(
+                watched_at__gte=day_start,
+                watched_at__lt=day_end,
+            ).count()
+            daily_views.append({"day": day.strftime("%b %d"), "views": count})
+
+        category_counts = Counter(
+            watch.video.category
+            for watch in watches_qs
+            if watch.video and watch.video.category
+        )
+        palette = ["#6366f1", "#0d9488", "#f59e0b", "#10b981", "#8b5cf6", "#ec4899"]
+        top_categories = [
+            {
+                "name": category,
+                "value": count,
+                "color": palette[index % len(palette)],
+            }
+            for index, (category, count) in enumerate(category_counts.most_common(5))
+        ]
+
+        # Department Performance Analytics
+        departments = Department.objects.filter(college=college) if college else []
+        dept_performance = []
+        for dept in departments:
+            dept_students = Student.objects.filter(college=college, department=dept)
+            std_count = dept_students.count()
+            dept_views = VideoWatch.objects.filter(student__in=dept_students).count()
+            comp_rate = round((dept_views / (std_count * max(total_videos, 1))) * 100) if std_count > 0 else 0
+            dept_performance.append({
+                "name": dept.dept_name,
+                "code": dept.dept_code,
+                "students": std_count,
+                "views": dept_views,
+                "completionRate": min(100, comp_rate),
+                "hod": dept.hod_name or "N/A",
+            })
+
+        # Live Activity Feed
+        live_activities = []
+        for w in watches_qs.order_by("-watched_at")[:6]:
+            student_name = w.student.full_name if w.student else "Student"
+            dept_name = w.student.department.dept_name if (w.student and w.student.department) else "General"
+            live_activities.append({
+                "id": f"watch-{w.id}",
+                "type": "watch",
+                "title": "Video Watched",
+                "description": f"{student_name} watched '{w.video.title if w.video else 'Lecture'}'",
+                "time": _format_time_ago(w.watched_at) if getattr(w, 'watched_at', None) else "Recently",
+                "badge": dept_name,
+            })
+
+        return JsonResponse({
+            "status": "success",
+            "data": {
+                "summaryCards": {
+                    "students": total_students,
+                    "activeStudents": active_students,
+                    "videos": total_videos,
+                    "totalViews": total_views,
+                    "watchTime": watch_time_str,
+                    "engagementRate": engagement_rate,
+                },
+                "dailyViews": daily_views,
+                "topCategories": top_categories,
+                "latestVideos": latest_videos_data,
+                "recentViews": recent_views_data,
+                "departmentPerformance": dept_performance,
+                "liveActivities": live_activities,
+                "collegeName": college.college_name if college else "Institutional Portal",
+                "principalName": principal.principal_name if getattr(principal, 'principal_name', None) else getattr(principal, 'username', 'Principal'),
+            }
+        })
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
         return JsonResponse({
             "status": "error",
-            "message": "Please login"
-        }, status=401)
-
-    college = principal.college
-
-    college_students = Student.objects.filter(college=college)
-    total_students = college_students.count()
-    active_students = college_students.filter(status="active").count()
-    total_videos = Video.objects.count()
-
-    watches_qs = VideoWatch.objects.filter(student__college=college).select_related("student", "video")
-    total_views = watches_qs.count()
-
-    # Calculate real watch hours
-    total_watch_seconds = 0
-    for w in watches_qs:
-        if getattr(w, "watched_seconds", 0) > 0:
-            total_watch_seconds += w.watched_seconds
-        elif w.video and w.video.duration:
-            m = re.search(r'\d+', str(w.video.duration))
-            if m:
-                total_watch_seconds += int(m.group()) * 60
-
-    watch_hours = round(total_watch_seconds / 3600, 1)
-    watch_time_str = f"{watch_hours} Hours" if watch_hours >= 1 else f"{round(total_watch_seconds / 60)} Mins"
-
-    engagement_rate = round((active_students / total_students) * 100, 1) if total_students > 0 else 0.0
-
-    recent_views_qs = watches_qs.select_related("student__department").order_by("-watched_at")[:10]
-    recent_views_data = [
-        {
-            "student": rw.student.full_name,
-            "department": rw.student.department.dept_name if rw.student.department else "N/A",
-            "video": rw.video.title if rw.video else "N/A",
-            "watchTime": rw.video.duration if rw.video else "N/A",
-            "lastViewed": _format_time_ago(rw.watched_at),
-        }
-        for rw in recent_views_qs
-    ]
-
-    latest_videos_qs = Video.objects.all().order_by("-uploaded_at")[:5]
-    latest_videos_data = [
-        {
-            "title": v.title,
-            "category": v.category or "General",
-            "duration": v.duration or "N/A",
-            "views": v.views or 0,
-            "uploadDate": v.uploaded_at.strftime("%Y-%m-%d") if v.uploaded_at else "Recently",
-            "thumbnail": request.build_absolute_uri(v.thumbnail.url) if v.thumbnail else None,
-        }
-        for v in latest_videos_qs
-    ]
-
-    today = timezone.localdate()
-    daily_views = []
-    for offset in range(6, -1, -1):
-        day = today - timedelta(days=offset)
-        day_start = timezone.make_aware(timezone.datetime.combine(day, timezone.datetime.min.time()))
-        day_end = day_start + timedelta(days=1)
-        count = watches_qs.filter(
-            watched_at__gte=day_start,
-            watched_at__lt=day_end,
-        ).count()
-        daily_views.append({"day": day.strftime("%b %d"), "views": count})
-
-    category_counts = Counter(
-        watch.video.category
-        for watch in watches_qs
-        if watch.video and watch.video.category
-    )
-    palette = ["#6366f1", "#0d9488", "#f59e0b", "#10b981", "#8b5cf6", "#ec4899"]
-    top_categories = [
-        {
-            "name": category,
-            "value": count,
-            "color": palette[index % len(palette)],
-        }
-        for index, (category, count) in enumerate(category_counts.most_common(5))
-    ]
-
-    # Department Performance Analytics
-    departments = Department.objects.filter(college=college)
-    dept_performance = []
-    for dept in departments:
-        dept_students = Student.objects.filter(college=college, department=dept)
-        std_count = dept_students.count()
-        dept_views = VideoWatch.objects.filter(student__in=dept_students).count()
-        comp_rate = round((dept_views / (std_count * max(total_videos, 1))) * 100) if std_count > 0 else 0
-        dept_performance.append({
-            "name": dept.dept_name,
-            "code": dept.dept_code,
-            "students": std_count,
-            "views": dept_views,
-            "completionRate": min(100, comp_rate),
-            "hod": dept.hod_name or "N/A",
-        })
-
-    # Live Activity Feed
-    live_activities = []
-    for w in watches_qs.order_by("-watched_at")[:6]:
-        live_activities.append({
-            "id": f"watch-{w.id}",
-            "type": "watch",
-            "title": "Video Watched",
-            "description": f"{w.student.full_name} watched '{w.video.title if w.video else 'Lecture'}'",
-            "time": _format_time_ago(w.watched_at),
-            "badge": w.student.department.dept_name if w.student.department else "General",
-        })
-
-    return JsonResponse({
-        "status": "success",
-        "data": {
-            "summaryCards": {
-                "students": total_students,
-                "activeStudents": active_students,
-                "videos": total_videos,
-                "totalViews": total_views,
-                "watchTime": watch_time_str,
-                "engagementRate": engagement_rate,
-            },
-            "dailyViews": daily_views,
-            "topCategories": top_categories,
-            "latestVideos": latest_videos_data,
-            "recentViews": recent_views_data,
-            "departmentPerformance": dept_performance,
-            "liveActivities": live_activities,
-            "collegeName": college.college_name if college else "Institutional Portal",
-        }
-    })
+            "message": str(e)
+        }, status=500)
 
 
 def api_principal_students(request):
@@ -2753,7 +2764,12 @@ def api_principal_departments(request):
         data = []
 
         for idx, dept in enumerate(departments):
-            student_count = dept.students.count()
+            dept_students = Student.objects.filter(college=principal.college, department=dept)
+            student_count = dept_students.count()
+            dept_views = VideoWatch.objects.filter(student__in=dept_students).count()
+            total_videos = Video.objects.count()
+
+            completion_rate = round((dept_views / (student_count * max(total_videos, 1))) * 100) if student_count > 0 else 0
 
             data.append({
                 "id": dept.id,
@@ -2762,9 +2778,9 @@ def api_principal_departments(request):
                 "hod": dept.hod_name,
                 "email": dept.hod_email,
                 "students": student_count,
-                "videos": Video.objects.count(),
-                "views": student_count * 12,
-                "completionRate": 75 if student_count > 0 else 0,
+                "videos": total_videos,
+                "views": dept_views,
+                "completionRate": min(100, completion_rate),
                 "performance": "High" if student_count > 10 else ("Average" if student_count > 0 else "Low"),
                 "trend": "+5%",
                 "color": dept_colors[idx % len(dept_colors)],
@@ -2809,6 +2825,13 @@ def api_principal_videos(request):
         data = []
 
         for video in videos:
+            # Count total watch views for this video from college students
+            watch_count = VideoWatch.objects.filter(
+                video=video,
+                student__in=college_students
+            ).count()
+            effective_views = max(video.views or 0, watch_count)
+
             # Count unique students in this college who watched this video
             students_viewed = VideoWatch.objects.filter(
                 video=video,
@@ -2835,7 +2858,7 @@ def api_principal_videos(request):
                 "title": video.title,
                 "category": video.category or "General",
                 "duration": video.duration or "15 min",
-                "views": video.views or 0,
+                "views": effective_views,
                 "uploadedDate": video.uploaded_at.strftime("%d %b %Y") if getattr(video, "uploaded_at", None) else "01 Jul 2026",
                 "uploadedBy": uploader_name,
                 "status": video.status or "Published",
@@ -2846,12 +2869,13 @@ def api_principal_videos(request):
                 "videoUrl": request.build_absolute_uri(video.video_file.url) if (getattr(video, "video_file", None) and hasattr(video.video_file, "url") and video.video_file) else "",
             })
 
-        # Department-wise view analytics strictly from VideoWatch
+        # Department-wise view analytics from Department model and VideoWatch
         dept_views_map = {}
-        for vw in VideoWatch.objects.filter(student__in=college_students).select_related("student__department"):
-            if vw.student and vw.student.department:
-                dname = vw.student.department.dept_name
-                dept_views_map[dname] = dept_views_map.get(dname, 0) + 1
+        for dept in Department.objects.filter(college=principal.college) if (principal and principal.college) else Department.objects.all():
+            dept_students = Student.objects.filter(department=dept)
+            views_cnt = VideoWatch.objects.filter(student__in=dept_students).count()
+            if views_cnt > 0:
+                dept_views_map[dept.dept_name] = views_cnt
 
         dept_breakdown = [
             {"department": dname, "views": count}

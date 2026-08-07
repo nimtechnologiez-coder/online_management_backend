@@ -63,13 +63,21 @@ urlpatterns = [
     # ================= PRINCIPAL API =================
 
     path('api/principal/dashboard/', views.api_principal_dashboard, name='api_principal_dashboard'),
+    path('api/principal/dashboard', views.api_principal_dashboard),
     path('api/principal/students/', views.api_principal_students, name='api_principal_students'),
+    path('api/principal/students', views.api_principal_students),
     path('api/principal/students/<int:student_id>/delete/', views.api_principal_student_delete, name='api_principal_student_delete'),
+    path('api/principal/students/<int:student_id>/delete', views.api_principal_student_delete),
     path('api/principal/profile/', views.api_principal_profile, name='api_principal_profile'),
+    path('api/principal/profile', views.api_principal_profile),
     path('api/principal/departments/', views.api_principal_departments, name='api_principal_departments'),
+    path('api/principal/departments', views.api_principal_departments),
     path('api/principal/videos/', views.api_principal_videos, name='api_principal_videos'),
+    path('api/principal/videos', views.api_principal_videos),
     path('api/principal/attendance_reports/', views.api_principal_attendance_reports, name='api_principal_attendance_reports'),
+    path('api/principal/attendance_reports', views.api_principal_attendance_reports),
     path('api/principal/login/', views.principal_login, name='principal_login'),
+    path('api/principal/login', views.principal_login),
 
     # ================= STUDENT API =================
 
