@@ -171,6 +171,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # ==================================================
 
 CORS_ALLOWED_ORIGINS = [
+    "https://online-studentmanagement.vercel.app",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "http://localhost:3001",
@@ -184,6 +185,8 @@ CORS_ALLOWED_ORIGINS = [
 CORS_ALLOW_CREDENTIALS = True
 
 CSRF_TRUSTED_ORIGINS = [
+    "https://online-studentmanagement.vercel.app",
+    "https://online-management-backend.onrender.com",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "http://localhost:3001",
