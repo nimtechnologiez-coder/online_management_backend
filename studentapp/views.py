@@ -4672,7 +4672,7 @@ def api_student_videos(request):
 
 
 # ==========================================================
-# DJANGO TEMPLATE VIEWS FOR VIDEO MANAGEMENT (http://127.0.0.1:8000/videos/)
+# DJANGO TEMPLATE VIEWS FOR VIDEO MANAGEMENT (https://online-management-backend.onrender.com/videos/)
 # ==========================================================
 
 from django.core.paginator import Paginator
