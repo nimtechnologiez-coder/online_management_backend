@@ -12,7 +12,7 @@ load_dotenv(BASE_DIR / ".env")
 
 SECRET_KEY = "django-insecure-5in&y=pb2rqbxmn7!p^y#q))w3+41h2z@t*!&amr+i&1)c4g_="
 
-DEBUG = True
+DEBUG = os.environ.get("DEBUG", "False" if "RENDER" in os.environ else "True").lower() in ("true", "1")
 
 ALLOWED_HOSTS = [
  "online-management-backend.onrender.com",
@@ -173,6 +173,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 CORS_ALLOWED_ORIGINS = [
     "https://online-studentmanagement.vercel.app",
+ 
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "http://localhost:3001",
@@ -187,6 +188,7 @@ CORS_ALLOW_CREDENTIALS = True
 
 CSRF_TRUSTED_ORIGINS = [
     "https://online-studentmanagement.vercel.app",
+    "https://online-studentmanagement-g6hbrzm6l.vercel.app",
     "https://online-management-backend.onrender.com",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
