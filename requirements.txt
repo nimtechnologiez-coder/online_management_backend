@@ -50,5 +50,6 @@ typing_extensions==4.15.0
 tzdata==2026.2
 urllib3==2.7.0
 whitenoise==6.12.0
+
 whitenoise==6.12.0
-桷瑩湥楯敳㴽⸶㈱〮਍
+
