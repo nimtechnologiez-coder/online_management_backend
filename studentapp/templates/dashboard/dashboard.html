@@ -572,8 +572,21 @@
         });
 
         /* ── 3. College Distribution Donut Chart ─────────────────── */
-        const dLabels = (backendCollegeLabels && backendCollegeLabels.length > 0) ? backendCollegeLabels : [];
-        const dData = (backendCollegeData && backendCollegeData.length > 0) ? backendCollegeData : [];
+        let dLabels = (backendCollegeLabels && backendCollegeLabels.length > 0) ? backendCollegeLabels : [];
+        let dData = (backendCollegeData && backendCollegeData.length > 0) ? backendCollegeData : [];
+
+        // Combine remaining colleges into "Other" if there are more than 5
+        if (dLabels.length > 5) {
+            const topLabels = dLabels.slice(0, 4);
+            const topData = dData.slice(0, 4);
+            const otherSum = parseFloat(dData.slice(4).reduce((sum, val) => sum + Number(val || 0), 0).toFixed(1));
+            
+            topLabels.push("Other");
+            topData.push(otherSum);
+            
+            dLabels = topLabels;
+            dData = topData;
+        }
 
         const hasDonutColleges = dLabels.length > 0;
         const hasEngagementData = hasDonutColleges && dData.some(val => Number(val) > 0);
