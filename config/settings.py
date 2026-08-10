@@ -15,11 +15,13 @@ SECRET_KEY = "django-insecure-5in&y=pb2rqbxmn7!p^y#q))w3+41h2z@t*!&amr+i&1)c4g_=
 DEBUG = os.environ.get("DEBUG", "False" if "RENDER" in os.environ else "True").lower() in ("true", "1")
 
 ALLOWED_HOSTS = [
- "https://online-management-backend.onrender.com",
-
+    "online-management-backend.onrender.com",
     "127.0.0.1",
     "localhost",
 ]
+
+if "RENDER_EXTERNAL_HOSTNAME" in os.environ:
+    ALLOWED_HOSTS.append(os.environ["RENDER_EXTERNAL_HOSTNAME"])
 # ==================================================
 # Applications
 # ==================================================
