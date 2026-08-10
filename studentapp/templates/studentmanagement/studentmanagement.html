@@ -235,7 +235,6 @@
                     <div class="sm-detail-item"><strong>Full Name:</strong> <span id="viewName"></span></div>
                     <div class="sm-detail-item"><strong>Email:</strong> <span id="viewEmail"></span></div>
                     <div class="sm-detail-item"><strong>Username:</strong> <span id="viewUser"></span></div>
-                    <div class="sm-detail-item"><strong>Password:</strong> <span id="viewPass"></span></div>
                     <div class="sm-detail-item"><strong>College:</strong> <span id="viewCollege"></span></div>
                     <div class="sm-detail-item"><strong>Department:</strong> <span id="viewDept"></span></div>
                     <div class="sm-detail-item"><strong>Year:</strong> <span id="viewYear"></span></div>
@@ -272,12 +271,6 @@
                 <div class="sm-form-group">
                     <label>Username <small>(read-only)</small></label>
                     <input type="text" id="editUser" readonly disabled class="sm-input--readonly">
-                </div>
-
-                <!-- READ-ONLY -->
-                <div class="sm-form-group">
-                    <label>Password <small>(read-only)</small></label>
-                    <input type="text" id="editPass" readonly disabled class="sm-input--readonly">
                 </div>
 
 
@@ -417,7 +410,6 @@
             document.getElementById('viewName').textContent = row.dataset.name;
             document.getElementById('viewEmail').textContent = row.dataset.email;
             document.getElementById('viewUser').textContent = row.dataset.user;
-            document.getElementById('viewPass').textContent = row.dataset.pass;
             document.getElementById('viewCollege').textContent = row.dataset.college;
             document.getElementById('viewDept').textContent = row.dataset.dept;
             document.getElementById('viewYear').textContent = row.dataset.year;
@@ -510,7 +502,6 @@
             document.getElementById('editId').value = row.dataset.id;
             document.getElementById('editName').value = row.dataset.name;
             document.getElementById('editUser').value = row.dataset.user;
-            document.getElementById('editPass').value = row.dataset.pass;
             document.getElementById('editYear').value = row.dataset.year;
             document.getElementById('editJoin').value = row.dataset.join;
             document.getElementById('editStatus').value = (row.dataset.status || '').toLowerCase();
