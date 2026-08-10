@@ -1877,8 +1877,8 @@ def api_get_colleges(request):
     })
 
 
+@csrf_exempt
 def student_delete(request, student_id):
-    from django.views.decorators.csrf import csrf_exempt
     from django.http import JsonResponse
 
     if request.method != 'POST':
@@ -1902,6 +1902,7 @@ from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
 
 
+@csrf_exempt
 def student_update(request, student_id):
     """
     Only these fields are editable from the UI:
@@ -2885,6 +2886,7 @@ def api_principal_students(request):
         "data": data
     })
 
+@csrf_exempt
 def api_principal_student_delete(request, student_id):
     if request.method != "POST":
         return JsonResponse({"status": "error", "message": "Method not allowed"}, status=405)
