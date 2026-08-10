@@ -83,6 +83,8 @@ urlpatterns = [
 
     path('api/student/login/', views.student_login, name='student_login'),
     path('api/student/login', views.student_login),
+    path('api/student/logout/', views.api_student_logout, name='api_student_logout'),
+    path('api/student/logout', views.api_student_logout),
     path('api/student/dashboard/', views.api_student_dashboard, name='api_student_dashboard'),
     path('api/student/dashboard', views.api_student_dashboard),
     path('api/student/videos/', views.api_student_videos, name='api_student_videos'),

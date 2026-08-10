@@ -1904,17 +1904,6 @@ from django.http import JsonResponse
 
 @csrf_exempt
 def student_update(request, student_id):
-    """
-    Only these fields are editable from the UI:
-        - full_name
-        - department
-        - year
-        - join_date
-        - status
-
-    Everything else (username, password, college) is read-only
-    and is preserved as-is from the existing record.
-    """
     student = get_object_or_404(Student, id=student_id)
 
     if request.method != "POST":
@@ -3281,6 +3270,14 @@ def student_login(request):
     except Exception as e:
         import traceback
         traceback.print_exc()
+        return JsonResponse({"status": "error", "message": str(e)}, status=500)
+
+@csrf_exempt
+def api_student_logout(request):
+    try:
+        request.session.flush()
+        return JsonResponse({"status": "success", "message": "Logged out successfully"})
+    except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)}, status=500)
 
 @csrf_exempt

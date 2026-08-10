@@ -496,17 +496,6 @@ class Video(models.Model):
     views = models.PositiveIntegerField(default=0)
 
 
-# ==========================================
-# Video Watch History
-# ==========================================
-# ==========================================
-# ONE ADDITION NEEDED IN YOUR EXISTING models.py
-# ==========================================
-# Your current VideoWatch model only records THAT a student watched a
-# video, not HOW MUCH of it they watched. Without that, "Completion
-# Rate" cannot be calculated from real data at all — it would have to
-# be faked. Add one field so it's real:
-
 class VideoWatch(models.Model):
     student = models.ForeignKey(
         Student,
@@ -524,14 +513,7 @@ class VideoWatch(models.Model):
         default=timezone.now
     )
 
-    # NEW FIELD -----------------------------------------------------
-    # How many seconds of the video this student actually watched.
-    # Update this from your video player's JS (e.g. on pause/ended,
-    # POST the current playback position to an endpoint that saves it
-    # here). Completion % = watched_seconds / video.duration_seconds.
     watched_seconds = models.PositiveIntegerField(default=0)
-    # -----------------------------------------------------------------
-
     def __str__(self):
         return f"{self.student.full_name} - {self.video.title}"
 

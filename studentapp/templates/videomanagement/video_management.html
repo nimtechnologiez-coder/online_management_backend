@@ -135,7 +135,7 @@
 
             <div class="pagination-bar">
                 <p class="pagination-info">
-                    Showing <strong id="infoStart">{{ page_obj.start_index|default:0 }}–{{ page_obj.end_index|default:0 }}</strong> of
+                    Showing <strong id="infoStart">{{ page_obj.start_index|default:0 }}</strong>–<strong id="infoEnd">{{ page_obj.end_index|default:0 }}</strong> of
                     <strong id="infoTotal">{{ page_obj.paginator.count|default:0 }}</strong> Videos
                 </p>
                 <div class="pagination-controls" id="paginationContainer">

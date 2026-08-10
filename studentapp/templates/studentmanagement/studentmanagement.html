@@ -178,7 +178,7 @@
 
             <div class="pagination-bar">
                 <p class="pagination-info">
-                    Showing <strong id="infoStart">{{ page_obj.start_index|default:0 }}–{{ page_obj.end_index|default:0 }}</strong> of
+                    Showing <strong id="infoStart">{{ page_obj.start_index|default:0 }}</strong>–<strong id="infoEnd">{{ page_obj.end_index|default:0 }}</strong> of
                     <strong id="infoTotal">{{ page_obj.paginator.count|default:0 }}</strong> Students
                 </p>
                 <div class="pagination-controls">
@@ -347,9 +347,19 @@
             <h3 id="deleteModalTitle" class="delete-modal__title">Delete Student</h3>
             <p id="deleteModalDesc" class="delete-modal__message">Are you sure you want to delete <strong
                     id="deleteName">this student</strong>? This action cannot be undone.</p>
+            
+            <div class="delete-modal__confirm-input-wrapper" style="margin: 15px 0; text-align: left; width: 100%;">
+                <label for="deleteConfirmInput" style="display: block; font-size: 12px; font-weight: 600; color: #4b5563; margin-bottom: 5px;">
+                    Type <strong style="color: #dc2626;">DELETE</strong> to confirm:
+                </label>
+                <input type="text" id="deleteConfirmInput" placeholder="Type DELETE" class="sm-input" 
+                       style="width: 100%; border: 1px solid #d1d5db; border-radius: 6px; padding: 8px 12px; font-size: 14px; box-sizing: border-box;" 
+                       oninput="checkDeleteConfirmation(this.value)">
+            </div>
+
             <div class="delete-modal__actions">
                 <button type="button" onclick="closeModal('deleteModal')" class="delete-modal__cancel">Cancel</button>
-                <button type="button" onclick="confirmDelete()" class="delete-modal__confirm" id="deleteConfirmBtn">
+                <button type="button" onclick="confirmDelete()" class="delete-modal__confirm" id="deleteConfirmBtn" disabled>
                     <span id="deleteBtnText">Delete Student</span>
                 </button>
             </div>
@@ -614,8 +624,33 @@
         function openDeleteModal(btn) {
             _deleteRow = btn.closest('tr');
             document.getElementById('deleteName').textContent = _deleteRow.dataset.name || 'this student';
+            
+            // Reset confirm input and confirm button state
+            const confirmInput = document.getElementById('deleteConfirmInput');
+            if (confirmInput) {
+                confirmInput.value = '';
+            }
+            const confirmBtn = document.getElementById('deleteConfirmBtn');
+            if (confirmBtn) {
+                confirmBtn.disabled = true;
+            }
+
             openModal('deleteModal');
-            document.getElementById('deleteConfirmBtn').focus();
+            if (confirmInput) {
+                setTimeout(() => confirmInput.focus(), 100);
+            } else {
+                confirmBtn.focus();
+            }
+        }
+
+        function checkDeleteConfirmation(val) {
+            const confirmBtn = document.getElementById('deleteConfirmBtn');
+            if (!confirmBtn) return;
+            if (val === 'DELETE') {
+                confirmBtn.disabled = false;
+            } else {
+                confirmBtn.disabled = true;
+            }
         }
         function confirmDelete() {
             if (!_deleteRow) return;
