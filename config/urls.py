@@ -31,4 +31,11 @@ if settings.DEBUG:
         re_path(r'^thumbnails/(?P<path>.*)$', serve, {'document_root': settings.BASE_DIR / 'thumbnails'}),
         re_path(r'^videos/(?P<path>.*)$', serve, {'document_root': settings.BASE_DIR / 'videos'}),
     ]
+else:
+    # Serve media, thumbnails, and videos in production when running on local Render disk
+    urlpatterns += [
+        re_path(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}),
+        re_path(r'^thumbnails/(?P<path>.*)$', serve, {'document_root': settings.BASE_DIR / 'thumbnails'}),
+        re_path(r'^videos/(?P<path>.*)$', serve, {'document_root': settings.BASE_DIR / 'videos'}),
+    ]
 

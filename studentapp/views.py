@@ -1377,10 +1377,12 @@ def send_otp(request):
         # Generate 6-digit OTP
         otp = f"{random.randint(100000, 999999)}"
 
-        # Always print OTP code in server console logs
-        print("\n" + "=" * 60)
-        print(f"  [REGISTRATION OTP] Email: {email} | Code: {otp}")
-        print("=" * 60 + "\n")
+        # Print OTP code in server console logs only in debug mode
+        from django.conf import settings as django_settings
+        if django_settings.DEBUG:
+            print("\n" + "=" * 60)
+            print(f"  [REGISTRATION OTP] Email: {email} | Code: {otp}")
+            print("=" * 60 + "\n")
 
         # Get default college & department fallback for temp OTP creation
         default_college = College.objects.first()
@@ -1423,7 +1425,6 @@ def send_otp(request):
         plain_message = f"Hello {full_name},\n\nYour OTP for registration verification is: {otp}\n\nThis code will expire in 10 minutes."
 
         import urllib.request, urllib.error
-        from django.conf import settings as django_settings
 
         api_key = (getattr(django_settings, 'BREVO_API_KEY', '') or '').strip()
         sender_email = (getattr(django_settings, 'DEFAULT_FROM_EMAIL', '') or '').strip()
@@ -1463,8 +1464,8 @@ def send_otp(request):
                 })
             return JsonResponse({
                 "status": "error",
-                "message": f"Failed to send OTP email. Brevo error {brevo_http_err.code}: {err_body[:200]}"
-            }, status=500)
+                "message": "Unable to send verification email. Please try again."
+            }, status=400)
         except Exception as brevo_err:
             print(f"[BREVO API ERROR] {brevo_err}")
             if django_settings.DEBUG:
@@ -1475,8 +1476,8 @@ def send_otp(request):
                 })
             return JsonResponse({
                 "status": "error",
-                "message": "Failed to send OTP email. Please try again."
-            }, status=500)
+                "message": "Unable to send verification email. Please try again."
+            }, status=400)
 
         return JsonResponse({
             "status": "success",
@@ -1673,10 +1674,12 @@ def forgot_password_send_otp(request):
         student.otp_attempts = 0
         student.save()
 
-        # Always print OTP code in server console logs
-        print("\n" + "=" * 60)
-        print(f"  [FORGOT PASSWORD OTP] Email: {email} | Code: {otp}")
-        print("=" * 60 + "\n")
+        # Print OTP code in server console logs only in debug mode
+        from django.conf import settings as django_settings
+        if django_settings.DEBUG:
+            print("\n" + "=" * 60)
+            print(f"  [FORGOT PASSWORD OTP] Email: {email} | Code: {otp}")
+            print("=" * 60 + "\n")
 
         # Send Email OTP via Brevo REST API (primary - no IP restriction)
         subject = f"Your Password Reset Code: {otp}"
@@ -1744,8 +1747,8 @@ def forgot_password_send_otp(request):
                 })
             return JsonResponse({
                 "status": "error",
-                "message": f"Failed to send OTP email. Brevo error {brevo_http_err.code}: {err_body[:200]}"
-            }, status=500)
+                "message": "Unable to send verification email. Please try again."
+            }, status=400)
         except Exception as brevo_err:
             print(f"[BREVO API ERROR] {brevo_err}")
             if django_settings.DEBUG:
@@ -1757,8 +1760,8 @@ def forgot_password_send_otp(request):
                 })
             return JsonResponse({
                 "status": "error",
-                "message": "Failed to send OTP email. Please try again."
-            }, status=500)
+                "message": "Unable to send verification email. Please try again."
+            }, status=400)
 
         return JsonResponse({
             "status": "success",

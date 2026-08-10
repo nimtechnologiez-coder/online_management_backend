@@ -1,0 +1,1130 @@
+/* ============================================================
+   Department Management List – department_list.css
+   Depends on: department.css (CSS custom properties / tokens)
+   ============================================================ */
+
+/* ── Base layout ─────────────────────────────────────────── */
+.dm-page {
+    font-family: 'Inter', sans-serif;
+    background-color: #f1f5f9;
+    min-height: 100vh;
+    color: #1e293b;
+}
+
+.dm-main {
+    margin-left: 260px;
+    padding: 2rem;
+    min-height: 100vh;
+    transition: margin-left 0.3s ease;
+}
+
+@media (max-width: 768px) {
+    .dm-main {
+        margin-left: 0;
+        padding: 1rem;
+    }
+}
+
+/* ── Breadcrumb ───────────────────────────────────────────── */
+.dm-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.82rem;
+    color: #64748b;
+    margin-bottom: 1.25rem;
+}
+
+.dm-breadcrumb a {
+    color: #64748b;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    transition: color 150ms;
+}
+
+.dm-breadcrumb a:hover {
+    color: #2563eb;
+}
+
+.dm-breadcrumb__sep {
+    color: #cbd5e1;
+}
+
+.dm-breadcrumb__current {
+    color: #1e293b;
+    font-weight: 600;
+}
+
+/* ── Page header ─────────────────────────────────────────── */
+.dm-page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1.75rem;
+}
+
+.dm-page-title {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0 0 0.2rem;
+}
+
+.dm-page-subtitle {
+    font-size: 0.875rem;
+    color: #64748b;
+    margin: 0;
+}
+
+/* ── Buttons ─────────────────────────────────────────────── */
+.dm-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.55rem 1.1rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 150ms ease;
+    text-decoration: none;
+    white-space: nowrap;
+    font-family: 'Inter', sans-serif;
+}
+
+.dm-btn--primary {
+    background: linear-gradient(135deg, #2563eb, #3b82f6);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, .35);
+}
+
+.dm-btn--primary:hover {
+    background: linear-gradient(135deg, #1d4ed8, #2563eb);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, .45);
+}
+
+.dm-btn--ghost {
+    background: #fff;
+    color: #475569;
+    border-color: #e2e8f0;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .04);
+}
+
+.dm-btn--ghost:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+}
+
+.dm-btn--danger {
+    background: linear-gradient(135deg, #dc2626, #ef4444);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(220, 38, 38, .35);
+}
+
+.dm-btn--danger:hover {
+    background: linear-gradient(135deg, #b91c1c, #dc2626);
+}
+
+/* ── Stats Row ───────────────────────────────────────────── */
+.dm-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.1rem;
+    margin-bottom: 1.5rem;
+}
+
+@media (max-width: 1100px) {
+    .dm-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.dm-stat {
+    position: relative;
+    overflow: hidden;
+    border: none !important;
+    border-radius: 20px !important;
+    padding: 1.35rem 1.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 1.1rem;
+    box-shadow: 0 8px 24px -4px rgba(15, 23, 42, 0.12), 0 4px 12px -2px rgba(15, 23, 42, 0.06);
+    color: #fff;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dm-stat:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 14px 28px -4px rgba(15, 23, 42, 0.18), 0 6px 16px -2px rgba(15, 23, 42, 0.1);
+}
+
+.dm-stat--indigo { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important; }
+.dm-stat--blue   { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important; }
+.dm-stat--green  { background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%) !important; }
+.dm-stat--red    { background: linear-gradient(135deg, #dc2626 0%, #f87171 100%) !important; }
+.dm-stat--purple { background: linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%) !important; }
+.dm-stat--orange { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%) !important; }
+.dm-stat--pink   { background: linear-gradient(135deg, #ec4899 0%, #db2777 100%) !important; }
+.dm-stat--cyan   { background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%) !important; }
+
+.dm-stat__icon {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    min-height: 48px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.24) !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    color: #fff !important;
+    flex-shrink: 0;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
+.dm-stat__body {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    z-index: 1;
+    min-width: 0;
+}
+
+.dm-stat__label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: rgba(255, 255, 255, 0.92) !important;
+    margin: 0 0 0.2rem 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dm-stat__value {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 2.1rem;
+    font-weight: 800;
+    line-height: 1;
+    color: #fff !important;
+    margin: 0;
+}
+
+.dm-stat__bg-icon {
+    display: none !important;
+}
+    bottom: -10px;
+    font-size: 4.5rem;
+    opacity: 0.12;
+    pointer-events: none;
+}
+
+/* ── Toolbar ─────────────────────────────────────────────── */
+.dm-toolbar {
+    background: #fff;
+    border: 1.5px solid #D1D5DB;
+    border-radius: 16px;
+    padding: 0.875rem 1.25rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, .04);
+    margin-bottom: 1.25rem;
+}
+
+.dm-toolbar__filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    align-items: center;
+    flex: 1;
+}
+
+.dm-search {
+    position: relative;
+    min-width: 220px;
+    flex: 1;
+    max-width: 320px;
+}
+
+.dm-search__icon {
+    position: absolute;
+    left: 0.85rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    font-size: 0.85rem;
+}
+
+.dm-search__input {
+    width: 100%;
+    padding: 0.5rem 0.85rem 0.5rem 2.25rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    color: #334155;
+    outline: none;
+    transition: border-color 150ms, box-shadow 150ms;
+    background: #f8fafc;
+    font-family: 'Inter', sans-serif;
+    box-sizing: border-box;
+}
+
+.dm-search__input:focus {
+    border-color: #93c5fd;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, .1);
+    background: #fff;
+}
+
+.dm-search__input::placeholder {
+    color: #94a3b8;
+}
+
+.dm-select {
+    padding: 0.5rem 0.85rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    color: #334155;
+    background: #f8fafc;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 150ms;
+    min-width: 170px;
+    font-family: 'Inter', sans-serif;
+}
+
+.dm-select--sm {
+    min-width: 120px;
+}
+
+.dm-select:focus {
+    border-color: #93c5fd;
+    background: #fff;
+}
+
+/* ── Table Card ──────────────────────────────────────────── */
+.dm-card {
+    background: #fff;
+    border: 1.5px solid #D1D5DB;
+    border-radius: 16px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, .06);
+    overflow: hidden;
+}
+
+.dm-table-scroll {
+    overflow-x: auto;
+}
+
+.dm-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.dm-table thead tr {
+    background: #f8fafc;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.dm-table th {
+    padding: 0.85rem 1rem;
+    text-align: left;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #64748b;
+    white-space: nowrap;
+}
+
+.dm-table td {
+    padding: 0.9rem 1rem;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.dm-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.dm-table tbody tr {
+    transition: background-color 150ms;
+}
+
+.dm-table tbody tr:hover {
+    background-color: #f8fafc;
+}
+
+/* ── Department Cell ─────────────────────────────────────── */
+.dm-dept {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.dm-dept-badge {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    font-weight: 800;
+    color: #fff;
+    flex-shrink: 0;
+    letter-spacing: 0.03em;
+}
+
+.dm-dept-badge--blue {
+    background: linear-gradient(135deg, #2563eb, #60a5fa);
+}
+
+.dm-dept-badge--teal {
+    background: linear-gradient(135deg, #0d9488, #2dd4bf);
+}
+
+.dm-dept-badge--orange {
+    background: linear-gradient(135deg, #ea580c, #fb923c);
+}
+
+.dm-dept-badge--rose {
+    background: linear-gradient(135deg, #e11d48, #fb7185);
+}
+
+.dm-dept-badge--purple {
+    background: linear-gradient(135deg, #7c3aed, #c084fc);
+}
+
+.dm-dept-badge--slate {
+    background: linear-gradient(135deg, #475569, #94a3b8);
+}
+
+.dm-dept__name {
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.dm-dept__sub {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    margin-top: 0.1rem;
+}
+
+/* ── HOD Cell ────────────────────────────────────────────── */
+.dm-hod {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.dm-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+}
+
+.dm-avatar--blue {
+    background: linear-gradient(135deg, #2563eb, #60a5fa);
+}
+
+.dm-avatar--green {
+    background: linear-gradient(135deg, #16a34a, #4ade80);
+}
+
+.dm-avatar--amber {
+    background: linear-gradient(135deg, #d97706, #fcd34d);
+}
+
+.dm-avatar--rose {
+    background: linear-gradient(135deg, #e11d48, #fb7185);
+}
+
+.dm-avatar--purple {
+    background: linear-gradient(135deg, #7c3aed, #c084fc);
+}
+
+/* ── Table Cell Variants ─────────────────────────────────── */
+.dm-td--no {
+    color: #94a3b8;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.dm-td--muted {
+    color: #64748b;
+}
+
+.dm-username {
+    font-family: 'Courier New', monospace;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #2563eb;
+    background: #eff6ff;
+    padding: 0.2rem 0.5rem;
+    border-radius: 5px;
+}
+
+.dm-password {
+    font-family: 'Courier New', monospace;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #475569;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    padding: 0.2rem 0.5rem;
+    border-radius: 5px;
+    letter-spacing: 0.03em;
+}
+
+.dm-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    padding: 0.2rem 0.5rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #334155;
+}
+
+/* ── Status Badge ────────────────────────────────────────── */
+.dm-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.25rem 0.65rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+}
+
+.dm-badge::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.dm-badge--active {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+.dm-badge--active::before {
+    background: #16a34a;
+}
+
+.dm-badge--inactive {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.dm-badge--inactive::before {
+    background: #dc2626;
+}
+
+/* ── Action Buttons ──────────────────────────────────────── */
+.dm-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+}
+
+.dm-icon-btn {
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    transition: background-color 150ms, color 150ms;
+    color: #94a3b8;
+    text-decoration: none;
+}
+
+.dm-icon-btn:hover {
+    background: #f1f5f9;
+}
+
+.dm-icon-btn--view:hover {
+    color: #2563eb;
+    background: #eff6ff;
+}
+
+.dm-icon-btn--edit:hover {
+    color: #d97706;
+    background: #fffbeb;
+}
+
+.dm-icon-btn--key:hover {
+    color: #7c3aed;
+    background: #f5f3ff;
+}
+
+.dm-icon-btn--delete:hover {
+    color: #dc2626;
+    background: #fef2f2;
+}
+
+/* ── Table Footer ────────────────────────────────────────── */
+.dm-table-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    border-top: 1px solid #E5E7EB;
+    background: #ffffff;
+}
+
+.dm-table-footer__info {
+    flex: 1 1 auto;
+    min-width: 220px;
+    font-size: 0.9rem;
+    color: #374151;
+    font-weight: 500;
+}
+
+.dm-table-footer__info strong {
+    color: #111827;
+    font-weight: 700;
+}
+
+.dm-pagination {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    min-width: 220px;
+}
+
+.dm-pagination__nav,
+.dm-pagination__page {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 38px;
+    height: 38px;
+    padding: 0 14px;
+    border-radius: 10px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #475569;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    line-height: 1;
+    user-select: none;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+
+.dm-pagination__nav:hover:not(.dm-pagination__nav--disabled),
+.dm-pagination__page:hover:not(.active) {
+    background: #f8fafc;
+    border-color: #94a3b8;
+    color: #0f172a;
+}
+
+.dm-pagination__nav--disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    border-color: #e2e8f0;
+    background: #f8fafc;
+    color: #94a3b8;
+    box-shadow: none;
+    pointer-events: none;
+}
+
+.dm-pagination__page.active {
+    background: #2563eb !important;
+    border-color: #2563eb !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25) !important;
+    cursor: default;
+    pointer-events: none;
+}
+
+.dm-pagination__ellipsis {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 44px;
+    color: #94a3b8;
+    font-size: 0.92rem;
+    padding: 0 8px;
+}
+
+@media (max-width: 640px) {
+    .dm-table-footer {
+        flex-direction: column;
+        align-items: center;
+    }
+    .dm-pagination {
+        justify-content: center;
+        width: 100%;
+    }
+    .dm-table-footer__info {
+        width: 100%;
+        text-align: center;
+    }
+}
+
+/* ============================================================
+   Modals — shared overlay + two variants:
+   1. Compact confirm modal (Delete) — centered icon/title/desc
+   2. Wide content modal (View / Edit) — header/body/footer
+   ============================================================ */
+
+.dm-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, .55);
+    backdrop-filter: blur(3px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 2000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+
+.dm-modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Base modal shell (compact / Delete confirm) */
+.dm-modal {
+    background: #fff;
+    border-radius: 18px;
+    padding: 2.25rem 2rem;
+    width: 100%;
+    max-width: 420px;
+    text-align: center;
+    transform: translateY(10px) scale(0.96);
+    opacity: 0;
+    transition: transform 0.25s ease, opacity 0.25s ease;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, .2);
+    box-sizing: border-box;
+}
+
+.dm-modal-overlay.active .dm-modal {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+}
+
+.dm-modal__icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: #fee2e2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    color: #dc2626;
+    margin: 0 auto 1.25rem;
+}
+
+.dm-modal__title {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0 0 0.6rem;
+}
+
+.dm-modal__desc {
+    font-size: 0.875rem;
+    color: #64748b;
+    line-height: 1.6;
+    margin: 0 0 1.5rem;
+}
+
+.dm-modal__actions {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+}
+
+/* Wide variant (View / Edit) — replaces the padded/centered look with a
+   proper header / scrollable body / footer layout */
+.dm-modal--wide {
+    max-width: 580px;
+    max-height: 88vh;
+    padding: 0;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.dm-modal--wide .dm-modal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid #e2e8f0;
+    flex-shrink: 0;
+}
+
+.dm-modal__title-inline {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.dm-modal__title-inline i {
+    color: #4f46e5;
+    font-size: 0.95rem;
+}
+
+.dm-modal__close {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: #f1f5f9;
+    border-radius: 50%;
+    color: #475569;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+    transition: background 150ms ease, color 150ms ease;
+}
+
+.dm-modal__close:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+}
+
+.dm-modal--wide .dm-modal__body {
+    padding: 1.5rem;
+    overflow-y: auto;
+    flex: 1 1 auto;
+}
+
+.dm-modal--wide .dm-modal__actions {
+    justify-content: flex-end;
+    padding: 1.1rem 1.5rem;
+    border-top: 1px solid #e2e8f0;
+    flex-shrink: 0;
+    background: #fafafa;
+}
+
+/* View modal — head (badge + name) */
+.dm-view-head {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px dashed #e2e8f0;
+}
+
+.dm-view-head__name {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.dm-view-head__sub {
+    font-size: 0.8rem;
+    color: #64748b;
+    margin-top: 0.15rem;
+}
+
+/* View modal — detail grid */
+.dm-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.25rem;
+}
+
+.dm-detail-item {
+    background: #f8f8fc;
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    border: 1px solid #f1f2f7;
+    transition: all 0.2s ease;
+}
+
+.dm-detail-item:hover {
+    background: #fff;
+    border-color: #4f46e5;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.08);
+}
+
+.dm-detail-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    color: #6b7085;
+    font-weight: 700;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.dm-detail-label i { color: #9a9db3; font-size: 0.85rem; }
+
+.dm-detail-value {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #0f172a;
+    margin: 0;
+    word-break: break-word;
+}
+
+/* Edit modal — form */
+.dm-form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.1rem;
+}
+
+.dm-form-row:last-child {
+    margin-bottom: 0;
+}
+
+.dm-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.dm-form-group label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #334155;
+}
+
+.dm-form-group input,
+.dm-form-group select {
+    width: 100%;
+    padding: 0.6rem 0.75rem;
+    font-size: 0.875rem;
+    font-family: 'Inter', sans-serif;
+    color: #0f172a;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    outline: none;
+    box-sizing: border-box;
+    background: #f8fafc;
+    transition: border-color 150ms ease, box-shadow 150ms ease, background 150ms ease;
+}
+
+.dm-form-group input:focus,
+.dm-form-group select:focus {
+    border-color: #93c5fd;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, .12);
+    background: #fff;
+}
+
+@media (max-width: 560px) {
+    .dm-modal--wide {
+        max-width: 94vw;
+    }
+
+    .dm-form-row,
+    .dm-detail-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ── Toast ────────────────────────────────────────────────── */
+.dm-toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: #0f172a;
+    color: #ffffff;
+    padding: 0.75rem 1.1rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, .3);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transform: translateY(20px);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.25s ease, opacity 0.25s ease;
+    z-index: 2100;
+}
+
+.dm-toast.show {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.dm-toast i {
+    color: #34d399;
+}
+
+
+/* ==========================================================================
+   Delete Modal — glassmorphism override (scoped, does NOT affect View/Edit)
+   ========================================================================== */
+#deleteModal {
+    background: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(10px);
+}
+
+#deleteModal .dm-modal--delete {
+    max-width: 430px;
+    padding: 0;
+    border-radius: 22px;
+    overflow: hidden;
+    text-align: center;
+    box-shadow: none;
+    backdrop-filter: blur(18px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  
+    position: relative;
+}
+
+#deleteModal .dm-modal__close--floating {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 32px;
+    height: 32px;
+   
+    border: 1px solid rgba(17, 24, 39, 0.08);
+    color: #111827;
+    z-index: 2;
+}
+
+#deleteModal .dm-modal__close--floating:hover {
+    background: rgba(255, 255, 255, 0.9);
+    color: #dc2626;
+}
+
+#deleteModal .dm-modal__icon--delete {
+    width: 78px;
+    height: 78px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ff5f6d, #ff2d55);
+    box-shadow: 0 10px 25px rgba(255, 45, 85, 0.35);
+    color: #fff;
+    font-size: 34px;
+    margin: 28px auto 18px;
+}
+
+#deleteModal .dm-modal__title--delete {
+    color: #111827;
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0 28px 8px;
+}
+
+#deleteModal .dm-modal__desc--delete {
+    margin: 0;
+    padding: 0 30px 28px;
+    font-size: 15px;
+    line-height: 1.7;
+    color: #4b5563;
+}
+
+#deleteModal .dm-modal__desc--delete strong {
+    color: #111827;
+}
+
+#deleteModal .dm-modal__actions--delete {
+    display: flex;
+    gap: 14px;
+    padding: 22px 28px;
+    background: rgba(248, 250, 252, 0.75);
+    border-top: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+#deleteModal .dm-btn--glass {
+    flex: 1;
+    padding: 14px;
+    border: none;
+    border-radius: 14px;
+    background: #eef2f7;
+    color: #374151;
+    font-size: 15px;
+    font-weight: 600;
+    justify-content: center;
+    transition: 0.3s;
+}
+
+#deleteModal .dm-btn--glass:hover {
+    background: #e2e8f0;
+}
+
+#deleteModal .dm-btn--danger-gradient {
+    flex: 1;
+    padding: 14px;
+    border: none;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    justify-content: center;
+    box-shadow: 0 12px 25px rgba(220, 38, 38, 0.35);
+    transition: 0.3s;
+}
+
+#deleteModal .dm-btn--danger-gradient:hover {
+    transform: translateY(-1px);
+   
+}
+
+@media (max-width: 540px) {
+    #deleteModal .dm-modal--delete {
+        max-width: 92%;
+    }
+}
