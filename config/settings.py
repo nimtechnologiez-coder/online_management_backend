@@ -59,6 +59,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "studentapp.middleware.NoCacheMiddleware",
     "studentapp.middleware.AdminRequiredMiddleware",
+    "studentapp.middleware.SimpleRateLimitMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -223,23 +224,31 @@ SESSION_ENGINE = "django.contrib.sessions.backends.db"
 
 SESSION_COOKIE_NAME = "sessionid"
 
-SESSION_COOKIE_AGE = 86400  # 1 day (24 hours)
+SESSION_COOKIE_AGE = 172800  # 2 days (48 hours)
 
 SESSION_SAVE_EVERY_REQUEST = True
 
-SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 
 SESSION_COOKIE_SAMESITE = "Lax"
-SESSION_COOKIE_SECURE = False
+SESSION_COOKIE_SECURE = not DEBUG
 SESSION_COOKIE_HTTPONLY = True
 
 # ==================================================
 # CSRF SETTINGS
 # ==================================================
 
-CSRF_COOKIE_SECURE = False
-
+CSRF_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_HTTPONLY = True
 CSRF_COOKIE_SAMESITE = "Lax"
+
+# ==================================================
+# PRODUCTION SECURITY HEADERS
+# ==================================================
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+SECURE_BROWSER_XSS_FILTER = not DEBUG
+SECURE_CONTENT_TYPE_NOSNIFF = not DEBUG
+X_FRAME_OPTIONS = "DENY"
 
 # Allow large JSON payload uploads (e.g., base64 profile pictures & cover photos)
 # ==================================================

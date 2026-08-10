@@ -55,3 +55,52 @@ class AdminRequiredMiddleware:
                 return redirect('admin_login')
 
         return self.get_response(request)
+
+
+from django.core.cache import cache
+from django.http import JsonResponse
+
+class SimpleRateLimitMiddleware:
+    """
+    Cache-based rate limiting middleware.
+    Limits request rates per IP:
+    - Sensitive endpoints (Login, OTP Send): 5 requests per minute.
+    - Other API endpoints: 60 requests per minute.
+    """
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        if request.path.startswith('/api/'):
+            # Get IP
+            ip = request.META.get('HTTP_X_FORWARDED_FOR')
+            if ip:
+                ip = ip.split(',')[0].strip()
+            else:
+                ip = request.META.get('REMOTE_ADDR')
+
+            # Identify tight limit endpoints
+            tight_endpoints = [
+                '/api/student/login', '/api/student/login/',
+                '/api/hod/login', '/api/hod/login/',
+                '/api/principal/login', '/api/principal/login/',
+                '/api/student/send-otp', '/api/student/send-otp/',
+                '/api/student/forgot-password/send-otp', '/api/student/forgot-password/send-otp/',
+            ]
+            
+            is_tight = any(request.path.startswith(endpoint) for endpoint in tight_endpoints)
+            limit = 5 if is_tight else 60
+            period = 60  # 1 minute
+
+            cache_key = f"ratelimit:{ip}:{request.path}"
+            request_count = cache.get(cache_key, 0)
+
+            if request_count >= limit:
+                return JsonResponse({
+                    "status": "error",
+                    "message": "Too many requests. Please try again later."
+                }, status=429)
+
+            cache.set(cache_key, request_count + 1, period)
+
+        return self.get_response(request)

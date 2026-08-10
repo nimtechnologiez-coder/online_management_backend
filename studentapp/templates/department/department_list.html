@@ -143,6 +143,17 @@
             </a>
         </div>
 
+        {% if new_credentials %}
+        <div style="background: #ecfdf5; border: 1px solid #10b981; border-radius: 8px; padding: 16px; margin-bottom: 24px; font-family: sans-serif;">
+            <h3 style="color: #065f46; margin: 0 0 8px 0; font-size: 1rem;"><i class="fas fa-check-circle"></i> Department Created Successfully!</h3>
+            <p style="margin: 0; color: #047857; font-size: 0.9rem;">
+                <strong>Username:</strong> <code>{{ new_credentials.username }}</code><br>
+                <strong>Password:</strong> <code>{{ new_credentials.password }}</code><br>
+                <span style="font-size: 0.8rem; color: #065f46;">* Please copy this password now. It will not be shown again.</span>
+            </p>
+        </div>
+        {% endif %}
+
         <!-- ── Stats Cards (computed server-side over full dataset) ── -->
         <div class="dm-stats">
             <div class="dm-stat dm-stat--indigo">

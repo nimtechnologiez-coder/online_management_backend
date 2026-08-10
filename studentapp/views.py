@@ -25,7 +25,7 @@ def _format_time_ago(value):
     return f"{days} day ago"
 
 from django.core.paginator import Paginator
-from django.db.models import Count, Q, Sum, Max
+from django.db.models import Count, Q, Sum, Max, Prefetch
 from django.db.models.functions import TruncMonth
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -827,6 +827,7 @@ def department_management(request):
         "active_count": active_count,
         "inactive_count": inactive_count,
         "college_count": college_count,
+        "new_credentials": request.session.pop('new_department_credentials', None),
     }
 
     return render(
@@ -920,8 +921,12 @@ def department_add(request):
                         hod_phone=hod_phone,
                         status=status,
                         username=username,
-                        password=password
+                        password=make_password(password)
                     )
+                    request.session['new_department_credentials'] = {
+                        'username': username,
+                        'password': password,
+                    }
                     return redirect('department_management')
                 except IntegrityError:
                     error = "Could not create department — one of the values conflicts with an existing record."
@@ -979,7 +984,7 @@ def department_edit(request, id):
             department.status = status
             department.username = username
             if password:
-                department.password = password
+                department.password = make_password(password)
 
             try:
                 department.save()
@@ -1138,7 +1143,7 @@ def principal_add(request):
                     college=college,
                     status=status,
                     username=username,
-                    password=password,
+                    password=make_password(password),
                 )
                 # Store credentials in session so management page can show them
                 request.session['new_principal_credentials'] = {
@@ -1346,20 +1351,20 @@ def student_signup(request):
 
 @csrf_exempt
 def send_otp(request):
-    """
-    1. send_otp API: Sends OTP code to student email.
-    Features 60s resend cooldown and 10-minute expiry.
-    """
     if request.method != "POST":
         return JsonResponse({"status": "error", "message": "POST method required"}, status=405)
 
     try:
-        data = json.loads(request.body) if request.content_type == "application/json" else request.POST
+        data = json.loads(request.body) if "application/json" in getattr(request, 'content_type', '') else request.POST
         email = data.get("email", "").strip().lower()
         full_name = data.get("full_name", "").strip() or email.split('@')[0]
 
         if not email:
             return JsonResponse({"status": "error", "message": "Email address is required."}, status=400)
+
+        # Allow signup only for new email address. Reject already verified emails.
+        if Student.objects.filter(email__iexact=email, is_verified=True).exists():
+            return JsonResponse({"status": "error", "message": "Email already exists. Please login."}, status=400)
 
         # 60s Cooldown Check
         student = Student.objects.filter(email__iexact=email).first()
@@ -1371,6 +1376,11 @@ def send_otp(request):
 
         # Generate 6-digit OTP
         otp = f"{random.randint(100000, 999999)}"
+
+        # Always print OTP code in server console logs
+        print("\n" + "=" * 60)
+        print(f"  [REGISTRATION OTP] Email: {email} | Code: {otp}")
+        print("=" * 60 + "\n")
 
         # Get default college & department fallback for temp OTP creation
         default_college = College.objects.first()
@@ -1395,24 +1405,82 @@ def send_otp(request):
                 status="pending_approval"
             )
 
-        # Send Email OTP via SMTP / Brevo REST API
+        # Send OTP email via Brevo REST API only
         subject = f"Your Verification Code: {otp}"
-        message = f"Hello {full_name},\n\nYour OTP for registration verification is: {otp}\n\nThis code will expire in 10 minutes."
-        email_sent = False
+        html_content = f"""
+        <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:24px;background:#f9f9f9;border-radius:8px;">
+          <h2 style="color:#6c3ef0;margin-bottom:8px;">EduPortal - Email Verification</h2>
+          <p style="color:#333;">Hello <strong>{full_name}</strong>,</p>
+          <p style="color:#333;">Your OTP verification code for student registration is:</p>
+          <div style="background:#6c3ef0;color:#fff;font-size:32px;font-weight:bold;letter-spacing:8px;text-align:center;padding:16px 24px;border-radius:8px;margin:16px 0;">
+            {otp}
+          </div>
+          <p style="color:#666;font-size:13px;">This code expires in <strong>10 minutes</strong>. Do not share it with anyone.</p>
+          <hr style="border:none;border-top:1px solid #eee;margin:16px 0;">
+          <p style="color:#999;font-size:11px;">If you did not request this, ignore this email.</p>
+        </div>
+        """
+        plain_message = f"Hello {full_name},\n\nYour OTP for registration verification is: {otp}\n\nThis code will expire in 10 minutes."
 
+        import urllib.request, urllib.error
+        from django.conf import settings as django_settings
+
+        api_key = (getattr(django_settings, 'BREVO_API_KEY', '') or '').strip()
+        sender_email = (getattr(django_settings, 'DEFAULT_FROM_EMAIL', '') or '').strip()
+
+        if not api_key:
+            return JsonResponse({"status": "error", "message": "Email service not configured. Please contact support."}, status=500)
+
+        payload = json.dumps({
+            "sender": {"name": "EduPortal LMS", "email": sender_email},
+            "to": [{"email": email, "name": full_name}],
+            "subject": subject,
+            "htmlContent": html_content,
+            "textContent": plain_message,
+        }).encode("utf-8")
+
+        req = urllib.request.Request(
+            "https://api.brevo.com/v3/smtp/email",
+            data=payload,
+            headers={
+                "accept": "application/json",
+                "api-key": api_key,
+                "content-type": "application/json",
+            },
+            method="POST",
+        )
         try:
-            from django.conf import settings
-            from django.core.mail import send_mail
-            from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'moontonabin@gmail.com')
-            send_mail(subject, message, from_email, [email], fail_silently=False)
-            email_sent = True
-        except Exception as mail_err:
-            print(f"[MAIL ERROR] {mail_err}")
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                resp_body = resp.read()
+        except urllib.error.HTTPError as brevo_http_err:
+            err_body = brevo_http_err.read().decode()
+            print(f"[BREVO API ERROR] HTTP {brevo_http_err.code}: {err_body}")
+            if django_settings.DEBUG:
+                print(f"[DEBUG FALLBACK] Allowing OTP code '{otp}' verification on console for testing.")
+                return JsonResponse({
+                    "status": "success",
+                    "message": f"[Debug Mode] OTP code generated. Check server console for code.",
+                })
+            return JsonResponse({
+                "status": "error",
+                "message": f"Failed to send OTP email. Brevo error {brevo_http_err.code}: {err_body[:200]}"
+            }, status=500)
+        except Exception as brevo_err:
+            print(f"[BREVO API ERROR] {brevo_err}")
+            if django_settings.DEBUG:
+                print(f"[DEBUG FALLBACK] Allowing OTP code '{otp}' verification on console for testing.")
+                return JsonResponse({
+                    "status": "success",
+                    "message": f"[Debug Mode] OTP code generated. Check server console for code.",
+                })
+            return JsonResponse({
+                "status": "error",
+                "message": "Failed to send OTP email. Please try again."
+            }, status=500)
 
         return JsonResponse({
             "status": "success",
-            "message": "OTP verification code sent to your email.",
-            "email_sent": email_sent
+            "message": f"OTP verification code sent to {email}. Please check your inbox.",
         })
     except Exception as e:
         import traceback
@@ -1429,7 +1497,7 @@ def verify_otp(request):
         return JsonResponse({"status": "error", "message": "POST method required"}, status=405)
 
     try:
-        data = json.loads(request.body) if request.content_type == "application/json" else request.POST
+        data = json.loads(request.body) if "application/json" in getattr(request, 'content_type', '') else request.POST
         email = data.get("email", "").strip().lower()
         otp_code = data.get("otp_code", "").strip()
 
@@ -1440,17 +1508,27 @@ def verify_otp(request):
         if not student:
             return JsonResponse({"status": "error", "message": "Student account record not found. Please request OTP again."}, status=404)
 
+        # Check attempts limit
+        if student.otp_attempts >= 5:
+            return JsonResponse({"status": "error", "message": "Too many failed OTP attempts. Please request a new OTP."}, status=429)
+
         # 10-Minute Expiry Check
         if student.otp_created_at:
             elapsed_minutes = (timezone.now() - student.otp_created_at).total_seconds() / 60
             if elapsed_minutes > 10:
                 return JsonResponse({"status": "error", "message": "OTP code has expired (valid for 10 minutes). Please request a new OTP."}, status=400)
 
-        # Tracking attempts (assuming field exists or logic handling)
         if str(student.otp_code).strip() != otp_code:
-            student.otp_attempts = getattr(student, 'otp_attempts', 0) + 1
+            student.otp_attempts += 1
             student.save()
-            return JsonResponse({"status": "error", "message": "Invalid OTP code provided. Please check your email and try again."}, status=400)
+            remaining = 5 - student.otp_attempts
+            if remaining <= 0:
+                return JsonResponse({"status": "error", "message": "Too many failed OTP attempts. Please request a new OTP."}, status=429)
+            return JsonResponse({"status": "error", "message": f"Invalid OTP code provided. {remaining} attempts remaining."}, status=400)
+
+        # Success - reset attempts
+        student.otp_attempts = 0
+        student.save()
 
         return JsonResponse({
             "status": "success",
@@ -1471,7 +1549,7 @@ def create_student_account(request):
         return JsonResponse({"status": "error", "message": "POST method required"}, status=405)
 
     try:
-        data = json.loads(request.body) if request.content_type == "application/json" else request.POST
+        data = json.loads(request.body) if "application/json" in getattr(request, 'content_type', '') else request.POST
 
         full_name = data.get("full_name", "").strip()
         email = data.get("email", "").strip().lower()
@@ -1494,7 +1572,7 @@ def create_student_account(request):
         if is_already_registered:
             return JsonResponse({
                 "status": "error",
-                "message": "This email is already registered. Please log in."
+                "message": "Email already exists. Please login."
             }, status=400)
 
         college = College.objects.filter(id=college_id).first() if college_id else None
@@ -1529,7 +1607,7 @@ def create_student_account(request):
             student.department = dept
             student.year = year
             student.username = email
-            student.password = password
+            student.password = make_password(password)
             student.is_verified = True
             student.status = "active"
             student.otp_code = None
@@ -1546,7 +1624,7 @@ def create_student_account(request):
                 join_date=today,
                 end_date=computed_end_date,
                 username=email,
-                password=password,
+                password=make_password(password),
                 is_verified=True,
                 status="active"
             )
@@ -1565,13 +1643,13 @@ def create_student_account(request):
 @csrf_exempt
 def forgot_password_send_otp(request):
     """
-    Step 1: Verify registered email and send password reset OTP.
+    Step 1: Verify registered, verified, and active email and send password reset OTP.
     """
     if request.method != "POST":
         return JsonResponse({"status": "error", "message": "POST method required"}, status=405)
 
     try:
-        data = json.loads(request.body) if request.content_type == "application/json" else request.POST
+        data = json.loads(request.body) if "application/json" in getattr(request, 'content_type', '') else request.POST
         email = data.get("email", "").strip().lower()
 
         if not email:
@@ -1579,63 +1657,113 @@ def forgot_password_send_otp(request):
 
         student = Student.objects.filter(email__iexact=email).first()
         if not student:
-            return JsonResponse({"status": "error", "message": "Email not found. Please enter your registered email address."}, status=404)
+            return JsonResponse({"status": "error", "message": "This email address is not registered."}, status=404)
+
+        if not student.is_verified:
+            return JsonResponse({"status": "error", "message": "Email is not verified. Please complete OTP verification first."}, status=403)
+
+        if student.status != "active":
+            return JsonResponse({"status": "error", "message": f"Account is currently {student.status}. Please contact administrator."}, status=403)
 
         # Generate 6-digit OTP
         import random
         otp = str(random.randint(100000, 999999))
         student.otp_code = otp
         student.otp_created_at = timezone.now()
+        student.otp_attempts = 0
         student.save()
 
-        # Send Email OTP via SMTP / Brevo REST API
+        # Always print OTP code in server console logs
+        print("\n" + "=" * 60)
+        print(f"  [FORGOT PASSWORD OTP] Email: {email} | Code: {otp}")
+        print("=" * 60 + "\n")
+
+        # Send Email OTP via Brevo REST API (primary - no IP restriction)
         subject = f"Your Password Reset Code: {otp}"
-        message = f"Hello {student.full_name},\n\nYour OTP for resetting your password is: {otp}\n\nThis code will expire in 10 minutes."
-        email_sent = False
+        html_content = f"""
+        <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:24px;background:#f9f9f9;border-radius:8px;">
+          <h2 style="color:#6c3ef0;margin-bottom:8px;">EduPortal - Password Reset</h2>
+          <p style="color:#333;">Hello <strong>{student.full_name}</strong>,</p>
+          <p style="color:#333;">Your OTP code to reset your password is:</p>
+          <div style="background:#6c3ef0;color:#fff;font-size:32px;font-weight:bold;letter-spacing:8px;text-align:center;padding:16px 24px;border-radius:8px;margin:16px 0;">
+            {otp}
+          </div>
+          <p style="color:#666;font-size:13px;">This code expires in <strong>10 minutes</strong>. Do not share it with anyone.</p>
+          <hr style="border:none;border-top:1px solid #eee;margin:16px 0;">
+          <p style="color:#999;font-size:11px;">If you did not request a password reset, ignore this email.</p>
+        </div>
+        """
+        plain_message = f"Hello {student.full_name},\n\nYour OTP for resetting your password is: {otp}\n\nThis code will expire in 10 minutes."
 
+        import urllib.request, urllib.error
+        from django.conf import settings as django_settings
+
+        api_key = (getattr(django_settings, 'BREVO_API_KEY', '') or '').strip()
+        sender_email = (getattr(django_settings, 'DEFAULT_FROM_EMAIL', '') or '').strip()
+
+        if not api_key:
+            if django_settings.DEBUG:
+                print("[DEBUG FALLBACK] Brevo API key not configured, allowing console OTP fallback.")
+                return JsonResponse({
+                    "status": "success",
+                    "message": "If your email is registered and verified, a password reset OTP code has been sent.",
+                    "email": email,
+                })
+            return JsonResponse({"status": "error", "message": "Email service not configured. Please contact support."}, status=500)
+
+        payload = json.dumps({
+            "sender": {"name": "EduPortal LMS", "email": sender_email},
+            "to": [{"email": email, "name": student.full_name}],
+            "subject": subject,
+            "htmlContent": html_content,
+            "textContent": plain_message,
+        }).encode("utf-8")
+
+        req = urllib.request.Request(
+            "https://api.brevo.com/v3/smtp/email",
+            data=payload,
+            headers={
+                "accept": "application/json",
+                "api-key": api_key,
+                "content-type": "application/json",
+            },
+            method="POST",
+        )
         try:
-            from django.conf import settings
-            from django.core.mail import send_mail
-            from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'divv26979@gmail.com')
-            send_mail(subject, message, from_email, [email], fail_silently=False)
-            email_sent = True
-        except Exception as mail_err:
-            print("SMTP send error in password reset:", mail_err)
-
-        if not email_sent:
-            try:
-                import urllib.request
-                from django.conf import settings
-                api_key = getattr(settings, 'BREVO_API_KEY', '')
-                sender_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'divv26979@gmail.com')
-                
-                payload = json.dumps({
-                    "sender": {"name": "Educational Portal", "email": sender_email},
-                    "to": [{"email": email, "name": student.full_name}],
-                    "subject": subject,
-                    "textContent": message
-                }).encode('utf-8')
-
-                req = urllib.request.Request(
-                    "https://api.brevo.com/v3/smtp/email",
-                    data=payload,
-                    headers={
-                        "accept": "application/json",
-                        "api-key": api_key,
-                        "content-type": "application/json"
-                    },
-                    method="POST"
-                )
-                with urllib.request.urlopen(req) as resp:
-                    print("Brevo API Email Dispatch status:", resp.status)
-                    email_sent = True
-            except Exception as brevo_err:
-                print("Brevo API password reset email dispatch error:", brevo_err)
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                resp_body = resp.read()
+        except urllib.error.HTTPError as brevo_http_err:
+            err_body = brevo_http_err.read().decode()
+            print(f"[BREVO API ERROR] HTTP {brevo_http_err.code}: {err_body}")
+            if django_settings.DEBUG:
+                print(f"[DEBUG FALLBACK] Allowing OTP code '{otp}' verification on console for testing.")
+                return JsonResponse({
+                    "status": "success",
+                    "message": f"Password reset OTP code sent successfully to {email}.",
+                    "email": email,
+                })
+            return JsonResponse({
+                "status": "error",
+                "message": f"Failed to send OTP email. Brevo error {brevo_http_err.code}: {err_body[:200]}"
+            }, status=500)
+        except Exception as brevo_err:
+            print(f"[BREVO API ERROR] {brevo_err}")
+            if django_settings.DEBUG:
+                print(f"[DEBUG FALLBACK] Allowing OTP code '{otp}' verification on console for testing.")
+                return JsonResponse({
+                    "status": "success",
+                    "message": f"Password reset OTP code sent successfully to {email}.",
+                    "email": email,
+                })
+            return JsonResponse({
+                "status": "error",
+                "message": "Failed to send OTP email. Please try again."
+            }, status=500)
 
         return JsonResponse({
             "status": "success",
             "message": f"Password reset OTP code sent successfully to {email}.",
-            "email": email
+            "email": email,
         })
     except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)}, status=500)
@@ -1650,19 +1778,31 @@ def forgot_password_verify_otp(request):
         return JsonResponse({"status": "error", "message": "POST method required"}, status=405)
 
     try:
-        data = json.loads(request.body) if request.content_type == "application/json" else request.POST
+        data = json.loads(request.body) if "application/json" in getattr(request, 'content_type', '') else request.POST
         email = data.get("email", "").strip().lower()
         otp_code = data.get("otp_code", "").strip()
 
         if not email or not otp_code:
             return JsonResponse({"status": "error", "message": "Email and OTP Code are required."}, status=400)
 
-        student = Student.objects.filter(email__iexact=email).first()
+        # Allow password reset verify only for students who completed Signup, verification, and are active
+        student = Student.objects.filter(email__iexact=email, is_verified=True, status="active").first()
         if not student:
-            return JsonResponse({"status": "error", "message": "Student account not found."}, status=404)
-
-        if student.otp_code != otp_code:
             return JsonResponse({"status": "error", "message": "Invalid OTP code provided. Please check your email and try again."}, status=400)
+
+        if student.otp_attempts >= 5:
+            return JsonResponse({"status": "error", "message": "Too many failed OTP attempts. Please request a new OTP."}, status=429)
+
+        if not student.otp_code or student.otp_code != otp_code:
+            student.otp_attempts += 1
+            student.save()
+            remaining = 5 - student.otp_attempts
+            if remaining <= 0:
+                return JsonResponse({"status": "error", "message": "Too many failed OTP attempts. Please request a new OTP."}, status=429)
+            return JsonResponse({"status": "error", "message": f"Invalid OTP code provided. {remaining} attempts remaining."}, status=400)
+
+        student.otp_attempts = 0
+        student.save()
 
         return JsonResponse({
             "status": "success",
@@ -1681,27 +1821,29 @@ def forgot_password_reset(request):
         return JsonResponse({"status": "error", "message": "POST method required"}, status=405)
 
     try:
-        data = json.loads(request.body) if request.content_type == "application/json" else request.POST
+        data = json.loads(request.body) if "application/json" in getattr(request, 'content_type', '') else request.POST
         email = data.get("email", "").strip().lower()
         otp_code = data.get("otp_code", "").strip()
         new_password = data.get("new_password", "").strip()
         confirm_password = data.get("confirm_password", "").strip()
 
-        if not email or not new_password or not confirm_password:
+        if not email or not new_password or not confirm_password or not otp_code:
             return JsonResponse({"status": "error", "message": "All fields are required."}, status=400)
 
         if new_password != confirm_password:
             return JsonResponse({"status": "error", "message": "Passwords do not match."}, status=400)
 
-        student = Student.objects.filter(email__iexact=email).first()
+        # Allow password reset only for students who completed Signup, verification, and are active
+        student = Student.objects.filter(email__iexact=email, is_verified=True, status="active").first()
         if not student:
             return JsonResponse({"status": "error", "message": "Student account not found."}, status=404)
 
-        if student.otp_code and student.otp_code != otp_code:
+        if not student.otp_code or student.otp_code != otp_code:
             return JsonResponse({"status": "error", "message": "Invalid or expired OTP session."}, status=400)
 
-        student.password = new_password
+        student.password = make_password(new_password)
         student.otp_code = None
+        student.otp_attempts = 0
         student.save()
 
         return JsonResponse({
@@ -2355,7 +2497,7 @@ def reports(request):
 # ------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
-
+import secrets
 
 @csrf_exempt
 def principal_login(request):
@@ -2373,19 +2515,28 @@ def principal_login(request):
 
         principal = Principal.objects.select_related("college").filter(
             username=username,
-            password=password,
             status="active"
         ).first()
 
-        if principal is None:
+        if principal is None or not verify_and_upgrade_password(password, principal.password, principal):
             return JsonResponse({
                 "status": "error",
                 "message": "Invalid Username or Password"
             }, status=401)
 
+        token = secrets.token_hex(32)
+        now = timezone.now()
+        expires_at = now + timedelta(days=2)
+        login_time_ms = int(now.timestamp() * 1000)
+        expires_at_ms = int(expires_at.timestamp() * 1000)
+
         request.session.flush()
         request.session["principal_id"] = principal.id
         request.session["college_id"] = principal.college.id
+        request.session["token"] = token
+        request.session["login_time"] = login_time_ms
+        request.session["token_expires_at"] = expires_at_ms
+        request.session.set_expiry(172800)  # 2 days in seconds
         request.session.save()
 
         print("Session Created:", request.session.session_key)
@@ -2394,11 +2545,17 @@ def principal_login(request):
         return JsonResponse({
             "status": "success",
             "message": "Login Successful",
+            "token": token,
+            "expires_at": expires_at.isoformat(),
+            "expires_in": 172800,
             "data": {
                 "id": principal.id,
                 "principal_name": principal.principal_name,
                 "college_id": principal.college.id,
                 "college_name": principal.college.college_name,
+                "token": token,
+                "login_time": login_time_ms,
+                "expires_at": expires_at_ms,
             }
         })
 
@@ -2410,18 +2567,69 @@ def principal_login(request):
 
 
 from .models import Principal
+from django.contrib.auth.hashers import make_password, check_password
+from django.conf import settings
+
+def verify_and_upgrade_password(raw_password, stored_password, user_instance):
+    if not raw_password or not stored_password:
+        return False
+    if stored_password.startswith("pbkdf2_") or stored_password.startswith("bcrypt") or stored_password.startswith("argon2"):
+        return check_password(raw_password, stored_password)
+    else:
+        if raw_password == stored_password:
+            user_instance.password = make_password(raw_password)
+            user_instance.save(update_fields=["password"])
+            return True
+    return False
+
+def get_authenticated_student(request):
+    session_student_id = request.session.get("student_id")
+    header_student_id = request.headers.get("X-Student-Id") or request.GET.get("student_id")
+    
+    if not settings.DEBUG or session_student_id:
+        if not session_student_id or (header_student_id and str(header_student_id) != str(session_student_id)):
+            return None
+        student_id = session_student_id
+    else:
+        student_id = header_student_id
+
+    if not student_id:
+        if settings.DEBUG:
+            student = Student.objects.filter(status="active", is_verified=True).first()
+            if student:
+                return student
+        return None
+
+    return (
+        Student.objects
+        .select_related("college", "department")
+        .filter(id=student_id, status="active", is_verified=True)
+        .first()
+    )
 
 def get_authenticated_principal(request):
-    principal_id = request.headers.get("X-Principal-Id") or request.session.get("principal_id") or request.GET.get("principal_id")
+    token_expires_at = request.session.get("token_expires_at")
+    if token_expires_at:
+        now_ms = int(timezone.now().timestamp() * 1000)
+        if now_ms > token_expires_at:
+            request.session.flush()
+            return None
 
-    print("Session:", dict(request.session))
-    print("Principal ID:", principal_id)
+    session_principal_id = request.session.get("principal_id")
+    header_principal_id = request.headers.get("X-Principal-Id") or request.GET.get("principal_id")
+
+    if not settings.DEBUG or session_principal_id:
+        if not session_principal_id or (header_principal_id and str(header_principal_id) != str(session_principal_id)):
+            return None
+        principal_id = session_principal_id
+    else:
+        principal_id = header_principal_id
 
     if not principal_id:
-        # Development fallback: use active principal if session/headers are missing
-        principal = Principal.objects.filter(status="active").first()
-        if principal:
-            return principal
+        if settings.DEBUG:
+            principal = Principal.objects.filter(status="active").first()
+            if principal:
+                return principal
         return None
 
     return Principal.objects.select_related("college").filter(
@@ -2430,8 +2638,9 @@ def get_authenticated_principal(request):
     ).first()
 
 def api_principal_dashboard(request):
-    from collections import Counter
-    import re
+    from django.db.models import Count, Sum, Q
+    from django.db.models.functions import TruncDay
+    from datetime import timedelta
 
     try:
         principal = get_authenticated_principal(request)
@@ -2443,89 +2652,105 @@ def api_principal_dashboard(request):
             }, status=401)
 
         college = principal.college
+        if not college:
+            return JsonResponse({"status": "error", "message": "College not assigned to Principal"}, status=400)
 
+        # 1. Summary Metrics
         college_students = Student.objects.filter(college=college)
         total_students = college_students.count()
         active_students = college_students.filter(status="active").count()
-        total_videos = Video.objects.count()
 
-        watches_qs = VideoWatch.objects.filter(student__college=college).select_related("student", "video")
+        college_hods = Department.objects.filter(college=college)
+        college_videos = Video.objects.filter(Q(uploaded_by_hod__in=college_hods) | Q(watch_history__student__college=college)).distinct()
+        total_videos = college_videos.count()
+
+        watches_qs = VideoWatch.objects.filter(student__college=college)
         total_views = watches_qs.count()
 
-        # Calculate real watch hours
-        total_watch_seconds = 0
-        for w in watches_qs:
-            if getattr(w, "watched_seconds", 0) > 0:
-                total_watch_seconds += w.watched_seconds
-            elif w.video and w.video.duration:
-                m = re.search(r'\d+', str(w.video.duration))
-                if m:
-                    total_watch_seconds += int(m.group()) * 60
-
-        watch_hours = round(total_watch_seconds / 3600, 1)
-        watch_time_str = f"{watch_hours} Hours" if watch_hours >= 1 else f"{round(total_watch_seconds / 60)} Mins"
+        sum_seconds = watches_qs.aggregate(total_sec=Sum("watched_seconds"))["total_sec"] or 0
+        watch_hours = round(sum_seconds / 3600, 1)
+        watch_time_str = f"{watch_hours} Hours" if watch_hours >= 1 else f"{round(sum_seconds / 60)} Mins"
 
         engagement_rate = round((active_students / total_students) * 100, 1) if total_students > 0 else 0.0
 
-        recent_views_qs = watches_qs.select_related("student__department").order_by("-watched_at")[:10]
+        # 2. Recent Views
+        recent_views_qs = watches_qs.select_related("student__department", "video").order_by("-watched_at")[:10]
         recent_views_data = [
             {
                 "student": rw.student.full_name if rw.student else "Student",
                 "department": rw.student.department.dept_name if (rw.student and rw.student.department) else "N/A",
                 "video": rw.video.title if rw.video else "N/A",
                 "watchTime": rw.video.duration if rw.video else "N/A",
-                "lastViewed": _format_time_ago(rw.watched_at) if getattr(rw, 'watched_at', None) else "Recently",
+                "lastViewed": _format_time_ago(rw.watched_at) if getattr(rw, "watched_at", None) else "Recently",
             }
             for rw in recent_views_qs
         ]
 
-        latest_videos_qs = Video.objects.all().order_by("-uploaded_at")[:5]
+        # 3. Latest Videos with annotated view counts in single query
+        latest_videos_qs = college_videos.annotate(
+            college_views=Count("watch_history", filter=Q(watch_history__student__college=college))
+        ).order_by("-uploaded_at")[:5]
+
         latest_videos_data = [
             {
                 "title": v.title,
                 "category": v.category or "General",
                 "duration": v.duration or "N/A",
-                "views": v.views or 0,
-                "uploadDate": v.uploaded_at.strftime("%Y-%m-%d") if getattr(v, 'uploaded_at', None) else "Recently",
-                "thumbnail": request.build_absolute_uri(v.thumbnail.url) if getattr(v, 'thumbnail', None) and hasattr(v.thumbnail, 'url') else None,
+                "views": getattr(v, "college_views", 0),
+                "uploadDate": v.uploaded_at.strftime("%Y-%m-%d") if getattr(v, "uploaded_at", None) else "Recently",
+                "thumbnail": request.build_absolute_uri(v.thumbnail.url) if getattr(v, "thumbnail", None) and hasattr(v.thumbnail, "url") and v.thumbnail else None,
             }
             for v in latest_videos_qs
         ]
 
+        # 4. Daily Views (7 Days) aggregated in single SQL query
         today = timezone.localdate()
+        seven_days_ago = today - timedelta(days=6)
+        seven_days_start = timezone.make_aware(timezone.datetime.combine(seven_days_ago, timezone.datetime.min.time()))
+
+        daily_counts_qs = (
+            watches_qs.filter(watched_at__gte=seven_days_start)
+            .annotate(day_date=TruncDay("watched_at"))
+            .values("day_date")
+            .annotate(day_views=Count("id"))
+        )
+        counts_by_date = {
+            item["day_date"].date() if hasattr(item["day_date"], "date") else item["day_date"]: item["day_views"]
+            for item in daily_counts_qs
+        }
+
         daily_views = []
         for offset in range(6, -1, -1):
-            day = today - timedelta(days=offset)
-            day_start = timezone.make_aware(timezone.datetime.combine(day, timezone.datetime.min.time()))
-            day_end = day_start + timedelta(days=1)
-            count = watches_qs.filter(
-                watched_at__gte=day_start,
-                watched_at__lt=day_end,
-            ).count()
-            daily_views.append({"day": day.strftime("%b %d"), "views": count})
+            d = today - timedelta(days=offset)
+            daily_views.append({"day": d.strftime("%b %d"), "views": counts_by_date.get(d, 0)})
 
-        category_counts = Counter(
-            watch.video.category
-            for watch in watches_qs
-            if watch.video and watch.video.category
+        # 5. Top Categories aggregated directly in SQL
+        cat_qs = (
+            watches_qs.filter(video__category__isnull=False)
+            .exclude(video__category="")
+            .values("video__category")
+            .annotate(cat_count=Count("id"))
+            .order_by("-cat_count")[:5]
         )
         palette = ["#6366f1", "#0d9488", "#f59e0b", "#10b981", "#8b5cf6", "#ec4899"]
         top_categories = [
             {
-                "name": category,
-                "value": count,
-                "color": palette[index % len(palette)],
+                "name": item["video__category"],
+                "value": item["cat_count"],
+                "color": palette[idx % len(palette)],
             }
-            for index, (category, count) in enumerate(category_counts.most_common(5))
+            for idx, item in enumerate(cat_qs)
         ]
 
-        # Department Performance Analytics
-        departments = Department.objects.filter(college=college) if college else []
+        # 6. Department Performance aggregated with single annotated query
+        departments_qs = Department.objects.filter(college=college).annotate(
+            students_cnt=Count("students", distinct=True),
+            views_cnt=Count("students__watch_history", distinct=True)
+        )
         dept_performance = []
-        for dept in departments:
-            dept_students = Student.objects.filter(college=college, department=dept)
-            std_count = dept_students.count()
-            dept_views = VideoWatch.objects.filter(student__in=dept_students).count()
+        for dept in departments_qs:
+            std_count = dept.students_cnt
+            dept_views = dept.views_cnt
             comp_rate = round((dept_views / (std_count * max(total_videos, 1))) * 100) if std_count > 0 else 0
             dept_performance.append({
                 "name": dept.dept_name,
@@ -2536,19 +2761,20 @@ def api_principal_dashboard(request):
                 "hod": dept.hod_name or "N/A",
             })
 
-        # Live Activity Feed
-        live_activities = []
-        for w in watches_qs.order_by("-watched_at")[:6]:
-            student_name = w.student.full_name if w.student else "Student"
-            dept_name = w.student.department.dept_name if (w.student and w.student.department) else "General"
-            live_activities.append({
+        # 7. Live Activity Feed (top 6 recent watches)
+        live_activities = [
+            {
                 "id": f"watch-{w.id}",
                 "type": "watch",
                 "title": "Video Watched",
-                "description": f"{student_name} watched '{w.video.title if w.video else 'Lecture'}'",
-                "time": _format_time_ago(w.watched_at) if getattr(w, 'watched_at', None) else "Recently",
-                "badge": dept_name,
-            })
+                "description": f"{w.student.full_name if w.student else 'Student'} watched '{w.video.title if w.video else 'Lecture'}'",
+                "time": _format_time_ago(w.watched_at) if getattr(w, "watched_at", None) else "Recently",
+                "badge": w.student.department.dept_name if (w.student and w.student.department) else "General",
+            }
+            for w in recent_views_qs[:6]
+        ]
+
+        principal_name = getattr(principal, "principal_name", None) or getattr(principal, "username", "Principal")
 
         return JsonResponse({
             "status": "success",
@@ -2567,8 +2793,8 @@ def api_principal_dashboard(request):
                 "recentViews": recent_views_data,
                 "departmentPerformance": dept_performance,
                 "liveActivities": live_activities,
-                "collegeName": college.college_name if college else "Institutional Portal",
-                "principalName": principal.principal_name if getattr(principal, 'principal_name', None) else getattr(principal, 'username', 'Principal'),
+                "collegeName": college.college_name,
+                "principalName": principal_name,
             }
         })
     except Exception as e:
@@ -2589,9 +2815,13 @@ def api_principal_students(request):
             "message": "Please login"
         }, status=401)
 
+    watches_prefetch = Prefetch(
+        "watch_history",
+        queryset=VideoWatch.objects.select_related("video").order_by("-watched_at")
+    )
     students = Student.objects.filter(
         college=principal.college
-    ).select_related("department", "college")
+    ).select_related("department", "college").prefetch_related(watches_prefetch)
 
     total_videos = Video.objects.count()
     data = []
@@ -2600,22 +2830,26 @@ def api_principal_students(request):
         join_date_value = student.join_date or getattr(student, "created_at", None)
         end_date_value = student.end_date
 
-        student_watches = VideoWatch.objects.filter(student=student).select_related("video")
-        viewed_videos_count = student_watches.values("video").distinct().count()
-        total_student_views = student_watches.count()
+        student_watches = list(student.watch_history.all())
+        unique_video_ids = {sw.video_id for sw in student_watches if sw.video_id}
+        viewed_videos_count = len(unique_video_ids)
+        total_student_views = len(student_watches)
         progress_pct = round((viewed_videos_count / total_videos) * 100) if total_videos > 0 else 0
 
+        recent_sws = student_watches[:4]
         recent_vids = [
             {
                 "title": sw.video.title,
                 "date": _format_time_ago(sw.watched_at)
             }
-            for sw in student_watches.order_by("-watched_at")[:4] if sw.video
+            for sw in recent_sws if sw.video
         ]
         recent_acts = [
             f"Watched '{sw.video.title}' ({_format_time_ago(sw.watched_at)})"
-            for sw in student_watches.order_by("-watched_at")[:4] if sw.video
+            for sw in recent_sws if sw.video
         ]
+
+        last_sw = student_watches[0] if student_watches else None
 
         data.append({
             "id": student.id,
@@ -2635,8 +2869,8 @@ def api_principal_students(request):
             "totalVideos": total_videos,
             "totalViews": total_student_views,
             "progress": min(100, progress_pct),
-            "lastLogin": _format_time_ago(student_watches.order_by("-watched_at").first().watched_at) if student_watches.exists() else "No recent login",
-            "last_viewed": student_watches.order_by("-watched_at").first().watched_at.strftime("%Y-%m-%d") if student_watches.exists() and student_watches.order_by("-watched_at").first().watched_at else (join_date_value.strftime("%Y-%m-%d") if join_date_value else ""),
+            "lastLogin": _format_time_ago(last_sw.watched_at) if last_sw and last_sw.watched_at else "No recent login",
+            "last_viewed": last_sw.watched_at.strftime("%Y-%m-%d") if last_sw and last_sw.watched_at else (join_date_value.strftime("%Y-%m-%d") if join_date_value else ""),
             "recentVideos": recent_vids,
             "recentActivity": recent_acts,
         })
@@ -2758,16 +2992,21 @@ def api_principal_departments(request):
         departments = Department.objects.filter(
             college=principal.college,
             status="active"
+        ).annotate(
+            student_count=Count("students", distinct=True),
+            dept_views=Count("students__watch_history")
         ).order_by("dept_name")
+
+        college_hods = Department.objects.filter(college=principal.college)
+        college_videos = Video.objects.filter(Q(uploaded_by_hod__in=college_hods) | Q(watch_history__student__college=principal.college)).distinct()
+        total_videos = college_videos.count()
 
         dept_colors = ["blue", "indigo", "teal", "emerald", "amber", "purple", "rose"]
         data = []
 
         for idx, dept in enumerate(departments):
-            dept_students = Student.objects.filter(college=principal.college, department=dept)
-            student_count = dept_students.count()
-            dept_views = VideoWatch.objects.filter(student__in=dept_students).count()
-            total_videos = Video.objects.count()
+            student_count = dept.student_count
+            dept_views = dept.dept_views
 
             completion_rate = round((dept_views / (student_count * max(total_videos, 1))) * 100) if student_count > 0 else 0
 
@@ -2807,14 +3046,15 @@ def api_principal_videos(request):
         if not principal:
             return JsonResponse({"status": "error", "message": "Unauthorized"}, status=401)
 
-        # All students in this principal's college
-        college_students = Student.objects.filter(college=principal.college) if (principal and principal.college) else Student.objects.all()
+        # All students & HODs in this principal's college
+        college_students = Student.objects.filter(college=principal.college)
+        college_hods = Department.objects.filter(college=principal.college)
 
         category_param = request.GET.get("category")
         status_param = request.GET.get("status")
         query_param = request.GET.get("q") or request.GET.get("query")
 
-        videos = Video.objects.all().order_by("-uploaded_at")
+        videos = Video.objects.filter(Q(uploaded_by_hod__in=college_hods) | Q(watch_history__student__college=principal.college)).distinct().order_by("-uploaded_at")
         if category_param and category_param != "All Categories":
             videos = videos.filter(category=category_param)
         if status_param and status_param != "All Status":
@@ -2919,7 +3159,9 @@ def api_principal_attendance_reports(request):
             videos_watched = watches.values("video").distinct().count()
 
             # Calculate simulated attendance based on watched videos or default
-            total_videos = Video.objects.count()
+            college_hods = Department.objects.filter(college=principal.college)
+            college_videos = Video.objects.filter(Q(uploaded_by_hod__in=college_hods) | Q(watch_history__student__college=principal.college)).distinct()
+            total_videos = college_videos.count()
             if total_videos > 0:
                 attendance_rate = min(100, round((videos_watched / total_videos) * 100))
             else:
@@ -2998,11 +3240,10 @@ def student_login(request):
 
         # Authenticate against Student model (matches email or username)
         student = Student.objects.filter(
-            Q(email__iexact=email_or_username) | Q(username__iexact=email_or_username),
-            password=password
+            Q(email__iexact=email_or_username) | Q(username__iexact=email_or_username)
         ).first()
 
-        if not student:
+        if not student or not verify_and_upgrade_password(password, student.password, student):
             return JsonResponse({"status": "error", "message": "Invalid email or password. Please check your credentials."}, status=401)
 
         if not student.is_verified:
@@ -3010,6 +3251,10 @@ def student_login(request):
 
         if student.status != "active":
             return JsonResponse({"status": "error", "message": f"Account is currently {student.status}. Please contact administrator."}, status=403)
+
+        request.session.flush()
+        request.session["student_id"] = student.id
+        request.session.save()
 
         student_data = {
             "id": student.id,
@@ -3129,18 +3374,7 @@ def video_stream(request, video_id):
 @csrf_exempt
 def api_student_dashboard(request):
     try:
-        # Identify student strictly via header or session
-        student_id_header = request.headers.get("X-Student-Id") or request.META.get("HTTP_X_STUDENT_ID")
-        student = None
-        if student_id_header and student_id_header != "0":
-            student = Student.objects.filter(id=student_id_header).first()
-
-        if not student:
-            # Fallback to current authenticated student in request session if available
-            student_session_id = request.session.get("student_id")
-            if student_session_id:
-                student = Student.objects.filter(id=student_session_id).first()
-
+        student = get_authenticated_student(request)
         if not student:
             return JsonResponse({"status": "error", "message": "Student session not found. Please log in."}, status=401)
 
@@ -3330,16 +3564,9 @@ def api_student_videos(request):
 @csrf_exempt
 def api_student_watch_history(request):
     try:
-        student_id_header = request.headers.get("X-Student-Id") or request.META.get("HTTP_X_STUDENT_ID")
-        student = None
-        if student_id_header:
-            student = Student.objects.filter(id=student_id_header).first()
-
+        student = get_authenticated_student(request)
         if not student:
-            student = Student.objects.filter(status="active").first()
-
-        if not student:
-            return JsonResponse({"status": "error", "message": "No active student found"}, status=404)
+            return JsonResponse({"status": "error", "message": "Student session not found. Please log in."}, status=401)
 
         history_qs = VideoWatch.objects.filter(student=student).select_related("video").order_by("-watched_at")
 
@@ -3375,10 +3602,7 @@ def api_student_record_watch(request, video_id):
     Rewatches update the timestamp but do NOT add to the count.
     """
     try:
-        student_id_header = request.headers.get("X-Student-Id") or request.META.get("HTTP_X_STUDENT_ID")
-        student = None
-        if student_id_header:
-            student = Student.objects.filter(id=student_id_header).first()
+        student = get_authenticated_student(request)
 
         video = Video.objects.filter(id=video_id).first()
         if not video:
@@ -3422,10 +3646,7 @@ def api_student_save_progress(request, video_id):
         return JsonResponse({"status": "error", "message": "Method not allowed"}, status=405)
     try:
         import json
-        student_id_header = request.headers.get("X-Student-Id") or request.META.get("HTTP_X_STUDENT_ID")
-        student = None
-        if student_id_header:
-            student = Student.objects.filter(id=student_id_header).first()
+        student = get_authenticated_student(request)
         if not student:
             return JsonResponse({"status": "error", "message": "Student not identified"}, status=401)
 
@@ -3462,16 +3683,9 @@ def api_student_save_progress(request, video_id):
 def api_student_delete_watch_history(request, history_id=None):
     """Deletes single watch history item or clears all history for the student."""
     try:
-        student_id_header = request.headers.get("X-Student-Id") or request.META.get("HTTP_X_STUDENT_ID")
-        student = None
-        if student_id_header:
-            student = Student.objects.filter(id=student_id_header).first()
-
+        student = get_authenticated_student(request)
         if not student:
-            student = Student.objects.filter(status="active").first()
-
-        if not student:
-            return JsonResponse({"status": "error", "message": "No active student found"}, status=404)
+            return JsonResponse({"status": "error", "message": "Student session not found. Please log in."}, status=401)
 
         if history_id:
             VideoWatch.objects.filter(id=history_id, student=student).delete()
@@ -3505,19 +3719,7 @@ def api_student_progress(request):
     from django.db.models import Sum, Count
 
     try:
-        student_id_header = request.headers.get("X-Student-Id") or request.META.get("HTTP_X_STUDENT_ID")
-        student = None
-        if student_id_header and student_id_header != "0":
-            try:
-                student = Student.objects.filter(id=int(student_id_header)).first()
-            except (ValueError, TypeError):
-                pass
-
-        if not student:
-            student_session_id = request.session.get("student_id")
-            if student_session_id:
-                student = Student.objects.filter(id=student_session_id).first()
-
+        student = get_authenticated_student(request)
         if not student:
             return JsonResponse({"status": "error", "message": "Student session not found. Please log in."}, status=401)
 
@@ -3786,11 +3988,10 @@ def hod_login(request):
         password = data.get("password", "").strip()
 
         hod = Department.objects.select_related("college").filter(
-            username__iexact=username,
-            password=password
+            username__iexact=username
         ).first()
 
-        if not hod:
+        if not hod or not verify_and_upgrade_password(password, hod.password, hod):
             return JsonResponse({
                 "success": False,
                 "message": "Invalid Username or Password"
@@ -3825,24 +4026,30 @@ def hod_login(request):
 
 
 def get_authenticated_hod(request):
-    hod_id = request.session.get("hod_id")
+    session_hod_id = request.session.get("hod_id")
+    header_hod_id = request.headers.get("X-Hod-Id") or request.GET.get("hod_id")
+
+    if not settings.DEBUG or session_hod_id:
+        if not session_hod_id or (header_hod_id and str(header_hod_id) != str(session_hod_id)):
+            return None
+        hod_id = session_hod_id
+    else:
+        hod_id = header_hod_id
 
     if not hod_id:
-        hod_id = request.headers.get("X-Hod-Id")
+        if settings.DEBUG:
+            dept = Department.objects.select_related("college").filter(status="active").first()
+            if dept:
+                return dept
+        return None
 
-    if not hod_id:
-        hod_id = request.GET.get("hod_id")
-
-    if hod_id:
-        try:
-            return Department.objects.select_related("college").get(
-                id=hod_id,
-                status="active"
-            )
-        except (Department.DoesNotExist, ValueError):
-            pass
-
-    return Department.objects.select_related("college").filter(status="active").first()
+    try:
+        return Department.objects.select_related("college").get(
+            id=hod_id,
+            status="active"
+        )
+    except (Department.DoesNotExist, ValueError):
+        return None
     
 @csrf_exempt
 def api_hod_dashboard(request):
@@ -4538,8 +4745,13 @@ def api_principal_video_approvals(request):
     if request.method != "GET":
         return JsonResponse({"status": "error", "message": "Method not allowed"}, status=405)
 
-    # Filter ONLY HOD uploaded videos for approval queue
-    hod_videos = Video.objects.filter(uploaded_by_hod__isnull=False)
+    principal = get_authenticated_principal(request)
+    if not principal or not principal.college:
+        return JsonResponse({"status": "error", "message": "Unauthorized"}, status=401)
+
+    # Filter ONLY HOD uploaded videos belonging to HODs of principal's college
+    college_hods = Department.objects.filter(college=principal.college)
+    hod_videos = Video.objects.filter(uploaded_by_hod__in=college_hods)
     pending_qs = hod_videos.filter(status="Pending").order_by("-uploaded_at")
     published_qs = hod_videos.filter(status="Published").order_by("-uploaded_at")
     rejected_qs = hod_videos.filter(status="Rejected").order_by("-uploaded_at")
@@ -4584,8 +4796,13 @@ def api_principal_approve_video(request, video_id):
     if request.method not in ["POST", "PUT"]:
         return JsonResponse({"status": "error", "message": "Method not allowed"}, status=405)
 
+    principal = get_authenticated_principal(request)
+    if not principal or not principal.college:
+        return JsonResponse({"status": "error", "message": "Unauthorized"}, status=401)
+
     try:
-        video = Video.objects.get(id=video_id)
+        college_hods = Department.objects.filter(college=principal.college)
+        video = Video.objects.get(id=video_id, uploaded_by_hod__in=college_hods)
         video.status = "Published"
         video.save()
         return JsonResponse({
@@ -4595,7 +4812,7 @@ def api_principal_approve_video(request, video_id):
             "new_status": "Published"
         })
     except Video.DoesNotExist:
-        return JsonResponse({"status": "error", "message": "Video not found"}, status=404)
+        return JsonResponse({"status": "error", "message": "Video not found or unauthorized"}, status=404)
 
 
 @csrf_exempt
@@ -4603,8 +4820,13 @@ def api_principal_reject_video(request, video_id):
     if request.method not in ["POST", "PUT"]:
         return JsonResponse({"status": "error", "message": "Method not allowed"}, status=405)
 
+    principal = get_authenticated_principal(request)
+    if not principal or not principal.college:
+        return JsonResponse({"status": "error", "message": "Unauthorized"}, status=401)
+
     try:
-        video = Video.objects.get(id=video_id)
+        college_hods = Department.objects.filter(college=principal.college)
+        video = Video.objects.get(id=video_id, uploaded_by_hod__in=college_hods)
         video.status = "Rejected"
         video.save()
         return JsonResponse({
@@ -4614,7 +4836,7 @@ def api_principal_reject_video(request, video_id):
             "new_status": "Rejected"
         })
     except Video.DoesNotExist:
-        return JsonResponse({"status": "error", "message": "Video not found"}, status=404)
+        return JsonResponse({"status": "error", "message": "Video not found or unauthorized"}, status=404)
 
 
 @csrf_exempt
