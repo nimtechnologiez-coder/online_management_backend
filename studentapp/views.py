@@ -575,6 +575,230 @@ def admin_login(request):
     return render(request, "login/login.html")
 
 
+def _send_admin_reset_email(email, otp, full_name):
+    from django.conf import settings as django_settings
+    import urllib.request, urllib.error
+    import json
+    
+    subject = f"Admin Password Reset Code: {otp}"
+    html_content = f"""
+    <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:24px;background:#f9f9f9;border-radius:8px;">
+      <h2 style="color:#2563eb;margin-bottom:8px;">EduPortal - Admin Password Reset</h2>
+      <p style="color:#333;">Hello <strong>{full_name}</strong>,</p>
+      <p style="color:#333;">Your OTP verification code to reset your administrator password is:</p>
+      <div style="background:#2563eb;color:#fff;font-size:32px;font-weight:bold;letter-spacing:8px;text-align:center;padding:16px 24px;border-radius:8px;margin:16px 0;">
+        {otp}
+      </div>
+      <p style="color:#666;font-size:13px;">This code expires in <strong>10 minutes</strong>. Do not share it with anyone.</p>
+      <hr style="border:none;border-top:1px solid #eee;margin:16px 0;">
+      <p style="color:#999;font-size:11px;">If you did not request a password reset, ignore this email.</p>
+    </div>
+    """
+    plain_message = f"Hello {full_name},\n\nYour OTP for resetting your administrator password is: {otp}\n\nThis code will expire in 10 minutes."
+
+    api_key = (getattr(django_settings, 'BREVO_API_KEY', '') or '').strip()
+    sender_email = (getattr(django_settings, 'DEFAULT_FROM_EMAIL', '') or '').strip()
+
+    if not api_key:
+        if django_settings.DEBUG:
+            print("\n" + "=" * 60)
+            print(f"  [DEBUG FALLBACK] [ADMIN PASSWORD RESET OTP] Email: {email} | Code: {otp}")
+            print("=" * 60 + "\n")
+            return True
+        return False
+
+    payload = json.dumps({
+        "sender": {"name": "EduPortal LMS", "email": sender_email},
+        "to": [{"email": email, "name": full_name}],
+        "subject": subject,
+        "htmlContent": html_content,
+        "textContent": plain_message,
+    }).encode("utf-8")
+
+    req = urllib.request.Request(
+        "https://api.brevo.com/v3/smtp/email",
+        data=payload,
+        headers={
+            "accept": "application/json",
+            "api-key": api_key,
+            "content-type": "application/json",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            resp.read()
+        return True
+    except Exception as e:
+        print(f"[BREVO ADMIN RESET ERROR] {e}")
+        if django_settings.DEBUG:
+            print("\n" + "=" * 60)
+            print(f"  [DEBUG FALLBACK] [ADMIN PASSWORD RESET OTP] Email: {email} | Code: {otp}")
+            print("=" * 60 + "\n")
+            return True
+        return False
+
+
+def admin_forgot_password(request):
+    if request.user.is_authenticated and (request.user.is_superuser or request.user.is_staff):
+        return redirect("dashboard")
+
+    # Handle explicit start over / reset
+    if request.GET.get("action") == "reset":
+        request.session.pop("admin_reset_email", None)
+        request.session.pop("admin_reset_otp", None)
+        request.session.pop("admin_reset_otp_time", None)
+        request.session.pop("admin_reset_otp_attempts", None)
+        request.session.pop("admin_reset_otp_verified", None)
+        request.session.save()
+        return redirect("admin_forgot_password")
+
+    email = request.session.get("admin_reset_email")
+    otp_verified = request.session.get("admin_reset_otp_verified", False)
+
+    # Determine step
+    if not email:
+        step = 1
+    elif not otp_verified:
+        step = 2
+    else:
+        step = 3
+
+    if request.method == "POST":
+        if step == 1:
+            input_email = request.POST.get("email", "").strip().lower()
+            if not input_email:
+                messages.error(request, "Email address is required.")
+                return redirect("admin_forgot_password")
+
+            # Allow only registered superuser admin emails in the User.email field
+            from django.contrib.auth.models import User
+            admin_user = User.objects.filter(email__iexact=input_email, is_superuser=True).first()
+            if not admin_user:
+                messages.error(request, "This email is not a registered admin email.")
+                return redirect("admin_forgot_password")
+
+            # Generate OTP
+            otp = f"{random.randint(100000, 999999)}"
+            full_name = admin_user.get_full_name() or admin_user.username
+
+            # Send OTP
+            success = _send_admin_reset_email(input_email, otp, full_name)
+            if success:
+                request.session["admin_reset_email"] = input_email
+                request.session["admin_reset_otp"] = otp
+                request.session["admin_reset_otp_time"] = int(timezone.now().timestamp())
+                request.session["admin_reset_otp_attempts"] = 0
+                request.session["admin_reset_otp_verified"] = False
+                request.session.save()
+                messages.success(request, f"A password reset OTP has been sent successfully to {input_email}.")
+            else:
+                messages.error(request, "Unable to send verification email. Please try again.")
+
+            return redirect("admin_forgot_password")
+
+        elif step == 2:
+            action = request.POST.get("action")
+            if action == "resend":
+                # Check cooldown: 60 seconds
+                otp_time = request.session.get("admin_reset_otp_time", 0)
+                seconds_since = int(timezone.now().timestamp()) - otp_time
+                if seconds_since < 60:
+                    remaining = 60 - seconds_since
+                    messages.error(request, f"Please wait {remaining} seconds before requesting another OTP.")
+                    return redirect("admin_forgot_password")
+
+                from django.contrib.auth.models import User
+                admin_user = User.objects.filter(email__iexact=email, is_superuser=True).first()
+                full_name = admin_user.get_full_name() or admin_user.username if admin_user else "Admin"
+
+                otp = f"{random.randint(100000, 999999)}"
+                success = _send_admin_reset_email(email, otp, full_name)
+                if success:
+                    request.session["admin_reset_otp"] = otp
+                    request.session["admin_reset_otp_time"] = int(timezone.now().timestamp())
+                    request.session["admin_reset_otp_attempts"] = 0
+                    request.session.save()
+                    messages.success(request, f"A new password reset OTP has been sent to {email}.")
+                else:
+                    messages.error(request, "Unable to send verification email. Please try again.")
+                return redirect("admin_forgot_password")
+
+            # Verify OTP
+            input_otp = request.POST.get("otp_code", "").strip()
+            if not input_otp:
+                messages.error(request, "OTP code is required.")
+                return redirect("admin_forgot_password")
+
+            # Check attempts
+            attempts = request.session.get("admin_reset_otp_attempts", 0) + 1
+            request.session["admin_reset_otp_attempts"] = attempts
+            request.session.save()
+
+            if attempts > 5:
+                messages.error(request, "Too many failed OTP attempts. Please start over.")
+                return redirect("/admin/forgot-password/?action=reset")
+
+            # Check expiration (10 minutes = 600 seconds)
+            otp_time = request.session.get("admin_reset_otp_time", 0)
+            if int(timezone.now().timestamp()) - otp_time > 600:
+                messages.error(request, "OTP has expired. Please request a new one.")
+                return redirect("/admin/forgot-password/?action=reset")
+
+            stored_otp = request.session.get("admin_reset_otp")
+            if input_otp == stored_otp:
+                request.session["admin_reset_otp_verified"] = True
+                request.session["admin_reset_otp_attempts"] = 0
+                request.session.save()
+                messages.success(request, "OTP verified successfully. Please enter your new password.")
+            else:
+                remaining = 5 - attempts
+                if remaining <= 0:
+                    messages.error(request, "Too many failed OTP attempts. Please start over.")
+                    return redirect("/admin/forgot-password/?action=reset")
+                messages.error(request, f"Invalid OTP code. {remaining} attempts remaining.")
+
+            return redirect("admin_forgot_password")
+
+        elif step == 3:
+            new_password = request.POST.get("new_password", "").strip()
+            confirm_password = request.POST.get("confirm_password", "").strip()
+
+            if not new_password or not confirm_password:
+                messages.error(request, "Password fields are required.")
+                return redirect("admin_forgot_password")
+
+            if new_password != confirm_password:
+                messages.error(request, "Passwords do not match.")
+                return redirect("admin_forgot_password")
+
+            # Reset password
+            from django.contrib.auth.models import User
+            admin_user = User.objects.filter(email__iexact=email, is_superuser=True).first()
+            if not admin_user:
+                messages.error(request, "Admin account not found.")
+                return redirect("/admin/forgot-password/?action=reset")
+
+            admin_user.set_password(new_password)
+            admin_user.save()
+
+            # Clear session
+            request.session.pop("admin_reset_email", None)
+            request.session.pop("admin_reset_otp", None)
+            request.session.pop("admin_reset_otp_time", None)
+            request.session.pop("admin_reset_otp_attempts", None)
+            request.session.pop("admin_reset_otp_verified", None)
+            request.session.save()
+
+            messages.success(request, "Password reset successfully. Please log in with your new password.")
+            return redirect("admin_login")
+
+    return render(request, "login/admin_forgot_password.html", {
+        "step": step,
+        "email": email
+    })
+
+
 @csrf_exempt
 def api_admin_login(request):
     if request.method != "POST":
@@ -1336,11 +1560,6 @@ def get_principal_by_college(request, college_id):
 
 @csrf_exempt
 def student_signup(request):
-    """
-    Student Self-Signup endpoint.
-    Expects: full_name, email, phone, date_of_birth, college_id, department_id, year, password, confirm_password.
-    Sends 6-digit OTP to student's email.
-    """
     if request.method == "GET":
         colleges = College.objects.filter(status="active").order_by("college_name")
         departments = Department.objects.filter(status="active").order_by("dept_name")
@@ -2576,6 +2795,13 @@ def verify_and_upgrade_password(raw_password, stored_password, user_instance):
     return False
 
 def get_authenticated_student(request):
+    student_token_expires_at = request.session.get("student_token_expires_at")
+    if student_token_expires_at:
+        now_ms = int(timezone.now().timestamp() * 1000)
+        if now_ms > student_token_expires_at:
+            request.session.flush()
+            return None
+
     session_student_id = request.session.get("student_id")
     header_student_id = request.headers.get("X-Student-Id") or request.GET.get("student_id")
     
@@ -3248,6 +3474,14 @@ def student_login(request):
 
         request.session.flush()
         request.session["student_id"] = student.id
+        
+        # Set session expiry to 1 day (24 hours = 86400 seconds)
+        now = timezone.now()
+        expires_at = now + timedelta(days=1)
+        expires_at_ms = int(expires_at.timestamp() * 1000)
+        
+        request.session["student_token_expires_at"] = expires_at_ms
+        request.session.set_expiry(86400)  # 24 hours
         request.session.save()
 
         student_data = {

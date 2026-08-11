@@ -5,6 +5,7 @@ urlpatterns = [
 
     path('', views.admin_login, name='home'),
     path('admin/login/', views.admin_login, name='admin_login'),
+    path('admin/forgot-password/', views.admin_forgot_password, name='admin_forgot_password'),
     path('api/admin/login/', views.api_admin_login, name='api_admin_login'),
 
     path('dashboard/', views.dashboard, name='dashboard'),
