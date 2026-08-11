@@ -2212,9 +2212,8 @@ def video_management(request):
         'selected_status': status,
         'total_videos': Video.objects.count(),
         'published_videos': Video.objects.filter(status='Published').count(),
-        'draft_videos': Video.objects.filter(status='Draft').count(),
-        # Dummy value for views for now until an aggregate is added
-        'total_views': "0",
+        'draft_videos': Video.objects.filter(status__in=['Draft', 'Pending']).count(),
+        'total_views': Video.objects.aggregate(total=Sum('views'))['total'] or 0,
     }
 
     if request.GET.get('partial') == '1':
@@ -5132,97 +5131,7 @@ def api_principal_reject_video(request, video_id):
 
 
 
-# ==========================================================
-# DJANGO TEMPLATE VIEWS FOR VIDEO MANAGEMENT (https://online-management-backend.onrender.com/videos/)
-# ==========================================================
 
-from django.core.paginator import Paginator
-from django.shortcuts import render, redirect, get_object_or_404
-
-
-@csrf_exempt
-def video_management(request):
-    q = request.GET.get("q", "").strip()
-    category = request.GET.get("category", "").strip()
-    status = request.GET.get("status", "").strip()
-
-    qs = Video.objects.all().order_by("-uploaded_at")
-
-    if q:
-        qs = qs.filter(title__icontains=q)
-    if category:
-        qs = qs.filter(category=category)
-    if status:
-        qs = qs.filter(status=status)
-
-    total_videos = Video.objects.count()
-    published_videos = Video.objects.filter(status="Published").count()
-    pending_videos = Video.objects.filter(status="Pending").count()
-    draft_videos = Video.objects.filter(status__in=["Draft", "Pending"]).count()
-    total_views = Video.objects.aggregate(total=Sum("views"))["total"] or 0
-
-    paginator = Paginator(qs, 10)
-    page_number = request.GET.get("page", 1)
-    page_obj = paginator.get_page(page_number)
-
-    context = {
-        "videos": page_obj.object_list,
-        "page_obj": page_obj,
-        "total_videos": total_videos,
-        "published_videos": published_videos,
-        "pending_videos": pending_videos,
-        "draft_videos": draft_videos,
-        "total_views": total_views,
-        "q": q,
-        "selected_category": category,
-        "selected_status": status,
-    }
-    return render(request, "videomanagement/video_management.html", context)
-
-
-@csrf_exempt
-def video_add(request):
-    if request.method == "POST":
-        title = request.POST.get("title") or "Untitled Video"
-        category = request.POST.get("category") or "Programming"
-        duration = request.POST.get("duration") or "10:00"
-        description = request.POST.get("description") or ""
-        status = request.POST.get("status") or "Pending"
-        video_file = request.FILES.get("video_file")
-        thumbnail = request.FILES.get("thumbnail")
-
-        Video.objects.create(
-            title=title,
-            category=category,
-            duration=duration,
-            description=description,
-            status=status,
-            video_file=video_file,
-            thumbnail=thumbnail,
-        )
-        return redirect("video_management")
-
-    return render(request, "videomanagement/video_add.html")
-
-
-@csrf_exempt
-def video_edit(request, id):
-    video = get_object_or_404(Video, id=id)
-    if request.method == "POST":
-        video.title = request.POST.get("title", video.title)
-        video.category = request.POST.get("category", video.category)
-        video.duration = request.POST.get("duration", video.duration)
-        video.description = request.POST.get("description", video.description)
-        if "status" in request.POST:
-            video.status = request.POST.get("status")
-        if "video_file" in request.FILES:
-            video.video_file = request.FILES["video_file"]
-        if "thumbnail" in request.FILES:
-            video.thumbnail = request.FILES["thumbnail"]
-        video.save()
-        return redirect("video_management")
-
-    return render(request, "videomanagement/video_add.html", {"video": video})
 
 
 
