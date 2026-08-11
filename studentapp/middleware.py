@@ -29,6 +29,14 @@ class AdminRequiredMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
+        # Check Admin session expiry (48 hours)
+        from django.utils import timezone
+        admin_token_expires_at = request.session.get("admin_token_expires_at")
+        if admin_token_expires_at:
+            now_ms = int(timezone.now().timestamp() * 1000)
+            if now_ms > admin_token_expires_at:
+                request.session.flush()
+
         path = request.path_info.rstrip('/')
 
         # 1. Redirect authenticated admins from login page directly to dashboard

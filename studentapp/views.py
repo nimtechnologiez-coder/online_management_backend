@@ -564,8 +564,10 @@ def admin_login(request):
         if user is not None:
             if user.is_superuser or user.is_staff:
                 login(request, user)
-                # Strict session security: Always expire session on browser/tab close
-                request.session.set_expiry(0)
+                # Set session expiry to 2 days (48 hours = 172800 seconds)
+                expires_at = timezone.now() + timedelta(days=2)
+                request.session["admin_token_expires_at"] = int(expires_at.timestamp() * 1000)
+                request.session.set_expiry(172800)  # 48 hours
                 return redirect("dashboard")
             else:
                 messages.error(request, "Only Admin can login.")
@@ -819,7 +821,10 @@ def api_admin_login(request):
     if user is not None:
         if user.is_superuser or user.is_staff:
             login(request, user)
-            request.session.set_expiry(0)
+            # Set session expiry to 2 days (48 hours = 172800 seconds)
+            expires_at = timezone.now() + timedelta(days=2)
+            request.session["admin_token_expires_at"] = int(expires_at.timestamp() * 1000)
+            request.session.set_expiry(172800)  # 48 hours
             return JsonResponse({
                 "status": "success",
                 "message": "Admin login successful",
