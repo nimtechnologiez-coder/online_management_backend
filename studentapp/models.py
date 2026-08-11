@@ -522,5 +522,27 @@ class VideoWatch(models.Model):
         unique_together = (("student", "video"),)
 
 
+class VideoRating(models.Model):
+    student = models.ForeignKey(
+        Student,
+        on_delete=models.CASCADE,
+        related_name="ratings"
+    )
+    video = models.ForeignKey(
+        Video,
+        on_delete=models.CASCADE,
+        related_name="ratings"
+    )
+    rating = models.PositiveSmallIntegerField()  # 1 to 5 stars
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = (("student", "video"),)
+
+    def __str__(self):
+        return f"{self.student.full_name} - {self.video.title}: {self.rating}"
+
+
+
 
 

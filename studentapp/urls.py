@@ -94,6 +94,8 @@ urlpatterns = [
     path('api/student/watch-history', views.api_student_watch_history),
     path('api/student/videos/<int:video_id>/watch/', views.api_student_record_watch, name='api_student_record_watch'),
     path('api/student/videos/<int:video_id>/watch', views.api_student_record_watch),
+    path('api/student/videos/<int:video_id>/rate/', views.api_student_rate_video, name='api_student_rate_video'),
+    path('api/student/videos/<int:video_id>/rate', views.api_student_rate_video),
     path('api/student/videos/<int:video_id>/progress/', views.api_student_save_progress, name='api_student_save_progress'),
     path('api/student/videos/<int:video_id>/progress', views.api_student_save_progress),
     path('api/student/videos/<int:video_id>/stream/', views.video_stream, name='video_stream'),
