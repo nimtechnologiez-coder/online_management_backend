@@ -3659,8 +3659,8 @@ def api_student_dashboard(request):
 
         total_videos = videos_qs.count()
 
-        # Strict watch history records for THIS specific logged-in student
-        watched_records = VideoWatch.objects.filter(student=student).select_related("video")
+        # Strict watch history records for THIS specific logged-in student (only published videos)
+        watched_records = VideoWatch.objects.filter(student=student, video__status="Published").select_related("video")
         completed_count = sum(1 for w in watched_records if is_video_completed(w.watched_seconds, w.video.duration))
         pending_count = max(0, total_videos - completed_count)
 
@@ -3668,18 +3668,21 @@ def api_student_dashboard(request):
         watch_hours = round(total_watch_seconds / 3600, 1)
 
         # Build Continue Watching list for THIS student only
-        recent_watches = VideoWatch.objects.filter(student=student, watched_seconds__gt=0).select_related("video").order_by("-watched_at")[:6]
+        recent_watches = VideoWatch.objects.filter(student=student, video__status="Published", watched_seconds__gt=0).select_related("video").order_by("-watched_at")[:6]
         continue_watching = []
         from django.urls import reverse
         for rw in recent_watches:
             v = rw.video
             progress_val = 0
             try:
-                dur_secs = duration_to_secs(v.duration)
-                if dur_secs > 0 and rw.watched_seconds > 0:
-                    progress_val = min(100, round((rw.watched_seconds / dur_secs) * 100))
-                elif rw.watched_seconds == 0:
-                    progress_val = 0
+                if is_video_completed(rw.watched_seconds, v.duration):
+                    progress_val = 100
+                else:
+                    dur_secs = duration_to_secs(v.duration)
+                    if dur_secs > 0 and rw.watched_seconds > 0:
+                        progress_val = min(100, round((rw.watched_seconds / dur_secs) * 100))
+                    else:
+                        progress_val = 0
             except Exception:
                 progress_val = 0
             thumb_url = request.build_absolute_uri(v.thumbnail.url) if (v.thumbnail and hasattr(v.thumbnail, 'url')) else ""
@@ -3693,6 +3696,7 @@ def api_student_dashboard(request):
                 "video_url": stream_url,
                 "videoUrl": stream_url,
                 "thumbnail": thumb_url,
+                "thumbnail_url": thumb_url,
             })
 
         # Recently added published videos for the student
@@ -3710,13 +3714,16 @@ def api_student_dashboard(request):
                 "video_url": stream_url,
                 "videoUrl": stream_url,
                 "thumbnail": thumb_url,
+                "thumbnail_url": thumb_url,
             })
 
-        # Top Categories dynamically computed from published videos
+        # Top Categories dynamically computed from published videos (skip empty categories)
         cat_counts = videos_qs.values('category').annotate(count=Count('id')).order_by('-count')
         top_categories = []
         for item in cat_counts:
-            c_name = item['category'] or "General"
+            c_name = item['category']
+            if not c_name:
+                continue
             top_categories.append({
                 "name": c_name,
                 "count": f"{item['count']} videos"
@@ -3738,6 +3745,7 @@ def api_student_dashboard(request):
                 "video_url": stream_url,
                 "videoUrl": stream_url,
                 "thumbnail": thumb_url,
+                "thumbnail_url": thumb_url,
             })
 
         return JsonResponse({
@@ -3752,7 +3760,7 @@ def api_student_dashboard(request):
                 "totalVideos": total_videos,
                 "completed": completed_count,
                 "pending": pending_count,
-                "watchHours": f"{watch_hours}h",
+                "watchHours": watch_hours,
             },
             "continueWatching": continue_watching,
             "recentlyAdded": recently_added,
@@ -4077,41 +4085,8 @@ def api_student_progress(request):
         total_videos = all_videos.count()
 
         # Watch records for this student
-        watch_qs = VideoWatch.objects.filter(student=student, watched_seconds__gt=0).select_related("video")
+        watch_qs = VideoWatch.objects.filter(student=student, video__status="Published", watched_seconds__gt=0).select_related("video")
         has_watch_history = watch_qs.exists()
-
-        if not has_watch_history:
-            dept = student.department
-            college = student.college
-            student_data = {
-                "id": student.id,
-                "full_name": student.full_name,
-                "email": student.email,
-                "phone": student.phone or "",
-                "username": student.username or "",
-                "status": student.status,
-                "year": student.year or "",
-                "department_name": dept.dept_name if dept else "",
-                "college_name": college.college_name if college else "",
-                "hod_name": dept.hod_name if dept else "",
-                "join_date": student.join_date.strftime("%d %b %Y") if student.join_date else "",
-                "end_date": student.end_date.strftime("%b %Y") if student.end_date else "",
-            }
-            return JsonResponse({
-                "status": "success",
-                "student": student_data,
-                "stats": {
-                    "totalVideos": total_videos,
-                    "completed": 0,
-                    "pending": total_videos,
-                    "watchHours": 0,
-                    "completionPct": 0,
-                },
-                "weeklyWatchTime": [],
-                "monthlyTrend": [],
-                "categoryBreakdown": [],
-                "recentVideos": [],
-            })
 
         # ------------------------------------------------------------------
         # KPI: completed, watch hours, completion %
@@ -4191,7 +4166,9 @@ def api_student_progress(request):
             v = w.video
             dur_secs = duration_to_secs(v.duration)
             progress_pct = 0
-            if dur_secs > 0 and w.watched_seconds:
+            if is_video_completed(w.watched_seconds, v.duration):
+                progress_pct = 100
+            elif dur_secs > 0 and w.watched_seconds:
                 progress_pct = min(100, round((w.watched_seconds / dur_secs) * 100))
             elif w.watched_seconds == 0 and v.id in watched_video_ids:
                 progress_pct = 100
@@ -4206,6 +4183,7 @@ def api_student_progress(request):
                 "date": w.watched_at.strftime("%d %b %Y, %I:%M %p") if w.watched_at else "",
                 "progress": progress_pct,
                 "thumbnail": thumb,
+                "thumbnail_url": thumb,
                 "completed": is_video_completed(w.watched_seconds, v.duration),
             })
 
@@ -4229,8 +4207,6 @@ def api_student_progress(request):
             "end_date": student.end_date.strftime("%b %Y") if student.end_date else "",
         }
 
-        has_watch_history = watch_qs.filter(watched_seconds__gt=0).exists()
-
         return JsonResponse({
             "status": "success",
             "student": student_data,
@@ -4241,10 +4217,10 @@ def api_student_progress(request):
                 "watchHours": watch_hours_total,
                 "completionPct": overall_completion_pct,
             },
-            "weeklyWatchTime": weekly_watch_time if has_watch_history else [],
-            "monthlyTrend": monthly_trend if has_watch_history else [],
-            "categoryBreakdown": category_breakdown if has_watch_history else [],
-            "recentVideos": recent_videos if has_watch_history else [],
+            "weeklyWatchTime": weekly_watch_time,
+            "monthlyTrend": monthly_trend,
+            "categoryBreakdown": category_breakdown,
+            "recentVideos": recent_videos,
         })
     except Exception as e:
         import traceback
