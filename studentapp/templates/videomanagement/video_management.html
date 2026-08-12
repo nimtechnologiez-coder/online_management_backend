@@ -18,7 +18,9 @@
     <!-- CSS Links -->
     <link rel="stylesheet" href="{% static 'css/sidebar.css' %}" />
     <link rel="stylesheet" href="{% static 'css/department.css' %}">
-    <link rel="stylesheet" href="{% static 'css/videomanagement.css' %}">
+    <link rel="stylesheet" href="{% static 'css/videomanagement.css' %}?v={% now 'U' %}">
+    <link rel="stylesheet" href="{% static 'css/admin_modals.css' %}?v={% now 'U' %}">
+    <link rel="stylesheet" href="{% static 'css/admin_toolbars.css' %}?v={% now 'U' %}">
 </head>
 
 <body class="vm-page">
@@ -82,30 +84,26 @@
         </div>
 
         <!-- Toolbar -->
-        <form method="GET" action="{% url 'video_management' %}" class="vm-toolbar">
-            <div class="vm-toolbar__filters">
-                <div class="vm-search">
-                    <i class="fas fa-search vm-search__icon"></i>
-                    <input type="text" name="q" value="{{ q }}" placeholder="Search video title..." class="vm-search__input" onchange="this.form.submit()">
-                </div>
-                <select name="category" class="vm-select" onchange="this.form.submit()">
-                    <option value="">All Categories</option>
-                    <option value="Programming" {% if selected_category == 'Programming' %}selected{% endif %}>Programming</option>
-                    <option value="Mathematics" {% if selected_category == 'Mathematics' %}selected{% endif %}>Mathematics</option>
-                    <option value="Physics" {% if selected_category == 'Physics' %}selected{% endif %}>Physics</option>
-                    <option value="Soft Skills" {% if selected_category == 'Soft Skills' %}selected{% endif %}>Soft Skills</option>
-                </select>
-                <select name="status" class="vm-select vm-select--sm" onchange="this.form.submit()">
-                    <option value="">All Status</option>
-                    <option value="Published" {% if selected_status == 'Published' %}selected{% endif %}>Published</option>
-                    <option value="Draft" {% if selected_status == 'Draft' %}selected{% endif %}>Draft</option>
-                </select>
+        <form method="GET" action="{% url 'video_management' %}" class="vm-toolbar admin-filter-grid">
+            <div class="vm-search">
+                <i class="fas fa-search vm-search__icon"></i>
+                <input type="text" name="q" value="{{ q }}" placeholder="Search video title..." class="vm-search__input" onchange="this.form.submit()">
             </div>
-            <div class="vm-toolbar__actions">
-                <a href="{% url 'video_management' %}" class="vm-btn vm-btn--ghost">
-                    <i class="fas fa-rotate-right"></i> Reset Filters
-                </a>
-            </div>
+            <select name="category" class="vm-select" onchange="this.form.submit()">
+                <option value="">All Categories</option>
+                <option value="Programming" {% if selected_category == 'Programming' %}selected{% endif %}>Programming</option>
+                <option value="Mathematics" {% if selected_category == 'Mathematics' %}selected{% endif %}>Mathematics</option>
+                <option value="Physics" {% if selected_category == 'Physics' %}selected{% endif %}>Physics</option>
+                <option value="Soft Skills" {% if selected_category == 'Soft Skills' %}selected{% endif %}>Soft Skills</option>
+            </select>
+            <select name="status" class="vm-select vm-select--sm" onchange="this.form.submit()">
+                <option value="">All Status</option>
+                <option value="Published" {% if selected_status == 'Published' %}selected{% endif %}>Published</option>
+                <option value="Draft" {% if selected_status == 'Draft' %}selected{% endif %}>Draft</option>
+            </select>
+            <a href="{% url 'video_management' %}" class="vm-btn vm-btn--ghost">
+                <i class="fas fa-rotate-right"></i> Reset Filters
+            </a>
         </form>
 
         <!-- Table Card -->
@@ -184,41 +182,50 @@
                 <button class="vm-modal__close" onclick="closeModal('editModal')">&times;</button>
             </div>
             <form class="vm-modal__body">
-                <div class="vm-modal-section">
-                    <h4 class="vm-modal-section-title">Basic Information</h4>
-                    <div class="vm-form-grid">
-                        <div class="vm-form-group vm-form-group--full">
-                            <label>Video Title</label>
-                            <input type="text" id="editTitle">
-                        </div>
+                {% csrf_token %}
+                <div class="vm-edit-layout">
+                    <!-- Left Column: Details -->
+                    <div class="vm-edit-main">
                         <div class="vm-form-group">
-                            <label>Category</label>
-                            <select id="editCat" class="vm-select">
-                                <option value="Programming">Programming</option>
-                                <option value="Mathematics">Mathematics</option>
-                                <option value="Physics">Physics</option>
-                                <option value="Soft Skills">Soft Skills</option>
-                            </select>
+                            <label for="editTitle">Video Title</label>
+                            <input type="text" id="editTitle" class="vm-input" placeholder="Enter video title" required>
                         </div>
+                        
+                        <div class="vm-form-row">
+                            <div class="vm-form-group">
+                                <label for="editCat">Category</label>
+                                <select id="editCat" class="vm-select">
+                                    <option value="Programming">Programming</option>
+                                    <option value="Mathematics">Mathematics</option>
+                                    <option value="Physics">Physics</option>
+                                    <option value="Soft Skills">Soft Skills</option>
+                                </select>
+                            </div>
+                            <div class="vm-form-group">
+                                <label for="editStatus">Status</label>
+                                <select id="editStatus" class="vm-select">
+                                    <option value="Published">Published</option>
+                                    <option value="Draft">Draft</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <input type="hidden" id="editDur">
+                        
                         <div class="vm-form-group">
-                            <label>Duration (MM:SS)</label>
-                            <input type="text" id="editDur">
-                        </div>
-                        <div class="vm-form-group vm-form-group--full">
-                            <label>Description</label>
-                            <textarea id="editDesc" rows="3" style="padding:0.6rem; border-radius:8px; border:1px solid #e2e8f0; font-family:inherit; width: 100%; box-sizing: border-box;"></textarea>
+                            <label for="editDesc">Description</label>
+                            <textarea id="editDesc" class="vm-textarea" rows="4" placeholder="Enter video description"></textarea>
                         </div>
                     </div>
-                </div>
-                <div class="vm-modal-section">
-                    <h4 class="vm-modal-section-title">Media Update</h4>
-                    <div class="vm-form-grid">
+                    
+                    <!-- Right Column: Media Uploads -->
+                    <div class="vm-edit-side">
                         <div class="vm-form-group">
                             <label>Update Video File</label>
                             <div class="vm-upload-box">
                                 <i class="fas fa-file-video"></i>
                                 <p>Change Video <span class="browse-txt">Browse</span></p>
-                                <input type="file" accept="video/*">
+                                <input type="file" id="editVideoInput" accept="video/*" onchange="handleEditVideoSelect(this)">
                             </div>
                         </div>
                         <div class="vm-form-group">
@@ -228,18 +235,6 @@
                                 <p>Change Thumbnail <span class="browse-txt">Browse</span></p>
                                 <input type="file" accept="image/*">
                             </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="vm-modal-section">
-                    <h4 class="vm-modal-section-title">Settings</h4>
-                    <div class="vm-form-grid">
-                        <div class="vm-form-group">
-                            <label>Status</label>
-                            <select id="editStatus" class="vm-select">
-                                <option value="Published">Published</option>
-                                <option value="Draft">Draft</option>
-                            </select>
                         </div>
                     </div>
                 </div>
@@ -278,6 +273,26 @@
             if (modal) modal.classList.remove('active'); 
         }
         
+        function handleEditVideoSelect(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                const videoElement = document.createElement('video');
+                videoElement.preload = 'metadata';
+                videoElement.src = URL.createObjectURL(file);
+                videoElement.onloadedmetadata = function() {
+                    URL.revokeObjectURL(videoElement.src);
+                    const durationInSeconds = videoElement.duration;
+                    if (durationInSeconds) {
+                        const minutes = Math.floor(durationInSeconds / 60);
+                        const seconds = Math.floor(durationInSeconds % 60);
+                        const formattedDuration = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                        document.getElementById('editDur').value = formattedDuration;
+                        console.log("Automatically detected edit duration: " + formattedDuration);
+                    }
+                };
+            }
+        }
+
         function openEditModal(btn) {
             const row = btn.closest('tr');
             currentEditId = row.dataset.id;

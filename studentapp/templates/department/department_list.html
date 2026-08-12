@@ -23,6 +23,8 @@
 
     <!-- Department list stylesheet (includes modal + toast styles) -->
     <link rel="stylesheet" href="{% static 'css/department_list.css' %}">
+    <link rel="stylesheet" href="{% static 'css/admin_modals.css' %}?v={% now 'U' %}">
+    <link rel="stylesheet" href="{% static 'css/admin_toolbars.css' %}?v={% now 'U' %}">
 
     <!-- Pagination styles (scoped, matches the Prev/1/Next pill style) -->
     <style>
@@ -191,27 +193,25 @@
         </div>
 
         <!-- ── Toolbar (submits GET request to the server) ──── -->
-        <form method="get" id="filterForm" class="dm-toolbar">
-            <div class="dm-toolbar__filters">
-                <div class="dm-search">
-                    <i class="fas fa-search dm-search__icon"></i>
-                    <input type="text" name="q" id="searchInput" placeholder="Search by name, code, HOD…"
-                           class="dm-search__input" value="{{ search_query }}">
-                </div>
-
-                <select name="college" id="collegeFilter" class="dm-select">
-                    <option value="">All Colleges</option>
-                    {% for c in colleges %}
-                    <option value="{{ c.college_name }}" {% if college_filter == c.college_name %}selected{% endif %}>{{ c.college_name }}</option>
-                    {% endfor %}
-                </select>
-
-                <select name="status" id="statusFilter" class="dm-select dm-select--sm">
-                    <option value="">All Status</option>
-                    <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
-                    <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive</option>
-                </select>
+        <form method="get" id="filterForm" class="dm-toolbar admin-filter-grid">
+            <div class="dm-search">
+                <i class="fas fa-search dm-search__icon"></i>
+                <input type="text" name="q" id="searchInput" placeholder="Search by name, code, HOD…"
+                       class="dm-search__input" value="{{ search_query }}">
             </div>
+
+            <select name="college" id="collegeFilter" class="dm-select">
+                <option value="">All Colleges</option>
+                {% for c in colleges %}
+                <option value="{{ c.college_name }}" {% if college_filter == c.college_name %}selected{% endif %}>{{ c.college_name }}</option>
+                {% endfor %}
+            </select>
+
+            <select name="status" id="statusFilter" class="dm-select dm-select--sm">
+                <option value="">All Status</option>
+                <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+                <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive</option>
+            </select>
 
             <button type="button" class="dm-btn dm-btn--ghost" id="resetBtn" title="Reset filters">
                 <i class="fas fa-rotate-left"></i> Reset

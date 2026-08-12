@@ -1,0 +1,237 @@
+/* ============================================================
+   Admin Toolbars – CSS Grid Design System
+   admin_toolbars.css
+   
+   Applies consistent responsive grid styling to filter & search forms:
+   Visual design matches the Colleges page toolbar (/colleges/) exactly.
+     • Desktop: Single horizontal row with explicit widths
+     • Tablet: 2 columns
+     • Mobile: 1 column
+   ============================================================ */
+
+/* ── Reference Container Style (from /colleges/ action-bar) ── */
+.admin-filter-grid,
+.action-bar {
+    display: grid !important;
+    background: #ffffff !important;
+    border: 1px solid #D1D5DB !important;
+    border-radius: 16px !important;
+    padding: 0.85rem 1.2rem !important;
+    margin-bottom: 1.25rem !important;
+    align-items: center !important;
+    gap: 1rem !important;
+    box-shadow: 0 2px 8px rgba(13, 17, 49, .04) !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+}
+
+/* Page specific desktop template columns (elements in a single row on desktop) */
+.dm-toolbar.admin-filter-grid,
+.pm-toolbar.admin-filter-grid {
+    grid-template-columns: 280px 220px 180px auto !important;
+    justify-content: start !important;
+}
+
+.sm-toolbar.admin-filter-grid {
+    grid-template-columns: 260px 180px 180px 120px 140px auto !important;
+    justify-content: start !important;
+}
+
+.vm-toolbar.admin-filter-grid {
+    grid-template-columns: 280px 200px 160px auto !important;
+    justify-content: start !important;
+}
+
+.action-bar.admin-filter-grid {
+    grid-template-columns: 280px 180px 180px auto !important;
+    justify-content: start !important;
+}
+
+#analyticsFilterForm.admin-filter-grid {
+    grid-template-columns: 180px 220px auto !important;
+    justify-content: start !important;
+    border: none !important;
+    padding: 0 !important;
+    margin-bottom: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+/* ── Inputs, Selects, and Buttons heights & alignment (Colleges style) ── */
+.admin-filter-grid input,
+.admin-filter-grid select,
+.admin-filter-grid button,
+.admin-filter-grid a,
+.action-bar input,
+.action-bar select,
+.action-bar button,
+.action-bar a {
+    height: 38px !important;
+    box-sizing: border-box !important;
+    font-size: 0.85rem !important;
+    font-family: 'Inter', sans-serif !important;
+    margin: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* Search input wrappers */
+.admin-filter-grid .search-box,
+.admin-filter-grid .sm-search,
+.admin-filter-grid .pm-search,
+.admin-filter-grid .dm-search,
+.admin-filter-grid .vm-search,
+.action-bar .search-box {
+    position: relative !important;
+    width: 100% !important;
+    height: 38px !important;
+    box-sizing: border-box !important;
+}
+
+/* Search input elements */
+.admin-filter-grid .search-box input,
+.admin-filter-grid .sm-search input,
+.admin-filter-grid .pm-search input,
+.admin-filter-grid .dm-search input,
+.admin-filter-grid .vm-search input,
+.action-bar .search-box input {
+    height: 100% !important;
+    padding: 0.6rem 1rem 0.6rem 2.4rem !important;
+    width: 100% !important;
+    border: 1.5px solid #D1D5DB !important;
+    border-radius: 8px !important;
+    background: #ffffff !important;
+    outline: none !important;
+    color: #0d1131 !important;
+    transition: border-color 0.2s ease !important;
+}
+
+.admin-filter-grid .search-box input:focus,
+.admin-filter-grid .sm-search input:focus,
+.admin-filter-grid .pm-search input:focus,
+.admin-filter-grid .dm-search input:focus,
+.admin-filter-grid .vm-search input:focus,
+.action-bar .search-box input:focus {
+    border-color: #4f46e5 !important;
+}
+
+/* Search Box Icons position */
+.admin-filter-grid .search-box i,
+.admin-filter-grid .sm-search i,
+.admin-filter-grid .pm-search i,
+.admin-filter-grid .dm-search i,
+.admin-filter-grid .vm-search i,
+.action-bar .search-box i {
+    position: absolute !important;
+    left: 1rem !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    color: #8b93b8 !important;
+    font-size: 0.85rem !important;
+    pointer-events: none !important;
+}
+
+/* Select element styling - matches Colleges select-filter exactly */
+.admin-filter-grid select,
+.action-bar select {
+    padding: 0.6rem 2.2rem 0.6rem 1rem !important;
+    border: 1.5px solid #D1D5DB !important;
+    border-radius: 8px !important;
+    color: #0d1131 !important;
+    outline: none !important;
+    transition: border-color 0.2s ease !important;
+    cursor: pointer !important;
+    width: 100% !important;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238b93b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 0.8rem center #ffffff !important;
+    background-size: 14px !important;
+}
+
+.admin-filter-grid select:focus,
+.action-bar select:focus {
+    border-color: #4f46e5 !important;
+}
+
+/* ── Reset and Action Buttons styling ── */
+.admin-filter-grid .dm-btn--ghost,
+.admin-filter-grid .pm-btn--ghost,
+.admin-filter-grid .sm-btn--ghost,
+.admin-filter-grid .vm-btn--ghost,
+.admin-filter-grid #resetBtn,
+.admin-filter-grid .btn-ghost,
+.action-bar .btn-icon,
+.action-bar .btn-outline {
+    background: #ffffff !important;
+    border: 1.5px solid #D1D5DB !important;
+    color: #4b5580 !important;
+    border-radius: 8px !important;
+    padding: 0.6rem 1.2rem !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    text-decoration: none !important;
+}
+
+.admin-filter-grid .dm-btn--ghost:hover,
+.admin-filter-grid .pm-btn--ghost:hover,
+.admin-filter-grid .sm-btn--ghost:hover,
+.admin-filter-grid .vm-btn--ghost:hover,
+.admin-filter-grid #resetBtn:hover,
+.admin-filter-grid .btn-ghost:hover,
+.action-bar .btn-icon:hover,
+.action-bar .btn-outline:hover {
+    background: #f8fafc !important;
+    color: #0d1131 !important;
+    border-color: #8b93b8 !important;
+}
+
+/* Action button group styling */
+.action-bar .actions-group {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    flex-wrap: wrap !important;
+}
+
+/* ── RESPONSIVE MEDIA QUERIES ── */
+
+/* Tablet Viewport (max-width: 1024px) */
+@media (max-width: 1024px) {
+    .admin-filter-grid,
+    .dm-toolbar.admin-filter-grid,
+    .pm-toolbar.admin-filter-grid,
+    .sm-toolbar.admin-filter-grid,
+    .vm-toolbar.admin-filter-grid,
+    .action-bar.admin-filter-grid,
+    #analyticsFilterForm.admin-filter-grid {
+        grid-template-columns: 1fr 1fr !important; /* 2 columns on tablet */
+        justify-content: stretch !important;
+    }
+}
+
+/* Mobile Viewport (max-width: 640px) */
+@media (max-width: 640px) {
+    .admin-filter-grid,
+    .dm-toolbar.admin-filter-grid,
+    .pm-toolbar.admin-filter-grid,
+    .sm-toolbar.admin-filter-grid,
+    .vm-toolbar.admin-filter-grid,
+    .action-bar.admin-filter-grid,
+    #analyticsFilterForm.admin-filter-grid {
+        grid-template-columns: 1fr !important; /* 1 column on mobile */
+        justify-content: stretch !important;
+    }
+    
+    /* Make buttons take full width on mobile */
+    .admin-filter-grid button,
+    .admin-filter-grid a,
+    .admin-filter-grid .dm-btn,
+    .admin-filter-grid .pm-btn,
+    .admin-filter-grid .sm-btn,
+    .admin-filter-grid .vm-btn,
+    .admin-filter-grid .btn {
+        width: 100% !important;
+    }
+}

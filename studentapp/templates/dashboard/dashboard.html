@@ -19,7 +19,425 @@
 
     <!-- Dashboard CSS -->
     <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
-    {% block extra_css %}{% endblock %}
+    {% block extra_css %}
+    <style>
+        /* ── Analytics Redesign Header & Cards ───────────────────────── */
+        .analytics-redesign-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .analytics-redesign-title-box {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .analytics-redesign-icon-box {
+            width: 40px;
+            height: 40px;
+            background: #2563eb;
+            color: #ffffff;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.22);
+            flex-shrink: 0;
+        }
+
+        .analytics-redesign-title {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin: 0;
+            line-height: 1.2;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        .analytics-redesign-sub {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin: 2px 0 0 0;
+            font-weight: 500;
+        }
+
+        .analytics-redesign-header-right {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+        }
+
+        .analytics-live-badge {
+            background: #dcfce7;
+            color: #16a34a;
+            border-radius: 9999px;
+            padding: 0.3rem 0.75rem;
+            font-weight: 700;
+            font-size: 0.75rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .live-dot {
+            width: 7px;
+            height: 7px;
+            background: #16a34a;
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2);
+        }
+
+        .analytics-updated-time {
+            font-size: 0.78rem;
+            color: #475569;
+            font-weight: 500;
+        }
+
+        /* Equal 3-Card Grid Layout on Desktop, 2 on Tablet, 1 on Mobile */
+        .analytics-redesign-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 1.25rem;
+            margin-bottom: 1.5rem;
+            align-items: stretch;
+        }
+
+        @media (max-width: 1200px) {
+            .analytics-redesign-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .analytics-redesign-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .analytics-redesign-card {
+            background: #ffffff;
+            border: 1px solid #d1d5db;
+            border-radius: 14px;
+            padding: 1.25rem;
+            box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.04);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-width: 0;
+            height: 100%;
+            box-sizing: border-box;
+        }
+
+        .analytics-redesign-card-header {
+            display: flex;
+            flex-direction: column;
+            gap: 0.55rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .analytics-header-top {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.65rem;
+            width: 100%;
+        }
+
+        .analytics-icon-circle {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+
+        .analytics-icon-circle.icon-blue {
+            background: #eff6ff;
+            color: #2563eb;
+        }
+
+        .analytics-icon-circle.icon-green {
+            background: #ecfdf5;
+            color: #10b981;
+        }
+
+        .analytics-icon-circle.icon-orange {
+            background: #fff7ed;
+            color: #f59e0b;
+        }
+
+        .analytics-card-title {
+            font-size: 0.98rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin: 0;
+            line-height: 1.25;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            white-space: normal;
+        }
+
+        .analytics-card-sub {
+            font-size: 0.75rem;
+            color: #64748b;
+            margin: 3px 0 0 0;
+            font-weight: 500;
+            white-space: normal;
+        }
+
+        .analytics-header-filter {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 28px;
+        }
+
+        .analytics-dropdown-select {
+            appearance: none;
+            -webkit-appearance: none;
+            background: #f8fafc;
+            color: #1e293b;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border: 1px solid #cbd5e1;
+            border-radius: 9999px;
+            padding: 0.35rem 1.75rem 0.35rem 0.75rem;
+            cursor: pointer;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M0 0l5 6 5-6z' fill='%23334155'/></svg>");
+            background-repeat: no-repeat;
+            background-position: right 0.65rem center;
+            background-size: 0.55rem 0.35rem;
+            outline: none;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .analytics-dropdown-select:hover {
+            border-color: #94a3b8;
+            background-color: #f1f5f9;
+        }
+
+        .analytics-badge-green {
+            background: #ecfdf5;
+            color: #15803d;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border: 1px solid #a7f3d0;
+            border-radius: 9999px;
+            padding: 0.35rem 0.75rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .analytics-badge-orange {
+            background: #fff7ed;
+            color: #d97706;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border: 1px solid #fde68a;
+            border-radius: 9999px;
+            padding: 0.35rem 0.75rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .analytics-chart-canvas-box {
+            position: relative;
+            height: 210px;
+            width: 100%;
+            margin-top: 0.25rem;
+            margin-bottom: 0.25rem;
+            flex: 1;
+            min-height: 190px;
+        }
+
+        /* Donut Wrapper inside card */
+        .card-donut-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            width: 100%;
+            height: 100%;
+        }
+
+        .card-donut-container {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            flex-shrink: 0;
+        }
+
+        .card-donut-legend {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+            max-height: 175px;
+            overflow-y: auto;
+            padding-right: 0.25rem;
+        }
+
+        .card-donut-legend::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .card-donut-legend::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        .card-donut-legend .donut-legend-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: #475569;
+            padding: 2px 0;
+        }
+
+        .card-donut-legend .donut-legend-left {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            min-width: 0;
+        }
+
+        .card-donut-legend .legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .card-donut-legend .legend-name {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 95px;
+        }
+
+        .card-donut-legend .legend-pct {
+            font-weight: 700;
+            color: #0f172a;
+            font-size: 0.72rem;
+            margin-left: 4px;
+            flex-shrink: 0;
+        }
+
+        /* Banner Footers */
+        .analytics-banner {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            border-radius: 12px;
+            padding: 0.65rem 0.85rem;
+            margin-top: 0.75rem;
+            flex-shrink: 0;
+        }
+
+        .analytics-banner.banner-blue {
+            background: #eff6ff;
+            border: 1px solid #dbeafe;
+        }
+
+        .analytics-banner.banner-green {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+        }
+
+        .analytics-banner.banner-orange {
+            background: #fff7ed;
+            border: 1px solid #fed7aa;
+        }
+
+        .banner-icon-box {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+
+        .banner-icon-box.icon-blue {
+            background: #dbeafe;
+            color: #2563eb;
+        }
+
+        .banner-icon-box.icon-green {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .banner-icon-box.icon-orange {
+            background: #ffedd5;
+            color: #ea580c;
+        }
+
+        .banner-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            margin: 0;
+            line-height: 1.2;
+        }
+
+        .banner-title.title-blue {
+            color: #1d4ed8;
+        }
+
+        .banner-title.title-green {
+            color: #15803d;
+        }
+
+        .banner-title.title-orange {
+            color: #c2410c;
+        }
+
+        .banner-sub {
+            font-size: 0.75rem;
+            margin: 1px 0 0 0;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .banner-sub.sub-blue {
+            color: #3b82f6;
+        }
+
+        .banner-sub.sub-green {
+            color: #16a34a;
+        }
+
+        .banner-sub.sub-orange {
+            color: #ea580c;
+        }
+    </style>
+    {% endblock %}
 </head>
 
 <body>
@@ -134,65 +552,104 @@
 
                 </div><!-- /stats-grid -->
 
-                <!-- ── Charts Grid (3 Cards) ───────────────────────── -->
-                <div class="charts-grid">
-
-                    <!-- 1. Weekly Engagement Chart -->
-                    <div class="dashboard-card">
-                        <div class="card-header">
-                            <h3><i class="fas fa-chart-line" style="color:var(--db-primary);"></i> Weekly Engagement
-                            </h3>
-                            <select id="weeklyPeriodSelect" class="period-select-custom">
-                                <option value="week" {% if selected_period == 'week' %}selected{% endif %}>This Week
-                                </option>
-                                <option value="3months" {% if selected_period == '3months' %}selected{% endif %}>Last 3
-                                    Months</option>
-                                <option value="6months" {% if selected_period == '6months' %}selected{% endif %}>Last 6
-                                    Months</option>
-                            </select>
+                <!-- ── Engagement & Analytics Redesign Header ───────────── -->
+                <div class="analytics-redesign-header">
+                    <div class="analytics-redesign-title-box">
+                        <div class="analytics-redesign-icon-box">
+                            <i class="fas fa-chart-column"></i>
                         </div>
-                        <div class="chart-container">
+                        <div>
+                            <h2 class="analytics-redesign-title">Engagement & Analytics</h2>
+                            <p class="analytics-redesign-sub">Track student engagement and participation across all colleges</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── 2-Card Row: Weekly Engagement & Monthly Analytics ───── -->
+                <div class="analytics-redesign-grid">
+
+                    <!-- 1. Weekly Engagement Card -->
+                    <div class="analytics-redesign-card">
+                        <div class="analytics-redesign-card-header">
+                            <div class="analytics-header-top">
+                                <div class="analytics-icon-circle icon-blue">
+                                    <i class="fas fa-chart-line"></i>
+                                </div>
+                                <div>
+                                    <h3 class="analytics-card-title">Weekly Engagement</h3>
+                                    <p class="analytics-card-sub">Student engagement over the last 4 weeks</p>
+                                </div>
+                            </div>
+                            <div class="analytics-header-filter">
+                                <select id="weeklyPeriodSelect" class="analytics-dropdown-select">
+                                    <option value="week" {% if selected_period == 'week' %}selected{% endif %}>This Week</option>
+                                    <option value="3months" {% if selected_period == '3months' %}selected{% endif %}>Last 3 Months</option>
+                                    <option value="6months" {% if selected_period == '6months' %}selected{% endif %}>Last 6 Months</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="analytics-chart-canvas-box">
                             <canvas id="watchOverviewChart"></canvas>
                         </div>
                     </div>
 
-                    <!-- 2. Monthly Analytics Chart -->
-                    <div class="dashboard-card">
-                        <div class="card-header">
-                            <h3><i class="fas fa-chart-area" style="color:var(--db-success);"></i> Monthly Analytics
-                            </h3>
-                            <span class="card-header-tag"
-                                style="background:rgba(16,185,129,0.12);color:#10b981;border:1px solid rgba(16,185,129,0.25);">
-                                <i class="fas fa-calendar-alt" style="font-size:0.65rem;"></i> This Month
-                            </span>
+                    <!-- 2. Monthly Analytics Card -->
+                    <div class="analytics-redesign-card">
+                        <div class="analytics-redesign-card-header">
+                            <div class="analytics-header-top">
+                                <div class="analytics-icon-circle icon-green">
+                                    <i class="fas fa-chart-line"></i>
+                                </div>
+                                <div>
+                                    <h3 class="analytics-card-title">Monthly Analytics</h3>
+                                    <p class="analytics-card-sub">Unique students watched videos</p>
+                                </div>
+                            </div>
+                            <div class="analytics-header-filter">
+                                <span class="analytics-badge-green">
+                                    <i class="fas fa-calendar-alt"></i> This Month &nbsp;&#x25BE;
+                                </span>
+                            </div>
                         </div>
-                        <div class="chart-container">
+                        <div class="analytics-chart-canvas-box">
                             <canvas id="monthlyWatchChart"></canvas>
                         </div>
                     </div>
-
-                    <!-- 3. College Distribution Donut Chart -->
-                    <div class="dashboard-card">
-                        <div class="card-header">
-                            <h3><i class="fas fa-chart-pie" style="color:var(--db-warning);"></i> College Distribution
-                            </h3>
-                            <span class="card-header-tag">Engagement Share</span>
-                        </div>
-                        <div class="donut-wrapper">
-                            <div class="donut-canvas-container">
-                                <canvas id="collegeDistributionChart"></canvas>
-                                <div class="donut-center-text">
-                                    <div class="cnt">{{ total_colleges }}</div>
-                                    <div class="lbl">Colleges</div>
+                    <!-- 3. College Distribution Card -->
+                    <div class="analytics-redesign-card">
+                        <div class="analytics-redesign-card-header">
+                            <div class="analytics-header-top">
+                                <div class="analytics-icon-circle icon-orange">
+                                    <i class="fas fa-chart-pie"></i>
+                                </div>
+                                <div>
+                                    <h3 class="analytics-card-title">College Distribution</h3>
+                                    <p class="analytics-card-sub">Engagement share by college</p>
                                 </div>
                             </div>
-                            <div class="donut-legend-list" id="customDonutLegend">
-                                <!-- Filled dynamically by JavaScript -->
+                            <div class="analytics-header-filter">
+                                <span class="analytics-badge-orange">
+                                    Engagement Share
+                                </span>
+                            </div>
+                        </div>
+                        <div class="analytics-chart-canvas-box" style="display:flex; align-items:center; justify-content:center;">
+                            <div class="card-donut-wrapper">
+                                <div class="card-donut-container">
+                                    <canvas id="collegeDistributionChart"></canvas>
+                                    <div class="donut-center-text">
+                                        <div class="cnt">{{ total_colleges }}</div>
+                                        <div class="lbl">Colleges</div>
+                                    </div>
+                                </div>
+                                <div class="card-donut-legend" id="customDonutLegend">
+                                    <!-- Filled dynamically by JavaScript -->
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                </div><!-- /charts-grid -->
+                </div><!-- /analytics-redesign-grid -->
 
                 <!-- ── Lower Row 1: 3 Columns ──────────────────────── -->
                 <div class="three-col-grid">
@@ -204,7 +661,7 @@
                             </h3>
                             <div style="display:flex;align-items:center;gap:0.4rem;flex-shrink:0;">
                                 <span class="card-header-tag"
-                                    style="background:rgba(245,158,11,0.12);color:#f59e0b;border:1px solid rgba(245,158,11,0.25);">
+                                    style="background:rgba(245,158,11,0.12);color:#f59e0b;border:1px solid #cbd5e1;padding:0.35rem 0.65rem;">
                                     <i class="fas fa-calendar-week"></i> This Week
                                 </span>
                                 <span class="card-header-tag">Top 5</span>
@@ -247,7 +704,7 @@
                             <h3><i class="fas fa-fire" style="color:#ef4444;"></i> Most Watched Videos</h3>
                             <div style="display:flex;align-items:center;gap:0.4rem;flex-shrink:0;">
                                 <span class="card-header-tag"
-                                    style="background:rgba(239,68,68,0.12);color:#ef4444;border:1px solid rgba(239,68,68,0.25);">
+                                    style="background:rgba(239,68,68,0.12);color:#ef4444;border:1px solid #cbd5e1;padding:0.35rem 0.65rem;">
                                     <i class="fas fa-calendar-week"></i> This Week
                                 </span>
                                 <span class="card-header-tag">Top 5</span>
@@ -460,9 +917,63 @@
 
     {% block extra_js %}
     <script>
-        Chart.defaults.color = '#94a3b8';
+        Chart.defaults.color = '#64748b';
         Chart.defaults.font.family = "'Inter', sans-serif";
         Chart.defaults.font.size = 11;
+
+        // Custom Chart.js Plugin to draw percentage labels directly above/below data points
+        const drawPointLabelsPlugin = {
+            id: 'drawPointLabels',
+            afterDatasetsDraw(chart) {
+                const { ctx, chartArea } = chart;
+                chart.data.datasets.forEach((dataset, datasetIndex) => {
+                    const meta = chart.getDatasetMeta(datasetIndex);
+                    const totalPoints = meta.data.length;
+                    meta.data.forEach((element, index) => {
+                        const val = dataset.data[index];
+                        if (val !== undefined && val !== null) {
+                            const text = val + '%';
+                            ctx.save();
+                            ctx.font = '700 11px "Inter", sans-serif';
+                            ctx.fillStyle = dataset.borderColor || '#2563eb';
+
+                            const isRightmost = (index === totalPoints - 1);
+                            const isLeftmost = (index === 0);
+                            
+                            if (isRightmost) {
+                                ctx.textAlign = 'right';
+                            } else if (isLeftmost) {
+                                ctx.textAlign = 'left';
+                            } else {
+                                ctx.textAlign = 'center';
+                            }
+
+                            const isTopBoundary = (val >= 100) || (chartArea && element.y <= chartArea.top + 15);
+                            let yPos, xPos;
+                            
+                            if (isRightmost) {
+                                xPos = element.x - 2;
+                            } else if (isLeftmost) {
+                                xPos = element.x + 2;
+                            } else {
+                                xPos = element.x;
+                            }
+
+                            if (isTopBoundary) {
+                                ctx.textBaseline = 'top';
+                                yPos = element.y + 16;
+                            } else {
+                                ctx.textBaseline = 'bottom';
+                                yPos = element.y - 8;
+                            }
+
+                            ctx.fillText(text, xPos, yPos);
+                            ctx.restore();
+                        }
+                    });
+                });
+            }
+        };
 
         // Backend Dynamic Data
         const backendLabels = {{ chart_labels| safe }};
@@ -473,30 +984,31 @@
         const backendCollegeData = {{ college_data| safe }};
 
         const weekLabels = (backendLabels && backendLabels.length > 0) ? backendLabels : ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
-        const weekData = (backendData && backendData.length > 0) ? backendData : [45, 65, 55, 75];
+        const weekData = (backendData && backendData.length > 0) ? backendData : [0, 0, 0, 100];
 
-        const monthLabels = (backendMonthlyLabels && backendMonthlyLabels.length > 0) ? backendMonthlyLabels : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-        const monthData = (backendMonthlyData && backendMonthlyData.length > 0) ? backendMonthlyData : [20, 35, 50, 65, 80, 95];
+        const monthLabels = (backendMonthlyLabels && backendMonthlyLabels.length > 0) ? backendMonthlyLabels : ['Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'];
+        const monthData = (backendMonthlyData && backendMonthlyData.length > 0) ? backendMonthlyData : [0, 0, 0, 0, 0, 100];
 
-        /* ── 1. Weekly Engagement Chart (Smooth Area Line Chart with AJAX) ───── */
+        /* ── 1. Weekly Engagement Chart ────────────────────────── */
         const ctxWeekly = document.getElementById('watchOverviewChart').getContext('2d');
-        const gradWeekly = ctxWeekly.createLinearGradient(0, 0, 0, 200);
-        gradWeekly.addColorStop(0, 'rgba(59, 130, 246, 0.25)');
-        gradWeekly.addColorStop(1, 'rgba(59, 130, 246, 0.0)');
+        const gradWeekly = ctxWeekly.createLinearGradient(0, 0, 0, 220);
+        gradWeekly.addColorStop(0, 'rgba(37, 99, 235, 0.28)');
+        gradWeekly.addColorStop(1, 'rgba(37, 99, 235, 0.0)');
 
         const weeklyChart = new Chart(ctxWeekly, {
             type: 'line',
+            plugins: [drawPointLabelsPlugin],
             data: {
                 labels: weekLabels,
                 datasets: [{
-                    label: 'Engagement (%)',
+                    label: 'Engagement',
                     data: weekData,
-                    borderColor: '#3b82f6',
+                    borderColor: '#2563eb',
                     borderWidth: 3,
                     backgroundColor: gradWeekly,
                     fill: true,
-                    tension: 0.4,
-                    pointBackgroundColor: '#3b82f6',
+                    tension: 0,
+                    pointBackgroundColor: '#2563eb',
                     pointBorderColor: '#ffffff',
                     pointBorderWidth: 2,
                     pointRadius: 5,
@@ -504,20 +1016,42 @@
                 }]
             },
             options: {
-                responsive: true, maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: {
+                    padding: { top: 20, right: 30, bottom: 10, left: 10 }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        enabled: true,
+                        backgroundColor: '#1e293b',
+                        padding: 10,
+                        cornerRadius: 8,
+                        callbacks: {
+                            label: (ctx) => ` Engagement: ${ctx.raw}%`
+                        }
+                    }
+                },
                 scales: {
-                    y: { beginAtZero: true, max: 100, grid: { color: '#f1f5f9' }, ticks: { callback: v => v + '%' } },
-                    x: { grid: { display: false } }
+                    y: { beginAtZero: true, max: 100, ticks: { stepSize: 20, callback: v => v + '%' }, grid: { color: '#f1f5f9' } },
+                    x: { grid: { display: false }, ticks: { color: '#475569', font: { weight: 600 } } }
                 }
             }
         });
 
-        // Smooth update without full page refresh
+        // Smooth AJAX update without full page refresh
         const weeklySelect = document.getElementById('weeklyPeriodSelect');
+        const chartCanvasContainer = document.getElementById('watchOverviewChart') ? document.getElementById('watchOverviewChart').parentElement : null;
+
         if (weeklySelect) {
             weeklySelect.addEventListener('change', function () {
                 const selectedPeriod = this.value;
+                if (chartCanvasContainer) {
+                    chartCanvasContainer.style.opacity = '0.4';
+                    chartCanvasContainer.style.transition = 'opacity 0.2s ease';
+                }
+
                 fetch(`?period=${selectedPeriod}`, {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 })
@@ -525,35 +1059,57 @@
                     .then(html => {
                         const parser = new DOMParser();
                         const doc = parser.parseFromString(html, 'text/html');
-                        const scriptMatch = doc.querySelector('script:not([src])');
-                        // Fast update url state cleanly
+                        
+                        const scriptContent = Array.from(doc.querySelectorAll('script')).map(s => s.textContent).join('\n');
+                        const labelsMatch = scriptContent.match(/const backendLabels\s*=\s*(\[[\s\S]*?\]);/);
+                        const dataMatch = scriptContent.match(/const backendData\s*=\s*(\[[\s\S]*?\]);/);
+
+                        if (labelsMatch && dataMatch) {
+                            try {
+                                const newLabels = JSON.parse(labelsMatch[1]);
+                                const newData = JSON.parse(dataMatch[1]);
+                                
+                                weeklyChart.data.labels = (newLabels && newLabels.length > 0) ? newLabels : ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
+                                weeklyChart.data.datasets[0].data = (newData && newData.length > 0) ? newData : weeklyChart.data.labels.map(() => 0);
+                                weeklyChart.update('active');
+                                updateBanners(weeklyChart.data.datasets[0].data, monthlyChart.data.datasets[0].data, monthlyChart.data.labels);
+                            } catch (e) {
+                                console.error('Error parsing chart data from response', e);
+                            }
+                        }
+
                         history.pushState(null, '', `?period=${selectedPeriod}`);
-                        window.location.reload();
                     })
-                    .catch(() => {
-                        window.location.href = `?period=${selectedPeriod}`;
+                    .catch(err => {
+                        console.error('Failed to fetch period data', err);
+                    })
+                    .finally(() => {
+                        if (chartCanvasContainer) {
+                            chartCanvasContainer.style.opacity = '1';
+                        }
                     });
             });
         }
 
-        /* ── 2. Monthly Analytics Chart (Green Gradient Line Chart) ── */
+        /* ── 2. Monthly Analytics Chart ────────────────────────── */
         const ctxMonthly = document.getElementById('monthlyWatchChart').getContext('2d');
-        const gradMonthly = ctxMonthly.createLinearGradient(0, 0, 0, 200);
-        gradMonthly.addColorStop(0, 'rgba(16, 185, 129, 0.25)');
+        const gradMonthly = ctxMonthly.createLinearGradient(0, 0, 0, 220);
+        gradMonthly.addColorStop(0, 'rgba(16, 185, 129, 0.28)');
         gradMonthly.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
 
-        new Chart(ctxMonthly, {
+        const monthlyChart = new Chart(ctxMonthly, {
             type: 'line',
+            plugins: [drawPointLabelsPlugin],
             data: {
                 labels: monthLabels,
                 datasets: [{
-                    label: 'Analytics (%)',
+                    label: 'Engagement',
                     data: monthData,
                     borderColor: '#10b981',
                     borderWidth: 3,
                     backgroundColor: gradMonthly,
                     fill: true,
-                    tension: 0.4,
+                    tension: 0,
                     pointBackgroundColor: '#10b981',
                     pointBorderColor: '#ffffff',
                     pointBorderWidth: 2,
@@ -562,14 +1118,62 @@
                 }]
             },
             options: {
-                responsive: true, maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: {
+                    padding: { top: 20, right: 30, bottom: 10, left: 10 }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        enabled: true,
+                        backgroundColor: '#1e293b',
+                        padding: 10,
+                        cornerRadius: 8,
+                        callbacks: {
+                            label: (ctx) => ` Engagement: ${ctx.raw}%`
+                        }
+                    }
+                },
                 scales: {
-                    y: { beginAtZero: true, max: 100, grid: { color: '#f1f5f9' }, ticks: { callback: v => v + '%' } },
-                    x: { grid: { display: false } }
+                    y: { beginAtZero: true, max: 100, ticks: { stepSize: 20, callback: v => v + '%' }, grid: { color: '#f1f5f9' } },
+                    x: { grid: { display: false }, ticks: { color: '#475569', font: { weight: 600 } } }
                 }
             }
         });
+
+        // Banner Growth Percentages Calculator
+        function updateBanners(wData, mData, mLabels) {
+            const wLast = (wData && wData.length > 0) ? Number(wData[wData.length - 1] || 0) : 0;
+            const wPrev = (wData && wData.length > 1) ? Number(wData[wData.length - 2] || 0) : 0;
+            const wGrowth = (wLast >= wPrev) ? (wLast - wPrev) : wLast;
+            const wEl = document.getElementById('weekly-growth-pct');
+            if (wEl) wEl.textContent = wGrowth;
+
+            const mLast = (mData && mData.length > 0) ? Number(mData[mData.length - 1] || 0) : 0;
+            const mPrev = (mData && mData.length > 1) ? Number(mData[mData.length - 2] || 0) : 0;
+            const mGrowth = (mLast >= mPrev) ? (mLast - mPrev) : mLast;
+            const mEl = document.getElementById('monthly-growth-pct');
+            if (mEl) mEl.textContent = mGrowth;
+
+            const mName = (mLabels && mLabels.length > 0) ? mLabels[mLabels.length - 1] : 'August';
+            const mNameEl = document.getElementById('current-month-name');
+            if (mNameEl) mNameEl.textContent = mName;
+        }
+        updateBanners(weekData, monthData, monthLabels);
+
+        // Live Last Updated calculation
+        function updateAnalyticsTime() {
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+            const el = document.getElementById('analytics-live-time');
+            if (el) {
+                el.textContent = `${dateStr} • ${timeStr}`;
+            }
+        }
+        updateAnalyticsTime();
+        setInterval(updateAnalyticsTime, 60000);
 
         /* ── 3. College Distribution Donut Chart ─────────────────── */
         let dLabels = (backendCollegeLabels && backendCollegeLabels.length > 0) ? backendCollegeLabels : [];

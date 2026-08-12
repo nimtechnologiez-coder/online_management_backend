@@ -20,6 +20,7 @@
     <!-- CSS Links -->
     <link rel="stylesheet" href="{% static 'css/sidebar.css' %}" />
     <link rel="stylesheet" href="{% static 'css/dashboard.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/admin_toolbars.css' %}?v={% now 'U' %}">
 
     <style>
         /* ── Standardized Enterprise Card & Container Borders ────────────── */
@@ -59,7 +60,7 @@
     {% include 'includes/sidebar.html' %}
 
     <!-- Main Container -->
-    <div class="md:ml-[260px] p-4 md:p-6 lg:p-8 space-y-6">
+    <div class="va-main md:ml-[260px] p-4 md:p-6 lg:p-8 space-y-6">
 
         <!-- Topbar Header & Filters -->
         <div
@@ -70,7 +71,7 @@
                 </h1>
                 <p class="text-xs md:text-sm text-slate-500 mt-0.5">Comprehensive analytics, student watch engagement, and institution performance.</p>
             </div>
-            <form method="GET" action="{% url 'video_analytics' %}" id="analyticsFilterForm" class="flex flex-wrap items-center gap-3">
+            <form method="GET" action="{% url 'video_analytics' %}" id="analyticsFilterForm" class="admin-filter-grid">
                 <!-- Date Filter -->
                 <select name="date_filter" id="dateFilterSelect" onchange="filterAnalyticsSmooth()"
                     class="px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs md:text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors focus:ring-2 focus:ring-indigo-500 focus:outline-none cursor-pointer">

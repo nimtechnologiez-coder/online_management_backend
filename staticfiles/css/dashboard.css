@@ -1382,3 +1382,107 @@ button {
     font-size: 0.7rem;
     font-weight: 600;
 }
+
+/* ============================================================
+   Dashboard Mobile Responsiveness & Top Header Redesign
+   ============================================================ */
+@media (max-width: 768px) {
+    .main-content {
+        margin-left: 0 !important;
+        max-width: 100vw !important;
+        width: 100% !important;
+        padding-top: 4.5rem !important; /* Make space for floating mobile toggle */
+    }
+
+    .dashboard-content {
+        padding: 1rem !important;
+    }
+
+    .top-header {
+        height: auto !important;
+        padding: 0.75rem 1rem !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0.75rem !important;
+        background: #ffffff !important;
+        border-bottom: 1px solid #e2e8f0 !important;
+        position: relative !important;
+    }
+    
+    .header-left {
+        margin-left: 3rem !important; /* Leave room for the hamburger toggle on the left */
+        align-items: flex-start !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+    
+    .page-title {
+        font-size: 1.25rem !important;
+        font-weight: 800 !important;
+    }
+    
+    .welcome-message {
+        display: none !important;
+    }
+    
+    .header-center {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        order: 3 !important; /* Push search box to the bottom of the stacked header */
+    }
+    
+    .header-right {
+        position: absolute !important;
+        top: 0.75rem !important;
+        right: 1rem !important;
+        gap: 0.5rem !important;
+        display: flex !important;
+        align-items: center !important;
+    }
+    
+    .datetime-display {
+        display: none !important;
+    }
+    
+    .user-profile {
+        padding: 0.2rem !important;
+        border: none !important;
+        background: transparent !important;
+    }
+    
+    .user-profile .user-info {
+        display: none !important; /* Hide user name and role text on mobile, just show avatar */
+    }
+}
+
+@media (max-width: 600px) {
+    .stats-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .donut-wrapper {
+        flex-direction: column !important;
+        height: auto !important;
+        align-items: center !important;
+        gap: 1.5rem !important;
+    }
+    .donut-canvas-container {
+        width: 150px !important;
+        height: 150px !important;
+    }
+    .donut-legend-list {
+        width: 100% !important;
+        max-height: none !important;
+        overflow-y: visible !important;
+    }
+    
+    .footer-content {
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+        text-align: center !important;
+    }
+}

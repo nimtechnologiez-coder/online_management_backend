@@ -1,18 +1,18 @@
 {% for video in videos %}
 <tr data-id="{{ video.id }}"
-    data-title="{{ video.title|escapejs }}" 
-    data-cat="{{ video.category|escapejs }}" 
-    data-dur="{{ video.duration|escapejs }}" 
+    data-title="{{ video.title }}" 
+    data-cat="{{ video.category }}" 
+    data-dur="{{ video.duration }}" 
     data-date="{{ video.uploaded_at|date:'Y-m-d' }}" 
-    data-status="{{ video.status|escapejs }}" 
-    data-desc="{{ video.description|escapejs }}">
+    data-status="{{ video.status }}" 
+    data-desc="{{ video.description }}">
     <td class="vm-td--no">{{ forloop.counter0|add:page_obj.start_index }}</td>
     <td>
         <div class="vm-thumb">
             {% if video.thumbnail %}
-                <img src="{{ video.thumbnail.url }}" alt="Thumbnail">
+                <img src="{{ video.thumbnail.url }}" onerror="this.onerror=null; this.src='https://picsum.photos/seed/{{ video.id }}/160/90';" alt="Thumbnail">
             {% else %}
-                <img src="https://via.placeholder.com/80x45?text=No+Thumb" alt="Thumbnail">
+                <img src="https://picsum.photos/seed/{{ video.id }}/160/90" alt="Thumbnail">
             {% endif %}
             <i class="fas fa-play vm-thumb__play"></i>
         </div>

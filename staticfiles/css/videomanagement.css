@@ -370,7 +370,7 @@ body.vm-page {
 .vm-modal-overlay.active .vm-modal { transform: translateY(0) scale(1); }
 
 .vm-modal--large {
-    max-width: 680px;
+    max-width: 760px;
     text-align: left;
 }
 
@@ -1219,4 +1219,71 @@ body.vm-page {
 #deleteModal .delete-modal__confirm:hover {
     opacity: 0.95;
     box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
+}
+
+/* ── Edit Modal Redesign Layout ── */
+.vm-edit-layout {
+    display: grid !important;
+    grid-template-columns: 1.25fr 1fr !important;
+    gap: 1.5rem !important;
+    max-height: 70vh !important;
+    overflow-y: auto !important;
+    padding: 0.5rem !important;
+    box-sizing: border-box !important;
+}
+
+.vm-form-row {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 1rem !important;
+    width: 100% !important;
+}
+
+.vm-edit-main {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1.1rem !important;
+}
+
+.vm-edit-side {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1.2rem !important;
+}
+
+.vm-input,
+.vm-textarea,
+.vm-select {
+    padding: 0.7rem 0.9rem !important;
+    border: 1.5px solid #cbd5e1 !important;
+    border-radius: 10px !important;
+    font-size: 0.88rem !important;
+    font-family: var(--font-body) !important;
+    color: #0f172a !important;
+    background: #ffffff !important;
+    outline: none !important;
+    transition: all 0.2s ease !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+}
+
+.vm-input:focus,
+.vm-textarea:focus,
+.vm-select:focus {
+    border-color: var(--vm-primary) !important;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12) !important;
+}
+
+.vm-textarea {
+    resize: vertical !important;
+    min-height: 100px !important;
+}
+
+@media (max-width: 768px) {
+    .vm-edit-layout {
+        grid-template-columns: 1fr !important;
+    }
+    .vm-form-row {
+        grid-template-columns: 1fr !important;
+    }
 }

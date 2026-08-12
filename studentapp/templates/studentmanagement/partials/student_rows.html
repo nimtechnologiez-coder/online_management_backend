@@ -1,15 +1,15 @@
 {% for student in students %}
 <tr data-id="{{ student.id }}"
-    data-name="{{ student.full_name|escapejs }}"
-    data-user="{{ student.username|escapejs }}"
-    data-pass="{{ student.password|escapejs }}"
+    data-name="{{ student.full_name }}"
+    data-user="{{ student.username }}"
+    data-pass="{{ student.password }}"
     data-college-id="{{ student.college_id }}"
     data-dept-id="{{ student.department_id }}"
-    data-college="{{ student.college.college_name|escapejs }}"
-    data-dept="{{ student.department.dept_name|escapejs }}"
+    data-college="{{ student.college.college_name }}"
+    data-dept="{{ student.department.dept_name }}"
     data-year="{{ student.year }}"
-    data-status="{{ student.status|title }}"
-    data-email="{{ student.email|escapejs }}"
+    data-status="{{ student.status|lower }}"
+    data-email="{{ student.email }}"
     data-join="{{ student.created_at|date:'Y-m-d' }}"
     data-end="{{ student.end_date|date:'Y-m-d'|default:'' }}">
     <td class="sm-td--no">{{ forloop.counter0|add:page_obj.start_index }}</td>

@@ -74,29 +74,20 @@
                         </div>
                     </div>
 
-                    <div class="va-field-grid-2">
-                        <div class="va-field-group">
-                            <label for="category" class="va-label">Category <span class="req">*</span></label>
-                            <div class="va-input-wrap">
-                                <i class="fas fa-folder-open va-input-icon"></i>
-                                <select id="category" name="category" required class="va-select">
-                                    <option value="" disabled selected>Select Category</option>
-                                    <option value="Programming">Programming</option>
-                                    <option value="Mathematics">Mathematics</option>
-                                    <option value="Physics">Physics</option>
-                                    <option value="Soft Skills">Soft Skills</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="va-field-group">
-                            <label for="duration" class="va-label">Duration (MM:SS) <span class="req">*</span></label>
-                            <div class="va-input-wrap">
-                                <i class="fas fa-clock va-input-icon"></i>
-                                <input type="text" id="duration" name="duration" placeholder="e.g. 15:45" required class="va-input" pattern="^[0-9]{1,3}:[0-5][0-9]$" title="Format: MM:SS (e.g. 12:30)">
-                            </div>
+                    <div class="va-field-group">
+                        <label for="category" class="va-label">Category <span class="req">*</span></label>
+                        <div class="va-input-wrap">
+                            <i class="fas fa-folder-open va-input-icon"></i>
+                            <select id="category" name="category" required class="va-select">
+                                <option value="" disabled selected>Select Category</option>
+                                <option value="Programming">Programming</option>
+                                <option value="Mathematics">Mathematics</option>
+                                <option value="Physics">Physics</option>
+                                <option value="Soft Skills">Soft Skills</option>
+                            </select>
                         </div>
                     </div>
+                    <input type="hidden" id="duration" name="duration" value="">
 
                     <div class="va-field-group">
                         <label for="description" class="va-label">Description</label>
@@ -224,6 +215,22 @@
                 document.getElementById('videoDropzoneInner').classList.add('hidden');
                 document.getElementById('videoPreview').classList.remove('hidden');
                 document.getElementById('videoDropzone').classList.add('has-file');
+
+                // Read duration automatically
+                const videoElement = document.createElement('video');
+                videoElement.preload = 'metadata';
+                videoElement.src = URL.createObjectURL(file);
+                videoElement.onloadedmetadata = function() {
+                    URL.revokeObjectURL(videoElement.src);
+                    const durationInSeconds = videoElement.duration;
+                    if (durationInSeconds) {
+                        const minutes = Math.floor(durationInSeconds / 60);
+                        const seconds = Math.floor(durationInSeconds % 60);
+                        const formattedDuration = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                        document.getElementById('duration').value = formattedDuration;
+                        console.log("Automatically detected duration: " + formattedDuration);
+                    }
+                };
             }
         }
 
@@ -234,6 +241,7 @@
             document.getElementById('videoDropzoneInner').classList.remove('hidden');
             document.getElementById('videoPreview').classList.add('hidden');
             document.getElementById('videoDropzone').classList.remove('has-file');
+            document.getElementById('duration').value = '';
         }
 
         function handleThumbSelect(input) {

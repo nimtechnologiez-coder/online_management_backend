@@ -1,0 +1,895 @@
+/* ============================================================
+   Admin Modals – Unified Design System v2
+   admin_modals.css
+   
+   Covers all modal prefix families:
+     • .sm-modal  (Student Management)
+     • .dm-modal  (Department Management)
+     • .pm-modal  (Principal Management)
+     • .vm-modal  (Video Management)
+     • .modal-box / .modal-overlay (College Management)
+   
+   Load AFTER per-page CSS so specificity wins.
+   Design: Card-per-item approach with outer bordered section.
+   ============================================================ */
+
+/* ── CSS Design Tokens ─────────────────────────────────────── */
+:root {
+    --am-overlay-bg      : rgba(10, 15, 40, 0.65);
+    --am-overlay-blur    : 8px;
+    --am-modal-bg        : #ffffff;
+    --am-modal-border    : 2px solid rgba(99, 102, 241, 0.2);
+    --am-modal-radius    : 22px;
+    --am-modal-shadow    : 0 32px 80px -8px rgba(15, 23, 42, 0.32), 0 8px 24px -4px rgba(15, 23, 42, 0.12);
+    --am-header-border   : 1px solid #e2e8f0;
+    --am-header-bg       : #f8fafc;
+    --am-footer-border   : 1px solid #e2e8f0;
+    --am-card-border     : 1px solid #e2e8f0;
+    --am-card-bg         : #f8fafc;
+    --am-card-radius     : 12px;
+    --am-section-wrap    : 2px solid #e2e8f0;
+    --am-section-radius  : 14px;
+    --am-primary         : #4f46e5;
+    --am-primary-dark    : #4338ca;
+    --am-danger          : #dc2626;
+    --am-text-main       : #0f172a;
+    --am-text-sub        : #475569;
+    --am-text-muted      : #94a3b8;
+    --am-input-border    : #cbd5e1;
+    --am-input-radius    : 10px;
+    --am-input-bg        : #ffffff;
+    --am-font            : 'Inter', system-ui, sans-serif;
+}
+
+/* ============================================================
+   OVERLAY – all families
+   ============================================================ */
+.sm-modal-overlay,
+.dm-modal-overlay,
+.pm-modal-overlay,
+.vm-modal-overlay,
+.modal-overlay {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background: var(--am-overlay-bg) !important;
+    backdrop-filter: blur(var(--am-overlay-blur)) !important;
+    -webkit-backdrop-filter: blur(var(--am-overlay-blur)) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 9999 !important;
+    padding: 1.25rem !important;
+    box-sizing: border-box !important;
+    /* hidden by default */
+    opacity: 0 !important;
+    visibility: hidden !important;
+    transition: opacity 0.25s ease, visibility 0.25s ease !important;
+}
+
+/* Delete overlay special — uses rgba 65% opacity */
+.delete-modal-overlay {
+    background: rgba(10, 15, 40, 0.6) !important;
+}
+
+/* Active / open states */
+.sm-modal-overlay.active,
+.dm-modal-overlay.active,
+.pm-modal-overlay.active,
+.vm-modal-overlay.active,
+.modal-overlay.open {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* ============================================================
+   MODAL CARD – base box
+   ============================================================ */
+.sm-modal,
+.dm-modal,
+.pm-modal,
+.vm-modal,
+.modal-box {
+    background: var(--am-modal-bg) !important;
+    border: var(--am-modal-border) !important;
+    border-radius: var(--am-modal-radius) !important;
+    box-shadow: var(--am-modal-shadow) !important;
+    width: 100% !important;
+    max-width: 600px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    text-align: left !important;
+    transform: translateY(22px) scale(0.96) !important;
+    transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.28s ease !important;
+    position: relative !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+    max-height: 92vh !important;
+}
+
+/* Animate in */
+.sm-modal-overlay.active .sm-modal,
+.dm-modal-overlay.active .dm-modal,
+.pm-modal-overlay.active .pm-modal,
+.vm-modal-overlay.active .vm-modal,
+.modal-overlay.open .modal-box {
+    transform: translateY(0) scale(1) !important;
+}
+
+/* Wide / large modifier */
+.sm-modal--large,
+.dm-modal--wide,
+.pm-modal--form,
+.pm-modal--view,
+.vm-modal--large {
+    max-width: 720px !important;
+}
+
+/* Delete modals are smaller and centered */
+.sm-modal.delete-modal,
+.dm-modal.dm-modal--delete,
+.pm-modal.delete-modal,
+.vm-modal.delete-modal,
+.modal-box.modal-box--glass {
+    max-width: 440px !important;
+    text-align: center !important;
+}
+
+/* ============================================================
+   MODAL HEADER
+   ============================================================ */
+.sm-modal__header,
+.dm-modal__header,
+.pm-modal__header,
+.vm-modal__header,
+.modal-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 1.2rem 1.5rem !important;
+    background: var(--am-header-bg) !important;
+    border-bottom: var(--am-header-border) !important;
+    flex-shrink: 0 !important;
+    gap: 0.75rem !important;
+}
+
+/* Centered header variant (delete modals, college) */
+.modal-header--centered {
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+    padding-bottom: 0 !important;
+    border-bottom: none !important;
+    background: transparent !important;
+}
+
+.sm-modal__title,
+.dm-modal__title,
+.dm-modal__title-inline,
+.pm-modal__title,
+.vm-modal__title,
+.modal-title {
+    font-size: 1.1rem !important;
+    font-weight: 800 !important;
+    color: var(--am-text-main) !important;
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    font-family: var(--am-font) !important;
+    letter-spacing: -0.01em !important;
+}
+
+.sm-modal__title i,
+.dm-modal__title i,
+.dm-modal__title-inline i,
+.pm-modal__title i,
+.vm-modal__title i {
+    color: var(--am-primary) !important;
+    font-size: 1rem !important;
+    width: 30px !important;
+    height: 30px !important;
+    background: rgba(79, 70, 229, 0.1) !important;
+    border-radius: 8px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* ── Close Button ─────────────────────────────────────────── */
+.sm-modal__close,
+.dm-modal__close,
+.pm-close-btn,
+.vm-modal__close,
+.modal-close {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    border: 1.5px solid #e2e8f0 !important;
+    background: #ffffff !important;
+    border-radius: 50% !important;
+    color: var(--am-text-sub) !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 0.9rem !important;
+    transition: all 0.2s ease !important;
+    flex-shrink: 0 !important;
+    line-height: 1 !important;
+}
+
+.sm-modal__close:hover,
+.dm-modal__close:hover,
+.pm-close-btn:hover,
+.vm-modal__close:hover,
+.modal-close:hover {
+    background: #fef2f2 !important;
+    border-color: #fca5a5 !important;
+    color: var(--am-danger) !important;
+    transform: rotate(90deg) !important;
+}
+
+/* ── Floating Close (Delete Modal) ───────────────────────── */
+.dm-modal__close--floating,
+.delete-modal__close,
+.modal-close--floating {
+    position: absolute !important;
+    top: 14px !important;
+    right: 14px !important;
+    z-index: 10 !important;
+    width: 32px !important;
+    height: 32px !important;
+    border: 1.5px solid #e2e8f0 !important;
+    background: #ffffff !important;
+    border-radius: 50% !important;
+    color: var(--am-text-sub) !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 0.9rem !important;
+    transition: all 0.2s ease !important;
+}
+
+.dm-modal__close--floating:hover,
+.delete-modal__close:hover,
+.modal-close--floating:hover {
+    background: #fef2f2 !important;
+    border-color: #fca5a5 !important;
+    color: var(--am-danger) !important;
+    transform: rotate(90deg) !important;
+}
+
+/* ============================================================
+   MODAL BODY
+   ============================================================ */
+.sm-modal__body,
+.dm-modal__body,
+.pm-view-content,
+.vm-modal__body,
+.modal-body {
+    padding: 1.4rem 1.5rem !important;
+    overflow-y: auto !important;
+    flex: 1 !important;
+    box-sizing: border-box !important;
+    scrollbar-width: thin !important;
+    scrollbar-color: #cbd5e1 transparent !important;
+}
+
+.sm-modal__body::-webkit-scrollbar,
+.dm-modal__body::-webkit-scrollbar,
+.pm-view-content::-webkit-scrollbar,
+.vm-modal__body::-webkit-scrollbar,
+.modal-body::-webkit-scrollbar {
+    width: 5px !important;
+}
+
+.sm-modal__body::-webkit-scrollbar-thumb,
+.dm-modal__body::-webkit-scrollbar-thumb,
+.pm-view-content::-webkit-scrollbar-thumb,
+.vm-modal__body::-webkit-scrollbar-thumb,
+.modal-body::-webkit-scrollbar-thumb {
+    background: #cbd5e1 !important;
+    border-radius: 4px !important;
+}
+
+/* ============================================================
+   DETAIL SECTION WRAPPER (View Modals)
+   Adds outer border and groups the card items together
+   ============================================================ */
+.sm-detail-grid,
+.dm-detail-grid,
+.pm-view-grid,
+.detail-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.6rem !important;
+    padding: 1rem !important;
+    background: #f1f5f9 !important;
+    border: var(--am-section-wrap) !important;
+    border-radius: var(--am-section-radius) !important;
+}
+
+/* Each detail card item */
+.sm-detail-item,
+.dm-detail-item,
+.pm-view-item,
+.detail-item {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 10px !important;
+    padding: 0.8rem 1rem !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.25rem !important;
+    min-width: 0 !important;
+    transition: border-color 0.15s ease !important;
+}
+
+.sm-detail-item:hover,
+.dm-detail-item:hover,
+.pm-view-item:hover,
+.detail-item:hover {
+    border-color: #c7d2fe !important;
+}
+
+/* Full-width items */
+.sm-detail-item[style*="grid-column"],
+.dm-detail-item[style*="grid-column"],
+.pm-view-item[style*="grid-column"],
+.detail-item[style*="grid-column"] {
+    grid-column: 1 / -1 !important;
+}
+
+/* Label (strong/p.label) */
+.sm-detail-item strong,
+.detail-label,
+.dm-detail-label,
+.pm-view-label {
+    font-size: 0.7rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.06em !important;
+    font-weight: 700 !important;
+    color: var(--am-text-muted) !important;
+    margin: 0 !important;
+}
+
+/* Value (span/p.value) */
+.sm-detail-item span,
+.detail-value,
+.dm-detail-value,
+.pm-view-value {
+    font-size: 0.88rem !important;
+    font-weight: 600 !important;
+    color: var(--am-text-main) !important;
+    word-break: break-word !important;
+    margin: 0 !important;
+    line-height: 1.4 !important;
+}
+
+/* ── Profile / Head Row (view modal intro) ───────────────── */
+.pm-view-profile,
+.dm-view-head,
+.view-avatar-row {
+    display: flex !important;
+    align-items: center !important;
+    gap: 1rem !important;
+    padding: 0.9rem 1.1rem !important;
+    background: linear-gradient(135deg, #eef2ff 0%, #f0fdf4 100%) !important;
+    border: 2px solid #e0e7ff !important;
+    border-radius: 14px !important;
+    margin-bottom: 1rem !important;
+}
+
+.pm-view-profile h2,
+.dm-view-head__name,
+.view-avatar-row .name {
+    font-size: 1.05rem !important;
+    font-weight: 800 !important;
+    color: var(--am-text-main) !important;
+    margin: 0 0 0.15rem !important;
+}
+
+.pm-principal__role,
+.dm-view-head__sub {
+    font-size: 0.8rem !important;
+    color: var(--am-text-sub) !important;
+    margin: 0 !important;
+}
+
+.pm-avatar {
+    border: 2px solid #c7d2fe !important;
+}
+
+.view-avatar-row img {
+    width: 60px !important;
+    height: 60px !important;
+    border-radius: 12px !important;
+    border: 2px solid #e0e7ff !important;
+    object-fit: cover !important;
+}
+
+/* ============================================================
+   EDIT FORM BODY WRAPPER
+   Adds a subtle outer border to the form input section
+   ============================================================ */
+.sm-form-grid,
+.pm-form-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 1rem !important;
+    padding: 1rem !important;
+    background: #f8fafc !important;
+    border: var(--am-section-wrap) !important;
+    border-radius: var(--am-section-radius) !important;
+}
+
+/* Department edit form body */
+.dm-modal__body .dm-form-row {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 1rem !important;
+    margin-bottom: 0 !important;
+}
+
+.dm-modal__body #editForm {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1rem !important;
+    padding: 1rem !important;
+    background: #f8fafc !important;
+    border: var(--am-section-wrap) !important;
+    border-radius: var(--am-section-radius) !important;
+}
+
+/* College edit form */
+.modal-body #editForm {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+}
+
+/* Input / Select / Textarea – unified look */
+.sm-modal__body input:not([type="hidden"]):not([type="file"]):not([type="checkbox"]),
+.sm-modal__body select,
+.sm-modal__body textarea,
+.dm-modal__body input:not([type="hidden"]):not([type="file"]):not([type="checkbox"]),
+.dm-modal__body select,
+.dm-modal__body textarea,
+.pm-modal input:not([type="hidden"]):not([type="file"]):not([type="checkbox"]),
+.pm-modal select,
+.pm-modal textarea,
+.vm-modal input:not([type="hidden"]):not([type="file"]):not([type="checkbox"]),
+.vm-modal select,
+.vm-modal textarea,
+.modal-body .form-group input,
+.modal-body .form-group select,
+.modal-body .form-group textarea,
+.sm-select,
+.dm-select,
+.pm-select,
+.vm-select {
+    width: 100% !important;
+    padding: 0.65rem 0.9rem !important;
+    border: 1.5px solid var(--am-input-border) !important;
+    border-radius: var(--am-input-radius) !important;
+    font-size: 0.875rem !important;
+    font-family: var(--am-font) !important;
+    color: var(--am-text-main) !important;
+    background: var(--am-input-bg) !important;
+    outline: none !important;
+    box-sizing: border-box !important;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+.sm-modal__body input:focus,
+.sm-modal__body select:focus,
+.sm-modal__body textarea:focus,
+.dm-modal__body input:focus,
+.dm-modal__body select:focus,
+.dm-modal__body textarea:focus,
+.pm-modal input:focus,
+.pm-modal select:focus,
+.pm-modal textarea:focus,
+.vm-modal input:focus,
+.vm-modal select:focus,
+.vm-modal textarea:focus,
+.modal-body .form-group input:focus,
+.modal-body .form-group select:focus,
+.modal-body .form-group textarea:focus {
+    border-color: var(--am-primary) !important;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12) !important;
+}
+
+/* Read-only */
+.sm-input--readonly,
+input[readonly],
+input[disabled] {
+    background: #f1f5f9 !important;
+    color: var(--am-text-sub) !important;
+    cursor: not-allowed !important;
+    border-color: #e2e8f0 !important;
+}
+
+/* Labels */
+.sm-modal__body label,
+.dm-modal__body label,
+.pm-modal label,
+.vm-modal label,
+.modal-body .form-group label {
+    font-size: 0.72rem !important;
+    font-weight: 700 !important;
+    color: var(--am-text-sub) !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.04em !important;
+    display: block !important;
+    margin-bottom: 0.35rem !important;
+}
+
+.sm-modal__body label small,
+.dm-modal__body label small,
+.pm-modal label small {
+    font-weight: 500 !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+    color: var(--am-text-muted) !important;
+}
+
+/* ============================================================
+   MODAL FOOTER / ACTIONS
+   ============================================================ */
+.sm-modal__actions,
+.dm-modal__actions,
+.pm-modal__actions,
+.vm-modal__actions,
+.modal-footer {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 0.75rem !important;
+    padding: 1rem 1.5rem !important;
+    border-top: var(--am-footer-border) !important;
+    background: var(--am-header-bg) !important;
+    flex-shrink: 0 !important;
+    margin-top: 0 !important;
+}
+
+/* ── Action Buttons – unified ────────────────────────────── */
+.sm-btn,
+.dm-btn,
+.pm-btn,
+.vm-btn,
+.btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.4rem !important;
+    padding: 0.6rem 1.3rem !important;
+    border-radius: 10px !important;
+    font-size: 0.875rem !important;
+    font-weight: 700 !important;
+    font-family: var(--am-font) !important;
+    cursor: pointer !important;
+    border: 1.5px solid transparent !important;
+    transition: all 0.2s ease !important;
+    white-space: nowrap !important;
+    text-decoration: none !important;
+}
+
+.sm-btn--ghost,
+.dm-btn--ghost,
+.pm-btn--ghost,
+.vm-btn--ghost,
+.btn-ghost {
+    background: #ffffff !important;
+    color: var(--am-text-sub) !important;
+    border-color: #e2e8f0 !important;
+}
+
+.sm-btn--ghost:hover,
+.dm-btn--ghost:hover,
+.pm-btn--ghost:hover,
+.vm-btn--ghost:hover,
+.btn-ghost:hover {
+    background: #f1f5f9 !important;
+    border-color: #cbd5e1 !important;
+    color: var(--am-text-main) !important;
+}
+
+.sm-btn--primary,
+.dm-btn--primary,
+.pm-btn--primary,
+.vm-btn--primary,
+.btn-primary {
+    background: linear-gradient(135deg, var(--am-primary) 0%, #6366f1 100%) !important;
+    color: #ffffff !important;
+    border-color: transparent !important;
+    box-shadow: 0 4px 14px rgba(79, 70, 229, 0.28) !important;
+}
+
+.sm-btn--primary:hover,
+.dm-btn--primary:hover,
+.pm-btn--primary:hover,
+.vm-btn--primary:hover,
+.btn-primary:hover {
+    background: linear-gradient(135deg, var(--am-primary-dark) 0%, var(--am-primary) 100%) !important;
+    box-shadow: 0 6px 18px rgba(79, 70, 229, 0.38) !important;
+    transform: translateY(-1px) !important;
+}
+
+/* ============================================================
+   DELETE MODAL – special layout
+   ============================================================ */
+.delete-modal__icon,
+.dm-modal__icon--delete {
+    width: 72px !important;
+    height: 72px !important;
+    border-radius: 50% !important;
+    background: linear-gradient(135deg, #ff5f6d 0%, #dc2626 100%) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 1.5rem auto 1rem !important;
+    box-shadow: 0 8px 24px rgba(220, 38, 38, 0.3) !important;
+    border: none !important;
+}
+
+.delete-modal__icon i,
+.dm-modal__icon--delete i {
+    font-size: 1.75rem !important;
+    color: #ffffff !important;
+}
+
+.delete-modal__title,
+.dm-modal__title--delete {
+    font-size: 1.25rem !important;
+    font-weight: 800 !important;
+    color: var(--am-text-main) !important;
+    margin: 0 0 0.5rem !important;
+}
+
+.delete-modal__message,
+.dm-modal__desc--delete {
+    font-size: 0.9rem !important;
+    color: var(--am-text-sub) !important;
+    line-height: 1.65 !important;
+    padding: 0 1rem !important;
+    margin: 0 !important;
+}
+
+.delete-modal__actions,
+.dm-modal__actions--delete {
+    display: flex !important;
+    gap: 0.75rem !important;
+    justify-content: center !important;
+    padding: 1.25rem 1.5rem !important;
+    border-top: var(--am-footer-border) !important;
+    background: var(--am-header-bg) !important;
+    flex-shrink: 0 !important;
+    margin-top: 0 !important;
+}
+
+.delete-modal__cancel,
+.dm-btn--glass {
+    flex: 1 !important;
+    padding: 0.65rem 1rem !important;
+    border-radius: 10px !important;
+    background: #ffffff !important;
+    border: 1.5px solid #e2e8f0 !important;
+    color: var(--am-text-sub) !important;
+    font-size: 0.875rem !important;
+    font-weight: 700 !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    font-family: var(--am-font) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.delete-modal__cancel:hover,
+.dm-btn--glass:hover {
+    background: #f1f5f9 !important;
+    border-color: #cbd5e1 !important;
+    color: var(--am-text-main) !important;
+}
+
+.delete-modal__confirm,
+.dm-btn--danger-gradient,
+.dm-btn--danger {
+    flex: 1 !important;
+    padding: 0.65rem 1rem !important;
+    border-radius: 10px !important;
+    background: linear-gradient(135deg, #ef4444 0%, var(--am-danger) 100%) !important;
+    border: none !important;
+    color: #ffffff !important;
+    font-size: 0.875rem !important;
+    font-weight: 700 !important;
+    cursor: pointer !important;
+    box-shadow: 0 4px 14px rgba(220, 38, 38, 0.28) !important;
+    transition: all 0.2s ease !important;
+    font-family: var(--am-font) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.delete-modal__confirm:hover,
+.dm-btn--danger-gradient:hover {
+    box-shadow: 0 6px 20px rgba(220, 38, 38, 0.42) !important;
+    transform: translateY(-1px) !important;
+}
+
+.delete-modal__confirm:disabled {
+    opacity: 0.5 !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+}
+
+/* Confirm input (Student delete modal) */
+#deleteConfirmInput {
+    width: 100% !important;
+    padding: 0.65rem 0.9rem !important;
+    border: 1.5px solid var(--am-input-border) !important;
+    border-radius: var(--am-input-radius) !important;
+    font-size: 0.875rem !important;
+    font-family: var(--am-font) !important;
+    outline: none !important;
+    box-sizing: border-box !important;
+    transition: border-color 0.2s ease !important;
+}
+
+#deleteConfirmInput:focus {
+    border-color: var(--am-danger) !important;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1) !important;
+}
+
+/* College delete glass variant */
+#deleteModal .modal-box,
+.modal-box--glass {
+    background: rgba(255, 255, 255, 0.96) !important;
+}
+
+/* ============================================================
+   COLLEGE MODALS (modal-box) – detail rows
+   ============================================================ */
+.detail-grid {
+    margin-top: 0 !important;
+}
+
+/* ============================================================
+   VIDEO PREVIEW MODAL (Admin Video Approval)
+   ============================================================ */
+.video-modal-backdrop {
+    position: fixed !important;
+    inset: 0 !important;
+    background: var(--am-overlay-bg) !important;
+    backdrop-filter: blur(var(--am-overlay-blur)) !important;
+    -webkit-backdrop-filter: blur(var(--am-overlay-blur)) !important;
+    display: none !important;
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 9999 !important;
+    padding: 1.25rem !important;
+    box-sizing: border-box !important;
+}
+
+.video-modal-backdrop.active {
+    display: flex !important;
+}
+
+.video-modal-card {
+    background: #1e293b !important;
+    border: 2px solid rgba(148, 163, 184, 0.3) !important;
+    border-radius: var(--am-modal-radius) !important;
+    box-shadow: var(--am-modal-shadow) !important;
+    width: 100% !important;
+    max-width: 780px !important;
+    max-height: 90vh !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+.video-modal-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 1rem 1.5rem !important;
+    background: #0f172a !important;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.2) !important;
+    color: #f1f5f9 !important;
+    flex-shrink: 0 !important;
+}
+
+.video-modal-header h3 {
+    color: #f1f5f9 !important;
+    font-size: 1rem !important;
+    font-weight: 700 !important;
+    margin: 0 !important;
+}
+
+.video-modal-body {
+    padding: 1.25rem !important;
+    background: #1e293b !important;
+    overflow-y: auto !important;
+    border: 1.5px solid #334155 !important;
+    margin: 1rem !important;
+    border-radius: 12px !important;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 640px) {
+    .sm-modal,
+    .dm-modal,
+    .pm-modal,
+    .vm-modal,
+    .modal-box {
+        max-width: 100% !important;
+        border-radius: 18px !important;
+    }
+
+    .sm-detail-grid,
+    .dm-detail-grid,
+    .pm-view-grid,
+    .detail-grid,
+    .sm-form-grid,
+    .pm-form-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .dm-modal__body .dm-form-row {
+        grid-template-columns: 1fr !important;
+    }
+
+    .sm-modal__header,
+    .dm-modal__header,
+    .pm-modal__header,
+    .vm-modal__header,
+    .modal-header {
+        padding: 1rem 1.1rem !important;
+    }
+
+    .sm-modal__body,
+    .dm-modal__body,
+    .pm-view-content,
+    .vm-modal__body,
+    .modal-body {
+        padding: 1rem !important;
+    }
+
+    .sm-modal__actions,
+    .dm-modal__actions,
+    .pm-modal__actions,
+    .vm-modal__actions,
+    .modal-footer {
+        padding: 0.85rem 1.1rem !important;
+    }
+
+    .delete-modal__actions,
+    .dm-modal__actions--delete {
+        flex-direction: column !important;
+    }
+
+    .sm-detail-grid,
+    .dm-detail-grid,
+    .pm-view-grid,
+    .detail-grid {
+        padding: 0.75rem !important;
+        gap: 0.5rem !important;
+    }
+}
+
+@media (max-width: 400px) {
+    .sm-modal__title,
+    .dm-modal__title-inline,
+    .pm-modal__title,
+    .vm-modal__title,
+    .modal-title {
+        font-size: 0.95rem !important;
+    }
+}

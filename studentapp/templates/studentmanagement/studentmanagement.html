@@ -19,6 +19,8 @@
     <link rel="stylesheet" href="{% static 'css/sidebar.css' %}" />
     <link rel="stylesheet" href="{% static 'css/department.css' %}">
     <link rel="stylesheet" href="{% static 'css/studentmanagement.css' %}">
+    <link rel="stylesheet" href="{% static 'css/admin_modals.css' %}?v={% now 'U' %}">
+    <link rel="stylesheet" href="{% static 'css/admin_toolbars.css' %}?v={% now 'U' %}">
 
 </head>
 
@@ -80,40 +82,38 @@
         </div>
 
         <!-- Toolbar -->
-        <form class="sm-toolbar" method="GET" action="{% url 'student_management' %}">
-            <div class="sm-toolbar__filters">
-                <div class="sm-search">
-                    <i class="fas fa-search sm-search__icon"></i>
-                    <input type="text" name="q" value="{{ q }}" placeholder="Search by name, username…"
-                        class="sm-search__input" onkeydown="if(event.key==='Enter'){this.form.submit();}">
-                </div>
-                <select name="college" class="sm-select" onchange="this.form.submit()">
-                    <option value="">All Colleges</option>
-                    {% for c in all_colleges %}
-                    <option value="{{ c.id }}" {% if selected_college == c.id|stringformat:"s" %}selected{% endif %}>{{ c.college_name }}</option>
-                    {% endfor %}
-                </select>
-                <select name="department" class="sm-select" onchange="this.form.submit()">
-                    <option value="">All Departments</option>
-                    {% for d in all_departments %}
-                    <option value="{{ d.id }}" {% if selected_dept == d.id|stringformat:"s" %}selected{% endif %}>{{ d.dept_name }}</option>
-                    {% endfor %}
-                </select>
-                <select name="year" class="sm-select sm-select--sm" onchange="this.form.submit()">
-                    <option value="">All Years</option>
-                    <option value="I" {% if selected_year == 'I' %}selected{% endif %}>Year I</option>
-                    <option value="II" {% if selected_year == 'II' %}selected{% endif %}>Year II</option>
-                    <option value="III" {% if selected_year == 'III' %}selected{% endif %}>Year III</option>
-                    <option value="IV" {% if selected_year == 'IV' %}selected{% endif %}>Year IV</option>
-                </select>
-                <select name="status" class="sm-select sm-select--sm" onchange="this.form.submit()">
-                    <option value="">All Status</option>
-                    <option value="pending_approval" {% if selected_status == 'pending_approval' %}selected{% endif %}>Pending Approval</option>
-                    <option value="active" {% if selected_status == 'active' %}selected{% endif %}>Active</option>
-                    <option value="inactive" {% if selected_status == 'inactive' %}selected{% endif %}>Inactive</option>
-                    <option value="rejected" {% if selected_status == 'rejected' %}selected{% endif %}>Rejected</option>
-                </select>
+        <form class="sm-toolbar admin-filter-grid" method="GET" action="{% url 'student_management' %}">
+            <div class="sm-search">
+                <i class="fas fa-search sm-search__icon"></i>
+                <input type="text" name="q" value="{{ q }}" placeholder="Search by name, username…"
+                    class="sm-search__input" onkeydown="if(event.key==='Enter'){this.form.submit();}">
             </div>
+            <select name="college" class="sm-select" onchange="this.form.submit()">
+                <option value="">All Colleges</option>
+                {% for c in all_colleges %}
+                <option value="{{ c.id }}" {% if selected_college == c.id|stringformat:"s" %}selected{% endif %}>{{ c.college_name }}</option>
+                {% endfor %}
+            </select>
+            <select name="department" class="sm-select" onchange="this.form.submit()">
+                <option value="">All Departments</option>
+                {% for d in all_departments %}
+                <option value="{{ d.id }}" {% if selected_dept == d.id|stringformat:"s" %}selected{% endif %}>{{ d.dept_name }}</option>
+                {% endfor %}
+            </select>
+            <select name="year" class="sm-select sm-select--sm" onchange="this.form.submit()">
+                <option value="">All Years</option>
+                <option value="I" {% if selected_year == 'I' %}selected{% endif %}>Year I</option>
+                <option value="II" {% if selected_year == 'II' %}selected{% endif %}>Year II</option>
+                <option value="III" {% if selected_year == 'III' %}selected{% endif %}>Year III</option>
+                <option value="IV" {% if selected_year == 'IV' %}selected{% endif %}>Year IV</option>
+            </select>
+            <select name="status" class="sm-select sm-select--sm" onchange="this.form.submit()">
+                <option value="">All Status</option>
+                <option value="pending_approval" {% if selected_status == 'pending_approval' %}selected{% endif %}>Pending Approval</option>
+                <option value="active" {% if selected_status == 'active' %}selected{% endif %}>Active</option>
+                <option value="inactive" {% if selected_status == 'inactive' %}selected{% endif %}>Inactive</option>
+                <option value="rejected" {% if selected_status == 'rejected' %}selected{% endif %}>Rejected</option>
+            </select>
             <a href="{% url 'student_management' %}" class="sm-btn sm-btn--ghost" id="resetBtn" title="Reset filters"
                 style="text-decoration:none;">
                 Reset
@@ -139,39 +139,7 @@
                         </tr>
                     </thead>
                     <tbody id="tableBody">
-                        <!-- ── Rows inlined directly (student_rows.html merged in) ────────── -->
-                        {% for s in students %}
-                        <tr data-id="{{ s.id }}" data-name="{{ s.full_name }}" data-email="{{ s.email }}"
-                            data-user="{{ s.username }}" data-pass="{{ s.password }}"
-                            data-college="{{ s.college.college_name }}" data-college-id="{{ s.college_id }}"
-                            data-dept="{{ s.department.dept_name }}" data-dept-id="{{ s.department_id }}"
-                            data-year="{{ s.year }}" data-join="{{ s.join_date|date:'Y-m-d' }}"
-                            data-end="{{ s.end_date|date:'Y-m-d' }}" data-status="{{ s.status }}">
-                            <td>{{ forloop.counter0|add:page_obj.start_index }}</td>
-                            <td>{{ s.full_name }}</td>
-                            <td>{{ s.username }}</td>
-                            <td>{{ s.college.college_name }}</td>
-                            <td>{{ s.department.dept_name }}</td>
-                            <td>{{ s.year }}</td>
-                            <td>{{ s.join_date|date:'M d, Y' }}</td>
-                            <td>{{ s.end_date|date:'M d, Y' }}</td>
-                            <td>
-                                <span class="sm-badge sm-badge--{{ s.status|lower }}">{{ s.get_status_display|default:s.status }}</span>
-                            </td>
-                            <td class="sm-table-actions">
-                                <button class="sm-icon-btn" title="View" onclick="openViewModal(this)"><i
-                                        class="fas fa-eye"></i></button>
-                                <button class="sm-icon-btn" title="Edit" onclick="openEditModal(this)"><i
-                                        class="fas fa-pen"></i></button>
-                                <button class="sm-icon-btn sm-icon-btn--danger" title="Delete"
-                                    onclick="openDeleteModal(this)"><i class="fas fa-trash"></i></button>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="11" class="sm-table-empty">No students found.</td>
-                        </tr>
-                        {% endfor %}
+                        {% include 'studentmanagement/partials/student_rows.html' %}
                     </tbody>
                 </table>
             </div>
@@ -326,13 +294,15 @@
                         <option value="inactive">Inactive</option>
                         <option value="rejected">Rejected</option>
                     </select>
-                <div class="sm-modal__actions">
-                    <button onclick="closeModal('editModal')" class="sm-btn sm-btn--ghost">Cancel</button>
-                    <button onclick="confirmEdit()" class="sm-btn sm-btn--primary" id="saveEditBtn">Save Changes</button>
                 </div>
             </form>
+            <div class="sm-modal__actions">
+                <button onclick="closeModal('editModal')" class="sm-btn sm-btn--ghost">Cancel</button>
+                <button onclick="confirmEdit()" class="sm-btn sm-btn--primary" id="saveEditBtn">Save Changes</button>
+            </div>
         </div>
     </div>
+
 
     <!-- ── DELETE MODAL ────────────────────────────────────── -->
     <div id="deleteModal" class="sm-modal-overlay delete-modal-overlay" role="dialog" aria-modal="true"

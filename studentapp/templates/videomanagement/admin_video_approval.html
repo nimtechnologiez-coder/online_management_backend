@@ -15,6 +15,8 @@
     <link rel="stylesheet" href="{% static 'css/sidebar.css' %}" />
     <link rel="stylesheet" href="{% static 'css/department.css' %}">
     <link rel="stylesheet" href="{% static 'css/videomanagement.css' %}">
+    <link rel="stylesheet" href="{% static 'css/admin_modals.css' %}?v={% now 'U' %}">
+    <link rel="stylesheet" href="{% static 'css/admin_toolbars.css' %}?v={% now 'U' %}">
 
     <style>
         .approval-stats {
@@ -192,25 +194,21 @@
         </div>
 
         <!-- Toolbar -->
-        <form method="GET" action="{% url 'admin_video_approval' %}" class="vm-toolbar">
-            <div class="vm-toolbar__filters">
-                <div class="vm-search">
-                    <i class="fas fa-search vm-search__icon"></i>
-                    <input type="text" name="q" value="{{ q }}" placeholder="Search video title, HOD..." class="vm-search__input" onchange="this.form.submit()">
-                </div>
+        <form method="GET" action="{% url 'admin_video_approval' %}" class="vm-toolbar admin-filter-grid">
+            <div class="vm-search">
+                <i class="fas fa-search vm-search__icon"></i>
+                <input type="text" name="q" value="{{ q }}" placeholder="Search video title, HOD..." class="vm-search__input" onchange="this.form.submit()">
+            </div>
 
-                <select name="status" class="vm-select" onchange="this.form.submit()">
-                    <option value="Pending" {% if selected_status == 'Pending' %}selected{% endif %}>Pending Approval Queue</option>
-                    <option value="Published" {% if selected_status == 'Published' %}selected{% endif %}>Published Videos</option>
-                    <option value="Rejected" {% if selected_status == 'Rejected' %}selected{% endif %}>Rejected Videos</option>
-                    <option value="All" {% if selected_status == 'All' %}selected{% endif %}>All Videos</option>
-                </select>
-            </div>
-            <div class="vm-toolbar__actions">
-                <a href="{% url 'admin_video_approval' %}" class="vm-btn vm-btn--ghost">
-                    <i class="fas fa-rotate-right"></i> Reset Filters
-                </a>
-            </div>
+            <select name="status" class="vm-select" onchange="this.form.submit()">
+                <option value="Pending" {% if selected_status == 'Pending' %}selected{% endif %}>Pending Approval Queue</option>
+                <option value="Published" {% if selected_status == 'Published' %}selected{% endif %}>Published Videos</option>
+                <option value="Rejected" {% if selected_status == 'Rejected' %}selected{% endif %}>Rejected Videos</option>
+                <option value="All" {% if selected_status == 'All' %}selected{% endif %}>All Videos</option>
+            </select>
+            <a href="{% url 'admin_video_approval' %}" class="vm-btn vm-btn--ghost">
+                <i class="fas fa-rotate-right"></i> Reset Filters
+            </a>
         </form>
 
         <!-- Video Approval Table Card -->
@@ -238,7 +236,7 @@
                             <td>
                                 <div class="vm-thumb cursor-pointer" onclick="openPreviewModal('{{ video.title|escapejs }}', '{% if video.video_file %}{{ video.video_file.url }}{% else %}https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4{% endif %}', '{% if video.uploaded_by_hod %}{{ video.uploaded_by_hod.dept_name }} (HOD){% else %}System Admin{% endif %}', '{{ video.uploaded_by_hod.dept_name|default:'General' }}', '{{ video.description|escapejs }}')">
                                     {% if video.thumbnail %}
-                                        <img src="{{ video.thumbnail.url }}" alt="Thumbnail">
+                                        <img src="{{ video.thumbnail.url }}" onerror="this.onerror=null; this.src='https://picsum.photos/seed/{{ video.id }}/160/90';" alt="Thumbnail">
                                     {% else %}
                                         <img src="https://picsum.photos/seed/{{ video.id }}/160/90" alt="Thumbnail">
                                     {% endif %}
