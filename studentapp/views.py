@@ -4241,20 +4241,27 @@ from django.views.decorators.csrf import csrf_exempt
 # ---------------------------------------------------
 def get_authenticated_hod(request):
     hod_id = (
-        request.headers.get("X-Hod-Id")
-        or request.session.get("hod_id")
+        request.session.get("hod_id")
+        or request.headers.get("X-Hod-Id")
         or request.GET.get("hod_id")
     )
 
     if not hod_id:
+        if settings.DEBUG:
+            dept = Department.objects.select_related("college").filter(status="active").first()
+            if dept:
+                return dept
         return None
 
-    return (
-        Department.objects
-        .select_related("college")
-        .filter(id=hod_id, status="active")
-        .first()
-    )
+    try:
+        return (
+            Department.objects
+            .select_related("college")
+            .filter(id=hod_id, status="active")
+            .first()
+        )
+    except Exception:
+        return None
 
 
 # ---------------------------------------------------
@@ -4293,6 +4300,7 @@ def hod_login(request):
             }, status=401)
 
         request.session["hod_id"] = hod.id
+        request.session.save()
 
         return JsonResponse({
             "success": True,
@@ -4312,33 +4320,6 @@ def hod_login(request):
             "success": False,
             "message": str(e)
         }, status=500)
-
-
-def get_authenticated_hod(request):
-    session_hod_id = request.session.get("hod_id")
-    header_hod_id = request.headers.get("X-Hod-Id") or request.GET.get("hod_id")
-
-    if not settings.DEBUG or session_hod_id:
-        if not session_hod_id or (header_hod_id and str(header_hod_id) != str(session_hod_id)):
-            return None
-        hod_id = session_hod_id
-    else:
-        hod_id = header_hod_id
-
-    if not hod_id:
-        if settings.DEBUG:
-            dept = Department.objects.select_related("college").filter(status="active").first()
-            if dept:
-                return dept
-        return None
-
-    try:
-        return Department.objects.select_related("college").get(
-            id=hod_id,
-            status="active"
-        )
-    except (Department.DoesNotExist, ValueError):
-        return None
     
 @csrf_exempt
 def api_hod_dashboard(request):

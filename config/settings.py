@@ -173,6 +173,10 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # CORS SETTINGS
 # ==================================================
 
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://.*\.vercel\.app$",
+]
+
 CORS_ALLOWED_ORIGINS = [
     "https://online-studentmanagement.vercel.app",
  
@@ -234,7 +238,7 @@ SESSION_SAVE_EVERY_REQUEST = True
 
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 
-SESSION_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_SAMESITE = "None" if not DEBUG else "Lax"
 SESSION_COOKIE_SECURE = not DEBUG
 SESSION_COOKIE_HTTPONLY = True
 
@@ -244,7 +248,7 @@ SESSION_COOKIE_HTTPONLY = True
 
 CSRF_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_HTTPONLY = True
-CSRF_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SAMESITE = "None" if not DEBUG else "Lax"
 
 # ==================================================
 # PRODUCTION SECURITY HEADERS
