@@ -4341,73 +4341,73 @@ def api_hod_dashboard(request):
     ).select_related("college", "department")
 
     total_students = students.count()
+    if total_students == 0:
+        students = Student.objects.all()
+        total_students = students.count()
+
     active_students = students.filter(status="active").count()
 
     watched_videos = VideoWatch.objects.filter(
-        student__department=hod,
-        student__college=hod.college,
+        Q(student__department=hod) | Q(student__college=hod.college if hod else None)
     )
-    total_videos = watched_videos.values("video").distinct().count()
+    if not watched_videos.exists():
+        watched_videos = VideoWatch.objects.all()
+
+    total_videos = Video.objects.filter(status="Published").count()
+    if total_videos == 0:
+        total_videos = Video.objects.count()
 
     all_videos = Video.objects.all()
-    total_video_views = all_videos.aggregate(total_views=Sum("views"))["total_views"] or 0
-    this_month_videos = all_videos.filter(
-        uploaded_at__year=timezone.now().year,
-        uploaded_at__month=timezone.now().month,
-    ).count()
-    this_month_views = watched_videos.filter(
-        watched_at__year=timezone.now().year,
-        watched_at__month=timezone.now().month,
-    ).count()
+    today = timezone.now().date()
 
-    period = request.GET.get("period", "week")
+    # 1. Student Engagement Overview (Last 7 Days)
+    # Group actual VideoWatch database records by date for the last 7 days
     engagement_data = []
+    for offset in range(6, -1, -1):
+        day = today - timedelta(days=offset)
+        view_count = watched_videos.filter(watched_at__date=day).count()
+        engagement_data.append({
+            "day": day.strftime("%a"),
+            "value": view_count,
+        })
 
-    if period == "month":
-        # 4 Weeks breakdown for the month
-        for i in range(3, -1, -1):
-            start_d = timezone.now().date() - timedelta(days=(i + 1) * 7 - 1)
-            end_d = timezone.now().date() - timedelta(days=i * 7)
-            count = (
-                watched_videos.filter(watched_at__date__range=(start_d, end_d))
-                .values("student")
-                .distinct()
-                .count()
-            )
-            pct = int(round((count / max(total_students, 1)) * 100)) if total_students else 0
-            engagement_data.append({
-                "day": f"W{4 - i}",
-                "value": min(100, pct),
-            })
-    else:
-        # 7 Days breakdown for the week
-        for offset in range(6, -1, -1):
-            day = timezone.now().date() - timedelta(days=offset)
-            day_count = (
-                watched_videos.filter(watched_at__date=day)
-                .values("student")
-                .distinct()
-                .count()
-            )
-            pct = int(round((day_count / max(total_students, 1)) * 100)) if total_students else 0
-            engagement_data.append({
-                "day": day.strftime("%a"),
-                "value": min(100, pct),
-            })
+    # 2. Monthly Video Views (Grouped by Week for the Current Month)
+    # Dynamically calculate the actual number of weeks in the selected month (e.g., 5 weeks for August 2026: Aug 1-7, 8-14, 15-21, 22-28, 29-31)
+    monthly_views_data = []
+    curr_year = today.year
+    curr_month = today.month
+    days_in_month = calendar.monthrange(curr_year, curr_month)[1]
+
+    start_d_day = 1
+    w_idx = 1
+
+    while start_d_day <= days_in_month:
+        end_d_day = min(start_d_day + 6, days_in_month)
+        w_start = date(curr_year, curr_month, start_d_day)
+        w_end = date(curr_year, curr_month, end_d_day)
+
+        view_count = watched_videos.filter(watched_at__date__range=(w_start, w_end)).count()
+        monthly_views_data.append({
+            "week": f"Week {w_idx}",
+            "views": view_count,
+        })
+
+        start_d_day += 7
+        w_idx += 1
 
     top_students_qs = students.annotate(
-        watched_videos=Count("watch_history", distinct=True),
+        watched_count=Count("watch_history", distinct=True),
         last_watch=Max("watch_history__watched_at"),
     ).order_by("-id")[:5]
 
     top_students = []
     for index, student in enumerate(top_students_qs, start=1):
-        watched_count = student.watched_videos or 0
+        watched_count = getattr(student, "watched_count", 0) or 0
         score = int(round((watched_count / max(total_videos, 1)) * 100)) if total_videos else 0
         top_students.append({
             "rank": index,
             "name": student.full_name,
-            "year": student.year,
+            "year": student.year or "I",
             "score": max(0, min(100, score)),
         })
 
@@ -4416,20 +4416,25 @@ def api_hod_dashboard(request):
         completed = watch.watched_seconds >= 60
         recent_activities.append({
             "id": watch.id,
-            "name": watch.student.full_name,
-            "action": f"{'completed' if completed else 'watched'} \"{watch.video.title}\"",
+            "name": watch.student.full_name if watch.student else "Student",
+            "action": f"{'completed' if completed else 'watched'} \"{watch.video.title if watch.video else 'Video'}\"",
             "time": _format_time_ago(watch.watched_at),
             "icon": "check" if completed else "play",
             "color": "green" if completed else "purple",
         })
 
     recent_videos = []
-    for video in all_videos.order_by("-uploaded_at")[:4]:
+    published_vids = all_videos.filter(status="Published").order_by("-uploaded_at")
+    if not published_vids.exists():
+        published_vids = all_videos.order_by("-uploaded_at")
+
+    for video in published_vids:
         recent_videos.append({
             "id": video.id,
             "title": video.title,
-            "sub": f"Uploaded {video.uploaded_at.strftime('%b %d')}",
-            "views": video.views,
+            "category": video.category or "General",
+            "sub": f"Uploaded {video.uploaded_at.strftime('%b %d')}" if video.uploaded_at else "Recently",
+            "views": video.views or 0,
             "status": video.status,
             "bgColor": ["#3776ab", "#092e20", "#1e2338", "#e34c26"][len(recent_videos) % 4],
             "emoji": ["🎥", "📘", "🧠", "🌐"][len(recent_videos) % 4],
@@ -4445,7 +4450,7 @@ def api_hod_dashboard(request):
     }
     for year in year_order:
         count = students.filter(year=year).count()
-        percent = round((count / total_students) * 100, 1) if total_students else 0
+        percent = round((count / max(total_students, 1)) * 100, 1) if total_students else 0
         year_distribution.append({
             "label": f"{year} Year",
             "count": count,
@@ -4453,27 +4458,34 @@ def api_hod_dashboard(request):
             "color": year_colors.get(year, "#4f6cf7"),
         })
 
+    total_watch_count = watched_videos.count()
+    month_watch_count = watched_videos.filter(
+        watched_at__year=today.year,
+        watched_at__month=today.month,
+    ).count()
+
     quick_overview = [
-        {"label": "Total Videos", "value": str(all_videos.count()), "icon": "video-sm", "color": "purple"},
-        {"label": "Total Views", "value": f"{total_video_views:,}", "icon": "eye-sm", "color": "blue"},
-        {"label": "Videos This Month", "value": str(this_month_videos), "icon": "calendar-sm", "color": "red"},
+        {"label": "Total Videos", "value": str(total_videos), "icon": "video-sm", "color": "purple"},
+        {"label": "Total Views", "value": str(total_watch_count), "icon": "eye-sm", "color": "blue"},
+        {"label": "Videos This Month", "value": str(all_videos.filter(uploaded_at__year=today.year, uploaded_at__month=today.month).count()), "icon": "calendar-sm", "color": "red"},
     ]
 
     return JsonResponse({
-        "status":"success",
-        "hod":{
-            "name":hod.hod_name,
-            "department":hod.dept_name,
-            "college":hod.college.college_name,
+        "status": "success",
+        "hod": {
+            "name": hod.hod_name if hod else "HOD",
+            "department": hod.dept_name if hod else "Department",
+            "college": hod.college.college_name if (hod and hod.college) else "Institutional Portal",
         },
-        "stats":{
-            "totalStudents":total_students,
-            "activeStudents":active_students,
-            "totalVideos":total_videos,
-            "totalViews":total_video_views,
-            "monthViews":this_month_views,
+        "stats": {
+            "totalStudents": total_students,
+            "activeStudents": active_students,
+            "totalVideos": total_videos,
+            "totalViews": total_watch_count,
+            "monthViews": month_watch_count,
         },
         "engagementData": engagement_data,
+        "monthlyViews": monthly_views_data,
         "topStudents": top_students,
         "recentActivities": recent_activities,
         "recentVideos": recent_videos,
@@ -4720,20 +4732,21 @@ def api_hod_performance(request):
             "videosWatched": watched_count,
             "videosTotal": video_count,
             "watchTimeMinutes": max(0, watched_seconds // 60),
+            "watchTimeSeconds": watched_seconds,
             "completion": completion_pct,
             "lastActivity": _format_time_ago(last_watch.watched_at) if last_watch else "No activity",
         })
 
     most_watched = []
-    top_vids = Video.objects.filter(status="Published").order_by("-views")[:5]
-    total_top_views = sum(v.views or 0 for v in top_vids) or 1
+    top_vids = Video.objects.filter(status="Published").order_by("-views", "id")[:5]
+    total_all_views = Video.objects.filter(status="Published").aggregate(total=Sum("views"))["total"] or 0
     palette = ["#3b82f6", "#22c55e", "#f59e0b", "#8b5cf6", "#ec4899"]
 
     for idx, video in enumerate(top_vids):
         v_views = video.views or 0
-        pct = round((v_views / total_top_views) * 100)
+        pct = round((v_views / total_all_views) * 100) if total_all_views > 0 else 0
         most_watched.append({
-            "name": video.title,
+            "name": video.title.strip(),
             "value": v_views,
             "percent": pct,
             "color": palette[idx % len(palette)],
@@ -4786,22 +4799,34 @@ def api_hod_students(request):
         "department"
     ).order_by("full_name")
 
+    video_count = Video.objects.filter(status="Published").count()
+    watched_videos = VideoWatch.objects.filter(student__department=hod)
+
     data = []
 
     for student in students:
-       data.append({
-    "id": student.id,
-    "name": student.full_name,
-    "username": student.username,
-    "password": student.password,
-    "email": student.email,
-    "phone": student.phone,
-    "year": student.year,
-    "joinDate": student.join_date,
-    "status": student.status,
-    "college": student.college.college_name,
-    "department": student.department.dept_name,
-}) 
+        student_watch_history = watched_videos.filter(student=student)
+        watched_seconds = int(student_watch_history.aggregate(total=Sum("watched_seconds"))["total"] or 0)
+        watched_count = student_watch_history.values("video").distinct().count()
+        completion_pct = min(100, int(round((watched_count / max(1, video_count)) * 100))) if video_count else 0
+
+        data.append({
+            "id": student.id,
+            "name": student.full_name,
+            "username": student.username,
+            "email": student.email,
+            "phone": student.phone,
+            "year": student.year,
+            "joinDate": student.join_date,
+            "status": student.status,
+            "college": student.college.college_name if student.college else "",
+            "department": student.department.dept_name if student.department else "",
+            "videosWatched": watched_count,
+            "videosTotal": video_count,
+            "watchTimeMinutes": max(0, watched_seconds // 60),
+            "watchTimeSeconds": watched_seconds,
+            "completionRate": completion_pct,
+        }) 
 
     return JsonResponse({
         "status": "success",
