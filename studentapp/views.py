@@ -3515,15 +3515,33 @@ def duration_to_secs(dur_str):
     import re
     if not dur_str:
         return 0
+    s_dur = str(dur_str).strip()
+
+    # Support MM:SS or HH:MM:SS format (e.g. 55:40 or 01:20:30)
+    parts = s_dur.split(":")
+    if len(parts) == 2:
+        try:
+            return int(parts[0]) * 60 + int(parts[1])
+        except ValueError:
+            pass
+    elif len(parts) == 3:
+        try:
+            return int(parts[0]) * 3600 + int(parts[1]) * 60 + int(parts[2])
+        except ValueError:
+            pass
+
     total = 0
-    h = re.search(r'(\d+)\s*h', str(dur_str))
-    m = re.search(r'(\d+)\s*(min|m\b)', str(dur_str))
+    h = re.search(r'(\d+)\s*h', s_dur)
+    m = re.search(r'(\d+)\s*(min|m\b)', s_dur)
+    s = re.search(r'(\d+)\s*(sec|s\b)', s_dur)
     if h:
         total += int(h.group(1)) * 3600
     if m:
         total += int(m.group(1)) * 60
+    if s:
+        total += int(s.group(1))
     if total == 0:
-        digits = re.search(r'(\d+)', str(dur_str))
+        digits = re.search(r'(\d+)', s_dur)
         if digits:
             total = int(digits.group(1)) * 60
     return total
@@ -3532,8 +3550,8 @@ def duration_to_secs(dur_str):
 def is_video_completed(watched_seconds, duration_str):
     dur_secs = duration_to_secs(duration_str)
     if dur_secs > 0:
-        return (watched_seconds or 0) / dur_secs >= 0.9
-    return (watched_seconds or 0) > 0
+        return ((watched_seconds or 0) / dur_secs) >= 0.95
+    return False
 
 
 def get_average_rating(video):
@@ -3665,6 +3683,27 @@ def api_student_dashboard(request):
 
         total_watch_seconds = sum(w.watched_seconds for w in watched_records)
         watch_hours = round(total_watch_seconds / 3600, 1)
+        completion_rate = min(100, int(round((completed_count / max(1, total_videos)) * 100))) if total_videos > 0 else 0
+
+        # Current month activity for THIS student
+        from django.utils import timezone
+        now = timezone.now()
+        current_month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        month_watches = watched_records.filter(watched_at__gte=current_month_start)
+        month_completed_count = sum(1 for w in month_watches if is_video_completed(w.watched_seconds, w.video.duration))
+
+        if total_videos > 0:
+            if month_completed_count > 0:
+                monthly_progress = min(100, max(1, int(round((month_completed_count / total_videos) * 100))))
+            else:
+                sum_month_progress = 0.0
+                for w in month_watches:
+                    dur_secs = duration_to_secs(w.video.duration)
+                    if dur_secs > 0 and w.watched_seconds > 0:
+                        sum_month_progress += min(100.0, (w.watched_seconds / dur_secs) * 100.0)
+                monthly_progress = min(100, int(round(sum_month_progress / total_videos)))
+        else:
+            monthly_progress = 0
 
         # Build Continue Watching list for THIS student only
         recent_watches = VideoWatch.objects.filter(student=student, video__status="Published", watched_seconds__gt=0).select_related("video").order_by("-watched_at")[:6]
@@ -3716,16 +3755,27 @@ def api_student_dashboard(request):
                 "thumbnail_url": thumb_url,
             })
 
-        # Top Categories dynamically computed from published videos (skip empty categories)
-        cat_counts = videos_qs.values('category').annotate(count=Count('id')).order_by('-count')
+        # Top Categories dynamically computed from published videos (5 most recently added categories)
+        cat_counts = (
+            videos_qs.filter(category__isnull=False)
+            .exclude(category="")
+            .values('category')
+            .annotate(
+                count=Count('id'),
+                latest_added=Max('uploaded_at')
+            )
+            .order_by('-latest_added')[:5]
+        )
         top_categories = []
         for item in cat_counts:
-            c_name = item['category']
+            c_name = str(item['category']).strip()
             if not c_name:
                 continue
+            cnt = item['count']
             top_categories.append({
                 "name": c_name,
-                "count": f"{item['count']} videos"
+                "count": f"{cnt} {'video' if cnt == 1 else 'videos'}",
+                "videoCount": cnt,
             })
 
         # Recommended videos dynamically based on published videos
@@ -3760,6 +3810,11 @@ def api_student_dashboard(request):
                 "completed": completed_count,
                 "pending": pending_count,
                 "watchHours": watch_hours,
+                "totalWatchSeconds": total_watch_seconds,
+                "completionRate": completion_rate,
+                "monthlyProgress": monthly_progress,
+                "monthCompletedCount": month_completed_count,
+                "monthName": now.strftime("%B"),
             },
             "continueWatching": continue_watching,
             "recentlyAdded": recently_added,
@@ -3804,10 +3859,12 @@ def api_student_videos(request):
         for v in videos_qs:
             duration_secs = duration_to_secs(v.duration)
             vid_watched_seconds = watched_seconds_map.get(v.id, 0)
+            completed = is_video_completed(vid_watched_seconds, v.duration)
+
             if duration_secs > 0 and vid_watched_seconds > 0:
-                progress_pct = min(100, round((vid_watched_seconds / duration_secs) * 100))
+                progress_pct = round(min(100.0, (vid_watched_seconds / duration_secs) * 100), 1)
             else:
-                progress_pct = 100 if (v.id in watched_ids and vid_watched_seconds == 0) else 0
+                progress_pct = 100.0 if completed else 0.0
 
             hod_name = v.uploaded_by_hod.hod_name if v.uploaded_by_hod else "System Admin"
             dept_name = v.uploaded_by_hod.dept_name if v.uploaded_by_hod else "General"
@@ -3830,7 +3887,9 @@ def api_student_videos(request):
                 "uploadDate": v.uploaded_at.strftime("%d %b %Y") if v.uploaded_at else "",
                 "uploadedBy": hod_name,
                 "department": dept_name,
-                "watched": v.id in watched_ids,
+                "watched": completed,
+                "completed": completed,
+                "status": "Watched" if completed else ("In Progress" if vid_watched_seconds > 0 else "Not Started"),
                 "watched_seconds": vid_watched_seconds,
                 "progress": progress_pct,
                 "rating": get_average_rating(v),
@@ -4139,12 +4198,32 @@ def api_student_progress(request):
         # ------------------------------------------------------------------
         category_breakdown = []
         categories_qs = all_videos.values_list("category", flat=True).distinct()
+        student_watches_map = {w.video_id: w.watched_seconds for w in watch_qs}
+
         for cat in categories_qs:
             if not cat:
                 continue
-            cat_total = all_videos.filter(category=cat).count()
-            cat_completed = sum(1 for w in watch_qs.filter(video__category=cat) if is_video_completed(w.watched_seconds, w.video.duration))
-            cat_pct = round((cat_completed / cat_total) * 100) if cat_total > 0 else 0
+            cat_videos = all_videos.filter(category=cat)
+            cat_total = cat_videos.count()
+            if cat_total == 0:
+                continue
+
+            cat_completed = 0
+            sum_video_progress = 0.0
+
+            for v in cat_videos:
+                w_secs = student_watches_map.get(v.id, 0)
+                dur_secs = duration_to_secs(v.duration)
+
+                if is_video_completed(w_secs, v.duration):
+                    cat_completed += 1
+                    sum_video_progress += 100.0
+                elif dur_secs > 0 and w_secs > 0:
+                    v_pct = min(100.0, (w_secs / dur_secs) * 100.0)
+                    sum_video_progress += v_pct
+
+            cat_pct = round(sum_video_progress / cat_total, 1)
+
             category_breakdown.append({
                 "category": cat,
                 "total": cat_total,
