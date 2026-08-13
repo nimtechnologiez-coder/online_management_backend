@@ -51,5 +51,4 @@ tzdata==2026.2
 urllib3==2.7.0
 whitenoise==6.12.0
 cloudinary==1.45.0
-django-cloudinary-storage==0.3.0
-python-magic==0.4.27
+django-cloudinary-storage==0.3.0
