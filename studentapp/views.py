@@ -2277,21 +2277,24 @@ def video_add(request):
         thumbnail = request.FILES.get("thumbnail")
 
         if title and category and duration and video_file and thumbnail:
+            try:
+                Video.objects.create(
+                    title=title,
+                    category=category,
+                    duration=duration,
+                    description=description,
+                    status=status,
+                    video_file=video_file,
+                    thumbnail=thumbnail,
 
-            Video.objects.create(
-                title=title,
-                category=category,
-                duration=duration,
-                description=description,
-                status=status,
-                video_file=video_file,
-                thumbnail=thumbnail,
-
-                # Admin Upload
-                is_admin_video=True
-            )
-
-            return redirect("video_management")
+                    # Admin Upload
+                    is_admin_video=True
+                )
+                return redirect("video_management")
+            except Exception as e:
+                import logging
+                logging.exception("Error creating video")
+                return render(request, "videomanagement/video_add.html", {"error": f"Failed to upload video: {str(e)}"})
 
     return render(request, "videomanagement/video_add.html")
 

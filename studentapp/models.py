@@ -10,16 +10,23 @@ from django.core.files.storage import FileSystemStorage
 def get_video_storage():
     c_storage = getattr(settings, "CLOUDINARY_STORAGE", {})
     if os.getenv("CLOUDINARY_URL") or (c_storage.get("CLOUD_NAME") and c_storage.get("API_KEY") and c_storage.get("API_SECRET")):
-        from cloudinary_storage.storage import VideoMediaCloudinaryStorage
-        return VideoMediaCloudinaryStorage()
+        try:
+            from cloudinary_storage.storage import VideoMediaCloudinaryStorage
+            return VideoMediaCloudinaryStorage()
+        except Exception:
+            return FileSystemStorage()
     return FileSystemStorage()
 
 def get_image_storage():
     c_storage = getattr(settings, "CLOUDINARY_STORAGE", {})
     if os.getenv("CLOUDINARY_URL") or (c_storage.get("CLOUD_NAME") and c_storage.get("API_KEY") and c_storage.get("API_SECRET")):
-        from cloudinary_storage.storage import MediaCloudinaryStorage
-        return MediaCloudinaryStorage()
+        try:
+            from cloudinary_storage.storage import MediaCloudinaryStorage
+            return MediaCloudinaryStorage()
+        except Exception:
+            return FileSystemStorage()
     return FileSystemStorage()
+
 
 # ==========================================
 # College Model
