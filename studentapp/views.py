@@ -33,6 +33,27 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
 
+
+def get_media_url(file_field, request=None):
+    """
+    Returns the absolute URL for a FileField or ImageField.
+    If stored on Cloudinary (starts with http:// or https://), return as is.
+    Otherwise, if local storage, build absolute URI via request.
+    """
+    if not file_field:
+        return ""
+    try:
+        url = file_field.url
+        if not url:
+            return ""
+        if url.startswith("http://") or url.startswith("https://"):
+            return url
+        if request is not None:
+            return request.build_absolute_uri(url)
+        return url
+    except Exception:
+        return ""
+
 from .models import (
     College,
     Department,
@@ -3586,6 +3607,16 @@ def video_stream(request, video_id):
     if not video:
         return HttpResponse("Video not found.", status=404)
 
+    # Check if stored on Cloudinary or external HTTP URL
+    if video.video_file:
+        try:
+            url = video.video_file.url
+            if url and (url.startswith("http://") or url.startswith("https://")):
+                from django.shortcuts import redirect
+                return redirect(url)
+        except Exception:
+            pass
+
     # Check if a valid local video file exists on disk
     file_path = None
     if video.video_file:
@@ -4160,9 +4191,9 @@ def api_student_progress(request):
         overall_completion_pct = round((completed_count / total_videos) * 100) if total_videos > 0 else 0
 
         # ------------------------------------------------------------------
-        # Weekly Watch Time — last 7 days (Mon … Sun or today-6 … today)
+        # Weekly Watch Time — last 7 days ending today (chronological order)
         # ------------------------------------------------------------------
-        now = timezone.now()
+        now = timezone.localtime(timezone.now())
         today = now.date()
         DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
         weekly_watch_time = []
@@ -4175,6 +4206,7 @@ def api_student_progress(request):
                 "day": day_label,
                 "hours": round(day_secs / 3600, 2),
                 "date": day_date.strftime("%d %b"),
+                "isToday": i == 0,
             })
 
         # ------------------------------------------------------------------

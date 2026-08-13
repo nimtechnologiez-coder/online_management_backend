@@ -1,7 +1,25 @@
 
 
+import os
 from django.db import models
 from django.utils import timezone
+from django.conf import settings
+
+from django.core.files.storage import FileSystemStorage
+
+def get_video_storage():
+    c_storage = getattr(settings, "CLOUDINARY_STORAGE", {})
+    if os.getenv("CLOUDINARY_URL") or (c_storage.get("CLOUD_NAME") and c_storage.get("API_KEY") and c_storage.get("API_SECRET")):
+        from cloudinary_storage.storage import VideoMediaCloudinaryStorage
+        return VideoMediaCloudinaryStorage()
+    return FileSystemStorage()
+
+def get_image_storage():
+    c_storage = getattr(settings, "CLOUDINARY_STORAGE", {})
+    if os.getenv("CLOUDINARY_URL") or (c_storage.get("CLOUD_NAME") and c_storage.get("API_KEY") and c_storage.get("API_SECRET")):
+        from cloudinary_storage.storage import MediaCloudinaryStorage
+        return MediaCloudinaryStorage()
+    return FileSystemStorage()
 
 # ==========================================
 # College Model
@@ -477,8 +495,8 @@ class Video(models.Model):
     duration = models.CharField(max_length=20)
     description = models.TextField(blank=True)
 
-    video_file = models.FileField(upload_to="videos/", blank=True, null=True)
-    thumbnail = models.ImageField(upload_to="thumbnails/", blank=True, null=True)
+    video_file = models.FileField(upload_to="videos/", storage=get_video_storage, blank=True, null=True)
+    thumbnail = models.ImageField(upload_to="thumbnails/", storage=get_image_storage, blank=True, null=True)
 
     status = models.CharField(max_length=20, choices=STATUS, default="Pending")
 

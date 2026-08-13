@@ -28,6 +28,7 @@ if "RENDER_EXTERNAL_HOSTNAME" in os.environ:
 
 INSTALLED_APPS = [
     "corsheaders",
+    "cloudinary_storage",
 
     "django.contrib.admin",
     "django.contrib.auth",
@@ -35,6 +36,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "cloudinary",
     "studentapp",
 ]
 
@@ -157,8 +159,19 @@ if (BASE_DIR.parent / "static").exists():
 STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
 
 # ==================================================
-# Media Files
+# Media Files & Cloudinary Configuration
 # ==================================================
+
+CLOUDINARY_STORAGE = {
+    "CLOUD_NAME": os.getenv("CLOUDINARY_CLOUD_NAME", ""),
+    "API_KEY": os.getenv("CLOUDINARY_API_KEY", ""),
+    "API_SECRET": os.getenv("CLOUDINARY_API_SECRET", ""),
+}
+
+CLOUDINARY_URL = os.getenv("CLOUDINARY_URL", "")
+
+if CLOUDINARY_URL or (os.getenv("CLOUDINARY_CLOUD_NAME") and os.getenv("CLOUDINARY_API_KEY") and os.getenv("CLOUDINARY_API_SECRET")):
+    DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
