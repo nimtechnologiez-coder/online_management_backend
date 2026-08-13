@@ -2267,34 +2267,38 @@ def video_management(request):
 
 def video_add(request):
     if request.method == "POST":
-        title = request.POST.get("title")
-        category = request.POST.get("category")
-        duration = request.POST.get("duration")
-        description = request.POST.get("description", "")
+        title = request.POST.get("title", "").strip()
+        category = request.POST.get("category", "").strip()
+        duration = request.POST.get("duration", "").strip() or "00:00"
+        description = request.POST.get("description", "").strip()
         status = request.POST.get("status", "Published")
 
-        video_file = request.FILES.get("video_file")
+        video_file = request.FILES.get("video_file") or request.FILES.get("video")
         thumbnail = request.FILES.get("thumbnail")
 
-        if title and category and duration and video_file and thumbnail:
-            try:
-                Video.objects.create(
-                    title=title,
-                    category=category,
-                    duration=duration,
-                    description=description,
-                    status=status,
-                    video_file=video_file,
-                    thumbnail=thumbnail,
+        if not title or not category or not video_file:
+            return render(request, "videomanagement/video_add.html", {
+                "error": "Title, category, and video file are required."
+            })
 
-                    # Admin Upload
-                    is_admin_video=True
-                )
-                return redirect("video_management")
-            except Exception as e:
-                import logging
-                logging.exception("Error creating video")
-                return render(request, "videomanagement/video_add.html", {"error": f"Failed to upload video: {str(e)}"})
+        try:
+            Video.objects.create(
+                title=title,
+                category=category,
+                duration=duration,
+                description=description,
+                status=status,
+                video_file=video_file,
+                thumbnail=thumbnail,
+                is_admin_video=True
+            )
+            return redirect("video_management")
+        except Exception as e:
+            import logging
+            logging.exception("Error creating video in video_add")
+            return render(request, "videomanagement/video_add.html", {
+                "error": f"Failed to upload video: {str(e)}"
+            })
 
     return render(request, "videomanagement/video_add.html")
 
@@ -4680,7 +4684,6 @@ def api_hod_videos(request):
 
 @csrf_exempt
 def api_hod_video_upload(request):
-
     if request.method != "POST":
         return JsonResponse({
             "status": "error",
@@ -4688,58 +4691,70 @@ def api_hod_video_upload(request):
         }, status=405)
 
     hod = get_authenticated_hod(request)
-
     if not hod:
         return JsonResponse({
             "status": "error",
             "message": "Unauthorized"
         }, status=401)
 
-    title = request.POST.get("title")
-    category = request.POST.get("category")
-    duration = request.POST.get("duration")
-    description = request.POST.get("description", "")
+    title = request.POST.get("title", "").strip()
+    category = request.POST.get("category", "").strip()
+    duration = request.POST.get("duration", "").strip() or "00:00"
+    description = request.POST.get("description", "").strip()
+    status = request.POST.get("status", "Pending")
 
-    # Frontend அனுப்பும் key-க்கு match ஆக வேண்டும்
-    video_file = request.FILES.get("video")
+    # Match frontend upload keys ('video' or 'video_file', 'thumbnail')
+    video_file = request.FILES.get("video") or request.FILES.get("video_file")
     thumbnail = request.FILES.get("thumbnail")
 
-    if not all([title, category, duration, video_file, thumbnail]):
+    if not title or not category or not video_file:
         return JsonResponse({
             "status": "error",
-            "message": "All fields are required."
+            "message": "Title, category, and video file are required."
         }, status=400)
 
-    video = Video.objects.create(
-        title=title,
-        category=category,
-        duration=duration,
-        description=description,
-        status="Published",
-        video_file=video_file,
-        thumbnail=thumbnail,
-        uploaded_by_hod=hod,
-        is_admin_video=False,
-    )
+    try:
+        video = Video.objects.create(
+            title=title,
+            category=category,
+            duration=duration,
+            description=description,
+            status=status,
+            video_file=video_file,
+            thumbnail=thumbnail,
+            uploaded_by_hod=hod,
+            is_admin_video=False,
+        )
 
-    return JsonResponse({
-        "status": "success",
-        "message": "Video uploaded successfully.",
-        "video": {
-            "id": video.id,
-            "title": video.title,
-            "category": video.category,
-            "duration": video.duration,
-            "description": video.description,
-            "uploadedBy": hod.hod_name,
-            "uploadDate": video.uploaded_at.strftime("%d %b %Y"),
-            "thumbnail": request.build_absolute_uri(video.thumbnail.url),
-            "videoUrl": request.build_absolute_uri(video.video_file.url),
-            "views": video.views,
-            "status": video.status,
-            "isMine": True,
-        }
-    })
+        thumb_url = request.build_absolute_uri(video.thumbnail.url) if video.thumbnail else ""
+        vid_url = request.build_absolute_uri(video.video_file.url) if video.video_file else ""
+        hod_name = getattr(hod, 'hod_name', None) or (getattr(hod, 'user', None).get_full_name() if getattr(hod, 'user', None) else str(hod))
+
+        return JsonResponse({
+            "status": "success",
+            "message": "Video uploaded successfully and submitted for Admin approval.",
+            "video": {
+                "id": video.id,
+                "title": video.title,
+                "category": video.category,
+                "duration": video.duration,
+                "description": video.description,
+                "uploadedBy": hod_name,
+                "uploadDate": video.uploaded_at.strftime("%d %b %Y") if video.uploaded_at else "",
+                "thumbnail": thumb_url,
+                "videoUrl": vid_url,
+                "views": video.views,
+                "status": video.status,
+                "isMine": True,
+            }
+        })
+    except Exception as e:
+        import logging
+        logging.exception("Error in api_hod_video_upload")
+        return JsonResponse({
+            "status": "error",
+            "message": f"Failed to upload video: {str(e)}"
+        }, status=500)
 
 
 @csrf_exempt
@@ -5081,72 +5096,7 @@ def api_hod_videos(request):
     })
 
 
-@csrf_exempt
-def api_hod_video_upload(request):
-    if request.method != "POST":
-        return JsonResponse({"status": "error", "message": "Method not allowed"}, status=405)
 
-    hod = get_authenticated_hod(request)
-    if not hod:
-        return JsonResponse({"status": "error", "message": "Unauthorized"}, status=401)
-
-    try:
-        import json
-        data = {}
-        if request.content_type == "application/json" and request.body:
-            data = json.loads(request.body.decode("utf-8"))
-        else:
-            data = request.POST
-
-        title = data.get("title") or "New Course Video"
-        category = data.get("category") or "Programming"
-        duration = data.get("duration") or "15:00"
-        description = data.get("description") or ""
-
-        # ALWAYS set status='Pending' when uploaded by HOD!
-        new_vid = Video.objects.create(
-            title=title,
-            category=category,
-            duration=duration,
-            description=description,
-            status="Pending",
-            uploaded_by_hod=hod,
-        )
-
-        return JsonResponse({
-            "status": "success",
-            "message": "Video uploaded successfully and submitted for Admin approval.",
-            "video": {
-                "id": new_vid.id,
-                "title": new_vid.title,
-                "category": new_vid.category,
-                "duration": new_vid.duration,
-                "description": new_vid.description,
-                "status": "Pending",
-                "uploadedBy": hod.hod_name,
-                "uploadDate": new_vid.uploaded_at.strftime("%d %b %Y"),
-                "isMine": True,
-                "views": 0,
-            }
-        })
-    except Exception as e:
-        return JsonResponse({"status": "error", "message": str(e)}, status=500)
-
-
-@csrf_exempt
-def api_hod_video_delete(request, video_id):
-    if request.method not in ["DELETE", "POST"]:
-        return JsonResponse({"status": "error", "message": "Method not allowed"}, status=405)
-
-    hod = get_authenticated_hod(request)
-    if not hod:
-        return JsonResponse({"status": "error", "message": "Unauthorized"}, status=401)
-
-    try:
-        Video.objects.filter(id=video_id, uploaded_by_hod=hod).delete()
-        return JsonResponse({"status": "success", "message": "Video deleted successfully"})
-    except Exception as e:
-        return JsonResponse({"status": "error", "message": str(e)}, status=500)
 
 
 @csrf_exempt

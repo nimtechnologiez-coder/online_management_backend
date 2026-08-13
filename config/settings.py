@@ -177,6 +177,15 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 # ==================================================
+# Large File Upload Settings
+# ==================================================
+# Remove maximum payload size restriction (allows large video file uploads)
+DATA_UPLOAD_MAX_MEMORY_SIZE = None
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10MB in RAM, larger streams to temp disk file
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
+
+
+# ==================================================
 # Default Auto Field
 # ==================================================
 
